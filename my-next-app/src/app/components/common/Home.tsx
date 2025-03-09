@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 
 interface BackButtonProps {
   href: string;
@@ -12,20 +13,7 @@ export default function BackButton({
   return (
     <div className="absolute top-4 left-4 z-10">
       <Link href={href} className={`block p-1 ${className}`}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={3}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
+        <FaArrowLeft className="h-3 w-3" />
       </Link>
     </div>
   );
