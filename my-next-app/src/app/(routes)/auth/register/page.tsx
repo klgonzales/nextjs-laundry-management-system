@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   return (
-    <div>
+    <div className="flex flex-col items-center justify-center min-h-screen">
       <BackButton href="/" />
       <RegisterForm />
       <div className="text-center mt-4">

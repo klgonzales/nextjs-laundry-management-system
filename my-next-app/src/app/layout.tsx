@@ -1,5 +1,5 @@
 import { Poppins } from "next/font/google";
-import "./styles/globals.css";
+import "./globals.css";
 import type { Metadata } from "next";
 import Header from "./components/common/Header";
 

@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+  --button-hover-bg: 244, 104, 187;
+  --button-hover-text: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+button {
+  background: rgb(var(--background-rgb));
+  color: rgb(var(--foreground-rgb));
+  border: 1px solid rgb(var(--foreground-rgb));
+}
+
+button:hover,
+button:focus {
+  background: rgb(var(--button-hover-bg));
+  color: rgb(var(--button-hover-text));
+}
+
+button:active {
+  background: rgb(var(--button-hover-bg));
+  color: rgb(var(--button-hover-text));
+}
+
+h1 {
+  color: #3d4eb0;
+  font-weight: 600;
+}
+
+h2 {
+  color: #3d4eb0;
+  font-weight: normal;
+}
+a {
+  color: #3d4eb0;
+}
