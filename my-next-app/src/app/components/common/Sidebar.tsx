@@ -6,7 +6,7 @@ interface SidebarProps {
 
 export default function Sidebar({ userType }: SidebarProps) {
   return (
-    <div className="w-64 h-full bg-gray-800 text-white flex flex-col">
+    <div className="w-64 h-screen max-h-screen bg-gray-800 text-white flex flex-col">
       <div className="p-4 flex items-center">
         <img
           src="/images/logo.png"

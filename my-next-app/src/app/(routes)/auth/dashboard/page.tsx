@@ -29,7 +29,7 @@ export default function Dashboard() {
                 This is a simple dashboard. You can add more features here like:
               </p>
               <ul className="list-disc list-inside mt-2 text-gray-600">
-                <li>Order History</li>
+                <li>Ordear History</li>
                 <li>Current Orders</li>
                 <li>Profile Settings</li>
                 <li>Payment Methods</li>
@@ -37,8 +37,8 @@ export default function Dashboard() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
+      <Footer />
     </div>
   );
 }

@@ -5,18 +5,15 @@ export default function Header() {
   const [notifications, setNotifications] = useState(0);
 
   return (
-    <div className="bg-white shadow p-4 flex items-center justify-between">
-      <h1 className="text-xl font-bold">Welcome Back!</h1>
+    <div className="bg-white p-4 flex items-center justify-between">
+      <h2 className="text-2xl font-bold">Welcome Back, France!</h2>
       <div className="flex items-center space-x-4">
-        <button className="relative">
-          <FaRegBell className="h-6 w-6 text-gray-600" />
-          {notifications > 0 && (
-            <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-600 rounded-full"></span>
-          )}
-        </button>
-        <button>
-          <FaRegUserCircle className="h-8 w-8 text-gray-600" />
-        </button>
+        <div className="border-0 hover:bg-transparent focus:outline-none">
+          <FaRegBell className="h-6 w-6 text-gray-600 hover:text-[#3D4EB0]" />
+        </div>
+        <div className="border-0 hover:bg-transparent focus:outline-none">
+          <FaRegUserCircle className="h-6 w-6 text-gray-600 hover:text-[#3D4EB0]" />
+        </div>
       </div>
     </div>
   );
