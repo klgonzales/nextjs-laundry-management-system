@@ -14,6 +14,14 @@ export default function Dashboard() {
     router.push("/auth/login");
   };
 
+  const navigateToSelfService = () => {
+    router.push("/auth/order-pickup-delivery");
+  };
+
+  const navigateToPickupDelivery = () => {
+    router.push("/auth/order-self-service");
+  };
+
   return (
     <div className="min-h-screen flex">
       <Sidebar userType="client" />
@@ -29,11 +37,25 @@ export default function Dashboard() {
                 This is a simple dashboard. You can add more features here like:
               </p>
               <ul className="list-disc list-inside mt-2 text-gray-600">
-                <li>Ordear History</li>
+                <li>Order History</li>
                 <li>Current Orders</li>
                 <li>Profile Settings</li>
                 <li>Payment Methods</li>
               </ul>
+              <div className="mt-6 space-x-4">
+                <button
+                  onClick={navigateToSelfService}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+                >
+                  Self-Service
+                </button>
+                <button
+                  onClick={navigateToPickupDelivery}
+                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
+                >
+                  Pickup & Delivery
+                </button>
+              </div>
             </div>
           </div>
         </main>
