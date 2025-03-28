@@ -334,37 +334,41 @@ export default function RegisterForm() {
               <label className="block text-sm font-medium text-gray-700">
                 Payment Methods
               </label>
-              <select
-                multiple
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                value={formData.payment_methods}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    payment_methods: Array.from(
-                      e.target.selectedOptions,
-                      (option) => option.value
-                    ),
-                  })
-                }
-              >
-                <option value="cash">Cash</option>
-                <option value="credit-card">Credit Card</option>
-                <option value="paypal">PayPal</option>
-                <option value="bank-transfer">Bank Transfer</option>
-              </select>
-              <button
-                type="button"
-                className="mt-2 bg-gray-200 text-gray-700 px-2 py-1 rounded-md"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    payment_methods: [...formData.payment_methods, ""],
-                  })
-                }
-              >
-                Add Payment Method
-              </button>
+              <div className="space-y-2">
+                {["cash", "credit-card", "paypal", "bank-transfer"].map(
+                  (method) => (
+                    <div key={method} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={method}
+                        value={method}
+                        checked={formData.payment_methods.includes(method)}
+                        onChange={(e) => {
+                          const selectedMethods =
+                            formData.payment_methods.includes(method)
+                              ? formData.payment_methods.filter(
+                                  (m) => m !== method
+                                )
+                              : [...formData.payment_methods, method];
+                          setFormData({
+                            ...formData,
+                            payment_methods: selectedMethods,
+                          });
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor={method}
+                        className="ml-2 block text-sm text-gray-700"
+                      >
+                        {method
+                          .replace("-", " ")
+                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      </label>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           )}
           <div className="flex justify-between">

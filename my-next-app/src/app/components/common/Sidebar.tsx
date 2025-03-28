@@ -1,10 +1,18 @@
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface SidebarProps {
   userType: "client" | "admin";
+  handleScroll: (section: string) => void; // Add this prop
 }
 
-export default function Sidebar({ userType }: SidebarProps) {
+export default function Sidebar({ userType, handleScroll }: SidebarProps) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.push("/");
+  };
+
   return (
     <div className="w-64 h-screen max-h-screen bg-gray-800 text-white flex flex-col">
       <div className="p-4 flex items-center">
@@ -16,72 +24,63 @@ export default function Sidebar({ userType }: SidebarProps) {
         <span className="text-xl font-bold">Elbi Wash</span>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-1">
-        <Link href="/" className="block px-4 py-2 rounded hover:bg-gray-700">
-          Home
-        </Link>
-        <Link
-          href="/orders"
-          className="block px-4 py-2 rounded hover:bg-gray-700"
-        >
-          Orders
-        </Link>
         {userType === "client" && (
           <>
-            <Link
-              href="/payments"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
+            <button
+              onClick={() => handleScroll("orders")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Orders
+            </button>
+
+            <button
+              onClick={() => handleScroll("payments")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Payments
-            </Link>
-            <Link
-              href="/messages"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Messages
-            </Link>
+            </button>
           </>
         )}
+
         {userType === "admin" && (
           <>
-            <Link
-              href="/services"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
+            <button
+              onClick={() => handleScroll("orders")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Orders
+            </button>
+            <button
+              onClick={() => handleScroll("services")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Services
-            </Link>
-            <Link
-              href="/customer-feedback"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
+            </button>
+            <button
+              onClick={() => handleScroll("feedback")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Customer Feedback
-            </Link>
-            <Link
-              href="/messages"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Messages
-            </Link>
-            <Link
-              href="/payments"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
+            </button>
+            <button
+              onClick={() => handleScroll("payments")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Payments
-            </Link>
-            <Link
-              href="/analytics"
-              className="block px-4 py-2 rounded hover:bg-gray-700"
+            </button>
+            <button
+              onClick={() => handleScroll("analytics")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Analytics
-            </Link>
+            </button>
           </>
         )}
-        <Link
-          href="/settings"
-          className="block px-4 py-2 rounded hover:bg-gray-700"
+
+        <button
+          onClick={handleLogout}
+          className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
         >
-          Settings
-        </Link>
-        <button className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700">
           Logout
         </button>
       </nav>

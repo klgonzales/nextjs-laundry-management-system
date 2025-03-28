@@ -38,7 +38,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: "Login successful",
-      admin: adminData,
+      admin: {
+        admin_id: admin.admin_id,
+        shops: admin.shops, // Include shops in the response
+      },
     });
   } catch (error) {
     console.error("Login error:", error);

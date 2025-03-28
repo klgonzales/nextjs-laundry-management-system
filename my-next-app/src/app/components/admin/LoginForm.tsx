@@ -30,8 +30,16 @@ export default function AdminLoginForm() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Redirect to admin dashboard on success
-      router.push("/admin/dashboard");
+      const shopType = data.admin.shops[0].type;
+      console.log(shopType);
+
+      if (shopType === "pickup-delivery") {
+        router.push("/admin/shop-pickup-delivery/dashboard"); // Redirect to pickup & delivery dashboard
+      } else if (shopType === "self-service") {
+        router.push("/admin/shop-self-service/dashboard"); // Redirect to self-service dashboard
+      } else {
+        throw new Error("Unknown shop type");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }
