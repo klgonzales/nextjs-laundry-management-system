@@ -38,12 +38,8 @@ export default function Dashboard() {
     router.push("/auth/login");
   };
 
-  const navigateToSelfService = () => {
-    router.push("/auth/order-pickup-delivery");
-  };
-
-  const navigateToPickupDelivery = () => {
-    router.push("/auth/order-self-service");
+  const navigateToOrder = () => {
+    router.push("/auth/order");
   };
 
   return (
@@ -66,16 +62,22 @@ export default function Dashboard() {
               <div className="border-t border-gray-200">
                 <div className="px-4 py-5 sm:p-6 text-center space-x-4">
                   <button
-                    onClick={navigateToSelfService}
+                    onClick={navigateToOrder}
                     className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
                   >
                     Self-Service
                   </button>
                   <button
-                    onClick={navigateToPickupDelivery}
+                    onClick={navigateToOrder}
                     className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
                   >
                     Pickup & Delivery
+                  </button>
+                  <button
+                    onClick={navigateToOrder}
+                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
+                  >
+                    Search
                   </button>
                 </div>
               </div>

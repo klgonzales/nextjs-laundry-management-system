@@ -44,6 +44,6 @@ export interface Order {
 export interface Service {
   service_id: number;
   name: string;
-  price_per_kg: number;
-  description: string;
+  price_per_kg: number | null;
+  description: string | null;
 }

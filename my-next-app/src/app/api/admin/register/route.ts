@@ -23,6 +23,14 @@ export async function POST(request: Request) {
       payment_methods, // Array of selected payment methods (e.g., ["cash", "credit-card"])
     } = await request.json();
 
+    // Validate services array
+    const validatedServices = services.map((service: any) => {
+      if (!service.description || service.description.trim() === "") {
+        service.description = `${service.name} service`; // Add default description
+      }
+      return service;
+    });
+
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -68,7 +76,7 @@ export async function POST(request: Request) {
       phone: shop_phone,
       email: shop_email,
       address: shop_address,
-      services,
+      services: validatedServices, // Use validated services
       orders: [],
       payment_methods: paymentMethodDocs, // Associate the created PaymentMethod documents
     });
@@ -78,7 +86,7 @@ export async function POST(request: Request) {
       name,
       email,
       password: hashedPassword,
-      admin_id,
+      admin_id: Math.floor(Math.random() * 1000000),
       shops: [newShop],
     });
 

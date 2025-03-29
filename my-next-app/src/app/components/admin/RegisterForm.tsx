@@ -23,6 +23,7 @@ export default function RegisterForm() {
       price_per_kg: number;
       description: string;
     }[];
+    customService?: string;
     payment_methods: string[];
   }
 
@@ -257,80 +258,131 @@ export default function RegisterForm() {
             </div>
           )}
           {step === 3 && (
-            <div className="rounded-md shadow-sm space-y-2">
+            <div className="rounded-md shadow-sm space-y-4">
               <label className="block text-sm font-medium text-gray-700">
                 Services Offered
               </label>
-              {formData.services.map((service, index) => (
-                <div key={index} className="flex space-x-2">
+
+              {/* Predefined Services */}
+              <div className="space-y-2">
+                {["Wash", "Iron", "Fold", "Dry Cleaning", "Shoe Cleaning"].map(
+                  (serviceName) => (
+                    <div key={serviceName} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={serviceName}
+                        value={serviceName}
+                        checked={formData.services.some(
+                          (service) => service.name === serviceName
+                        )}
+                        onChange={(e) => {
+                          const newServices = [...formData.services];
+                          if (e.target.checked) {
+                            // Add the service if checked
+                            newServices.push({
+                              service_id: Date.now(),
+                              name: serviceName,
+                              price_per_kg: 0,
+                              description: "",
+                            });
+                          } else {
+                            // Remove the service if unchecked
+                            const index = newServices.findIndex(
+                              (service) => service.name === serviceName
+                            );
+                            newServices.splice(index, 1);
+                          }
+                          setFormData({ ...formData, services: newServices });
+                        }}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor={serviceName}
+                        className="ml-2 block text-sm text-gray-700"
+                      >
+                        {serviceName}
+                      </label>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* Custom Service Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Add Custom Service
+                </label>
+                <div className="flex space-x-2">
                   <input
                     type="text"
-                    placeholder="Service Name"
+                    placeholder="Custom Service Name"
                     className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    value={service.name}
-                    onChange={(e) => {
-                      const newServices = [...formData.services];
-                      newServices[index].name = e.target.value;
+                    value={formData.customService || ""}
+                    onChange={(e) =>
                       setFormData({
                         ...formData,
-                        services: newServices,
-                      });
-                    }}
+                        customService: e.target.value,
+                      })
+                    }
                   />
-                  <input
-                    type="number"
-                    placeholder="Price per Kg"
-                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    value={service.price_per_kg}
-                    onChange={(e) => {
-                      const newServices = [...formData.services];
-                      newServices[index].price_per_kg = Number(e.target.value);
-                      setFormData({
-                        ...formData,
-                        services: newServices,
-                      });
+                  <button
+                    type="button"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+                    onClick={() => {
+                      if (formData.customService?.trim()) {
+                        const newServices = [
+                          ...formData.services,
+                          {
+                            service_id: Date.now(),
+                            name: formData.customService.trim(),
+                            price_per_kg: 0,
+                            description: "",
+                          },
+                        ];
+                        setFormData({
+                          ...formData,
+                          services: newServices,
+                          customService: "", // Clear the input field
+                        });
+                      }
                     }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Description"
-                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    value={service.description}
-                    onChange={(e) => {
-                      const newServices = [...formData.services];
-                      newServices[index].description = e.target.value;
-                      setFormData({
-                        ...formData,
-                        services: newServices,
-                      });
-                    }}
-                  />
+                  >
+                    Add
+                  </button>
                 </div>
-              ))}
-              <button
-                type="button"
-                className="mt-2 bg-gray-200 text-gray-700 px-2 py-1 rounded-md"
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    services: [
-                      ...formData.services,
-                      {
-                        service_id: Date.now(),
-                        name: "",
-                        price_per_kg: 0,
-                        description: "",
-                      },
-                    ],
-                  })
-                }
-              >
-                Add Service
-              </button>
+              </div>
+
+              {/* Display Selected Services */}
+              <div className="mt-4">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Selected Services:
+                </h4>
+                <ul className="list-disc list-inside text-sm text-gray-600">
+                  {formData.services.map((service, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center"
+                    >
+                      <span>{service.name}</span>
+                      <button
+                        type="button"
+                        className="text-red-500 text-sm hover:underline"
+                        onClick={() => {
+                          const newServices = [...formData.services];
+                          newServices.splice(index, 1);
+                          setFormData({ ...formData, services: newServices });
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
           {step === 4 && (
-            <div className="rounded-md shadow-sm space-y-2">
+            <div className="rounded-md space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Payment Methods
               </label>
