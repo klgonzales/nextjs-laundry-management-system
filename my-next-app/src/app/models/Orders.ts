@@ -10,7 +10,7 @@ export interface OrderDocument extends Document {
   customer_id: number;
   order_type: string;
   service_id: number[];
-  machine_id: number;
+  machine_id: number | null;
   payment_status: string;
   order_status: string;
   total_weight: number;
@@ -18,17 +18,17 @@ export interface OrderDocument extends Document {
   date_placed: Date;
   date_completed: Date | null;
   clothes: ClothingItem[]; // Array of clothing items with type and quantity
-  date: Date;
+  date: Date | null;
   delivery_instructions: string;
   feedbacks: string[];
   payment_method: string;
   services: string[];
-  soap: boolean;
+  soap: boolean | null;
   time_range: {
-    t: number;
-    i: number;
+    t: number | null;
+    i: number | null;
   };
-  shop: mongoose.Types.ObjectId; // Reference to Shop collection
+  shop: { type: String; required: true }; // Reference to Shop
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -41,29 +41,29 @@ const OrderSchema = new Schema<OrderDocument>({
   customer_id: { type: Number, required: true },
   order_type: { type: String, required: true },
   service_id: { type: [Number], required: true },
-  machine_id: { type: Number, required: true },
+  machine_id: { type: Number, default: null },
   payment_status: { type: String, required: true, enum: ["pending", "paid"] },
   order_status: {
     type: String,
     required: true,
-    enum: ["in progress", "completed", "cancelled"],
+    enum: ["pending", "in progress", "completed", "cancelled"],
   },
   total_weight: { type: Number, required: true },
   total_price: { type: Number, required: true },
   date_placed: { type: Date, required: true },
   date_completed: { type: Date, default: null },
   clothes: { type: [ClothingItemSchema], default: [] }, // Array of clothing items
-  date: { type: Date, required: true },
+  date: { type: Date, default: null }, // Date of order placement
   delivery_instructions: { type: String, default: "" },
   feedbacks: { type: [String], default: [] },
   payment_method: { type: String, default: "" },
   services: { type: [String], default: [] },
-  soap: { type: Boolean, required: true },
+  soap: { type: Boolean, default: null }, // Indicates if soap is included
   time_range: {
-    t: { type: Number, required: true },
-    i: { type: Number, required: true },
+    t: { type: Number, default: null }, // Time range for pickup/delivery
+    i: { type: Number, default: null },
   },
-  shop: { type: mongoose.Schema.Types.ObjectId, ref: "Shop", required: true }, // Reference to Shop
+  shop: { type: String, required: true }, // Reference to Shop
 });
 
 export const Order =

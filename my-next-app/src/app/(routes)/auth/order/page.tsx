@@ -1,12 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Home from "../../../components/common/Home";
 import Footer from "../../../components/common/Footer";
 
 export default function Order() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialShopType = searchParams.get("shopType") || ""; // Get shopType from query params
+
   interface Shop {
     shop_id: string;
     name: string;
@@ -16,12 +19,13 @@ export default function Order() {
     payment_methods: { name: string }[];
   }
 
+  // Filter states
+  // const [shopType, setShopType] = useState("");
+  const [shopType, setShopType] = useState(initialShopType); // Initialize with query param
   const [shops, setShops] = useState<Shop[]>([]);
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const [selectedShop, setSelectedShop] = useState<string | null>(null);
 
-  // Filter states
-  const [shopType, setShopType] = useState("");
   const [priceRange, setPriceRange] = useState([0, 100]); // Default price range
   const [paymentMethod, setPaymentMethod] = useState("");
   const [service, setService] = useState("");
@@ -106,12 +110,12 @@ export default function Order() {
                   Shop Type
                 </label>
                 <select
-                  value={shopType}
-                  onChange={(e) => setShopType(e.target.value)}
+                  value={shopType} // Use shopType state here
+                  onChange={(e) => setShopType(e.target.value)} // Update shopType state on change
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 >
                   <option value="">All</option>
-                  <option value="pickup&delivery">Pickup & Delivery</option>
+                  <option value="pickup-delivery">Pickup & Delivery</option>
                   <option value="self-service">Self-Service</option>
                 </select>
               </div>
@@ -206,6 +210,7 @@ export default function Order() {
                   </div>
                   <p className="text-sm text-gray-600">{shop.address}</p>
                   <p className="text-sm text-gray-600">{shop.type}</p>
+
                   <div className="mt-4">
                     <h4 className="text-md font-semibold text-gray-800">
                       Services:

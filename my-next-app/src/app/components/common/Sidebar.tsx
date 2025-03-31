@@ -14,14 +14,16 @@ export default function Sidebar({ userType, handleScroll }: SidebarProps) {
   };
 
   return (
-    <div className="w-64 h-screen max-h-screen bg-gray-800 text-white flex flex-col">
+    <div className="w-64 h-screen max-h-screen bg-white shadow rounded-lg p-4 mb-6 text-white flex flex-col">
       <div className="p-4 flex items-center">
         <img
           src="/images/logo.png"
           alt="Elbi Wash Logo"
           className="h-8 w-8 mr-2"
         />
-        <span className="text-xl font-bold">Elbi Wash</span>
+        <span className="text-xl font-semibold" style={{ color: "#3D4EB0" }}>
+          Elbi Wash
+        </span>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-1">
         {userType === "client" && (

@@ -54,14 +54,14 @@ export default function ChooseService() {
 
   const handleProceed = () => {
     if (selectedServices.length > 0) {
-      // Proceed to the next step (e.g., order summary or payment)
-      console.log("Selected Services:", selectedServices);
-      alert("Proceeding to the next step...");
+      // Navigate to the quantity page and pass selected services as query parameters
+      router.push(
+        `/auth/order/${shop_id}/quantity?services=${encodeURIComponent(selectedServices.join(","))}`
+      );
     } else {
       alert("Please select at least one service to proceed.");
     }
   };
-
   const handleCancel = () => {
     router.push("/auth/order"); // Navigate back to the shop selection page
   };
