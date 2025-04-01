@@ -2,6 +2,7 @@
 
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import Home from "@/app/components/common/Home";
 
 export default function InputQuantity() {
   const router = useRouter();
@@ -76,6 +77,7 @@ export default function InputQuantity() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full bg-white shadow rounded-lg p-6">
+        <Home href="/auth/services" />
         <h2 className="text-2xl font-bold mb-4">
           Step 3: Input Clothing Quantities
         </h2>

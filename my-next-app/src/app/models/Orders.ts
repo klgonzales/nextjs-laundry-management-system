@@ -8,7 +8,7 @@ interface ClothingItem {
 export interface OrderDocument extends Document {
   order_id: number;
   customer_id: number;
-  order_type: string;
+  order_type: string | null; // Type of order (e.g., "self-service", "pickup&delivery")
   service_id: number[];
   machine_id: number | null;
   payment_status: string;
@@ -39,7 +39,7 @@ const ClothingItemSchema = new Schema<ClothingItem>({
 const OrderSchema = new Schema<OrderDocument>({
   order_id: { type: Number, required: true, unique: true },
   customer_id: { type: Number, required: true },
-  order_type: { type: String, required: true },
+  order_type: { type: String, default: null },
   service_id: { type: [Number], required: true },
   machine_id: { type: Number, default: null },
   payment_status: { type: String, required: true, enum: ["pending", "paid"] },

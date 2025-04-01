@@ -6,10 +6,15 @@ import { Customer } from "../../../models/Customer";
 export async function POST(request: Request) {
   try {
     await dbConnect();
+
     const { email, password } = await request.json();
 
     // Find user by email
-    const user = await Customer.findOne({ email });
+    const user = await Customer.findOne({ email }).select(
+      "name email customer_id role phone address password"
+    );
+
+    console.log("Query result:", user);
 
     if (!user) {
       return NextResponse.json(
@@ -30,11 +35,15 @@ export async function POST(request: Request) {
 
     // Password is valid - return user data (excluding password)
     const userData = {
-      id: user._id,
+      name: user.name,
       email: user.email,
       customer_id: user.customer_id,
       role: user.role,
+      phone: user.phone,
+      address: user.address,
     };
+
+    console.log("User logged in:", userData);
 
     return NextResponse.json({
       message: "Login successful",

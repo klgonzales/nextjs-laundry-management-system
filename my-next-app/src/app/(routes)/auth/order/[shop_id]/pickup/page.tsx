@@ -1,22 +1,39 @@
 "use client";
 
 import { useRouter, useSearchParams, useParams } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 import { useState } from "react";
+import Home from "@/app/components/common/Home";
 
 export default function PickupDetails() {
   const router = useRouter();
+  const { user } = useAuth(); // Get the logged-in user from AuthContext
   const { shop_id } = useParams(); // Extract shop_id from the URL path
   const searchParams = useSearchParams();
   const services = searchParams.get("services")?.split(",") || []; // Get services from query params
   const clothing = JSON.parse(searchParams.get("clothing") || "{}"); // Parse clothing from query params
 
+  console.log(clothing);
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [address, setAddress] = useState("");
+  const [deliveryInstructions, setDeliveryInstructions] = useState(""); // New state for delivery instructions
 
-  console.log("shop_id:", shop_id); // This should now correctly log the shop_id
+  const customer_id = user?.customer_id;
 
+  const clothingArray = Object.entries(clothing)
+    .filter(([type, quantity]) => type !== "customClothing") // Exclude customClothing for now
+    .map(([type, quantity]) => ({
+      type,
+      quantity: Number(quantity), // Ensure quantity is a number
+    }));
+
+  // Add custom clothing items to the array
+  const customClothingArray = clothing.customClothing || [];
+  const finalClothingArray = [...clothingArray, ...customClothingArray];
+
+  console.log(finalClothingArray);
   const handleSubmit = async () => {
     try {
       const response = await fetch("/api/orders", {
@@ -25,13 +42,15 @@ export default function PickupDetails() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          shop_id, // Use shop_id from the URL path
+          customer_id,
+          shop_id,
           services,
-          clothing,
+          clothing: finalClothingArray,
           pickupDate,
           pickupTime,
-          paymentMethod,
-          address,
+          paymentMethod: paymentMethod,
+          address: address,
+          delivery_instructions: deliveryInstructions, // Include delivery instructions
         }),
       });
 
@@ -40,8 +59,9 @@ export default function PickupDetails() {
       }
 
       const data = await response.json();
-      alert("Order successfully placed!");
-      router.push("/auth/dashboard");
+
+      // Navigate to the confirmation page
+      router.push(`/auth/order/confirmation?order_id=${data.order_id}`);
     } catch (error) {
       console.error("Error saving order:", error);
       alert("Failed to save order. Please try again.");
@@ -51,6 +71,7 @@ export default function PickupDetails() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full bg-white shadow rounded-lg p-6">
+        <Home href="/auth/quantity" />
         <h2 className="text-2xl font-bold mb-4">Step 4: Pickup Details</h2>
         <p className="text-gray-600 mb-6">Enter the pickup details below.</p>
 
@@ -106,6 +127,19 @@ export default function PickupDetails() {
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+        </div>
+
+        {/* Delivery Instructions */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700">
+            Delivery Instructions
+          </label>
+          <input
+            type="text"
+            value={deliveryInstructions} // Bind to deliveryInstructions state
+            onChange={(e) => setDeliveryInstructions(e.target.value)} // Update state on change
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
         </div>

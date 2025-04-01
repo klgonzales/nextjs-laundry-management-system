@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useAuth(); // Get the login function from AuthContext
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,8 +32,9 @@ export default function LoginForm() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Login successful
-      console.log("Login successful:", data);
+      // Login successful: Set the user in AuthContext
+      login(data.user); // Assuming the backend returns a `user` object with `id`, `name`, and `email`
+      console.log("User logged in:", data.user);
       // Redirect to dashboard or home page
       router.push("/auth/dashboard"); // Adjust this route as needed
     } catch (err) {

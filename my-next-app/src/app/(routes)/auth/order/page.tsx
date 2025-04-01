@@ -2,10 +2,15 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "../../../context/AuthContext"; // Import the AuthContext
+
 import Home from "../../../components/common/Home";
 import Footer from "../../../components/common/Footer";
 
 export default function Order() {
+  const { user } = useAuth(); // Retrieve the authenticated user
+  const customer_id = user?.id; // Assume `id` is the customer_id
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialShopType = searchParams.get("shopType") || ""; // Get shopType from query params

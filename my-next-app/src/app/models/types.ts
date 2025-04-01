@@ -9,6 +9,7 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  customer_id: number;
 }
 
 export interface Customer extends User {
