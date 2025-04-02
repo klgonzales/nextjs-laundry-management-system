@@ -16,6 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    console.log("Order fetched", order);
     return NextResponse.json(order);
   } catch (error) {
     console.error("Error fetching order:", error);

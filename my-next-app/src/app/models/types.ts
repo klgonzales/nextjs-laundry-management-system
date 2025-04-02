@@ -40,6 +40,7 @@ export interface Order {
   total_price: number;
   date_placed: Date;
   date_completed?: Date;
+  address: string;
 }
 
 export interface Service {

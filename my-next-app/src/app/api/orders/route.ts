@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       soap: body.soap || false,
       machine_id: body.machine_id || null,
       date: body.date || new Date(), // Default to current date if not provided
+      address: body.address || "",
     });
 
     console.log("New order created:", newOrder);

@@ -16,7 +16,12 @@ export default function Header({ userType }: HeaderProps) {
 
   return (
     <div className="bg-white p-4 flex items-center justify-between">
-      <h2 className="text-2xl font-bold">Welcome Back, {user?.name}</h2>
+      <h2 className="text-2xl font-bold">
+        Welcome Back,{" "}
+        {user?.name
+          ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
+          : ""}
+      </h2>
 
       <div className="flex items-center space-x-4">
         {/* Notifications Icon */}

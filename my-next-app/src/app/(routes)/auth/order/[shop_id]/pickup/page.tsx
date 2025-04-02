@@ -13,11 +13,11 @@ export default function PickupDetails() {
   const services = searchParams.get("services")?.split(",") || []; // Get services from query params
   const clothing = JSON.parse(searchParams.get("clothing") || "{}"); // Parse clothing from query params
 
-  console.log(clothing);
+  // console.log(clothing);
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [address, setAddress] = useState("");
+  const [customerAddress, setAddress] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState(""); // New state for delivery instructions
 
   const customer_id = user?.customer_id;
@@ -33,7 +33,7 @@ export default function PickupDetails() {
   const customClothingArray = clothing.customClothing || [];
   const finalClothingArray = [...clothingArray, ...customClothingArray];
 
-  console.log(finalClothingArray);
+  // console.log(finalClothingArray);
   const handleSubmit = async () => {
     try {
       const response = await fetch("/api/orders", {
@@ -49,7 +49,7 @@ export default function PickupDetails() {
           pickupDate,
           pickupTime,
           paymentMethod: paymentMethod,
-          address: address,
+          address: customerAddress,
           delivery_instructions: deliveryInstructions, // Include delivery instructions
         }),
       });
@@ -63,7 +63,6 @@ export default function PickupDetails() {
       // Navigate to the confirmation page
       router.push(`/auth/order/confirmation?order_id=${data.order_id}`);
     } catch (error) {
-      console.error("Error saving order:", error);
       alert("Failed to save order. Please try again.");
     }
   };
@@ -125,7 +124,7 @@ export default function PickupDetails() {
           </label>
           <input
             type="text"
-            value={address}
+            value={customerAddress}
             onChange={(e) => setAddress(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />

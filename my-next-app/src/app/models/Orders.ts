@@ -29,6 +29,7 @@ export interface OrderDocument extends Document {
     i: number | null;
   };
   shop: { type: String; required: true }; // Reference to Shop
+  address: string | null; // Address for pickup/delivery
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -64,6 +65,7 @@ const OrderSchema = new Schema<OrderDocument>({
     i: { type: Number, default: null },
   },
   shop: { type: String, required: true }, // Reference to Shop
+  address: { type: String, default: null }, // Address for pickup/delivery
 });
 
 export const Order =

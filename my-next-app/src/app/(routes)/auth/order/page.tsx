@@ -55,11 +55,11 @@ export default function Order() {
           throw new Error("Failed to fetch shops");
         }
         const data = await response.json();
-        console.log("Fetched Shops:", data.shops); // Debugging
+        // console.log("Fetched Shops:", data.shops); // Debugging
         setShops(data.shops);
         setFilteredShops(data.shops); // Initialize filtered shops
       } catch (error) {
-        console.error("Error fetching shops:", error);
+        // console.error("Error fetching shops:", error);
       }
     };
 

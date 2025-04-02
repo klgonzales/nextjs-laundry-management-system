@@ -10,9 +10,6 @@ export default function InputQuantity() {
   const searchParams = useSearchParams();
   const services = searchParams.get("services")?.split(",") || []; // Get selected services from query params
 
-  console.log("start");
-  console.log("shop_id:", shop_id); // This should now correctly log the shop_id
-
   const [quantities, setQuantities] = useState({
     shirt: 0,
     jacket: 0,
@@ -62,9 +59,6 @@ export default function InputQuantity() {
       ...quantities,
       customClothing,
     };
-
-    console.log("quantity");
-    console.log("shop_id:", shop_id);
 
     const queryParams = new URLSearchParams({
       services: services.join(","),
