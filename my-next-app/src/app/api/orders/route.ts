@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       total_price: body.total_price || 0, // Optional
       date_completed: null,
       time_range: body.time_range || { t: null, i: null },
-      soap: body.soap || false,
+      soap: body.soap || null,
       machine_id: body.machine_id || null,
       date: body.date || new Date(), // Default to current date if not provided
       address: body.address || "",

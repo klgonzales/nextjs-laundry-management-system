@@ -5,6 +5,16 @@ import { Admin } from "@/app/models/Admin";
 import { Shop } from "@/app/models/Shop";
 import { PaymentMethod } from "@/app/models/PaymentMethod";
 
+function convertOpeningHours(
+  openingHours: Record<string, { start: string; end: string }>
+) {
+  return Object.entries(openingHours).map(([day, hours]) => ({
+    day,
+    open: hours.start,
+    close: hours.end,
+  }));
+}
+
 export async function POST(request: Request) {
   try {
     await dbConnect();
@@ -19,9 +29,13 @@ export async function POST(request: Request) {
       shop_email,
       shop_address,
       services,
-      orders,
-      payment_methods, // Array of selected payment methods (e.g., ["cash", "credit-card"])
+      payment_methods,
+      opening_hours, // Opening hours object from the frontend
+      delivery_fee,
     } = await request.json();
+
+    // Convert opening_hours to the array format
+    const convertedOpeningHours = convertOpeningHours(opening_hours);
 
     // Validate services array
     const validatedServices = services.map((service: any) => {
@@ -52,22 +66,6 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create admin ID (you might want to use a more sophisticated method)
-    const admin_id = Math.floor(Math.random() * 1000000);
-
-    // Create PaymentMethod documents for each selected payment method
-    const paymentMethodDocs = await Promise.all(
-      payment_methods.map(async (method: any, index: any) => {
-        return await PaymentMethod.create({
-          method_id: index + 1, // Generate a unique ID for each method
-          name: method, // Set the name to the selected payment method (e.g., "cash")
-          account_number: "1", // You can set this dynamically if needed
-          status: "active", // Default status
-          payments: [], // Initialize with an empty array
-        });
-      })
-    );
-
     // Create new shop in the shops collection
     const newShop = await Shop.create({
       shop_id,
@@ -76,9 +74,17 @@ export async function POST(request: Request) {
       phone: shop_phone,
       email: shop_email,
       address: shop_address,
-      services: validatedServices, // Use validated services
+      services: validatedServices,
       orders: [],
-      payment_methods: paymentMethodDocs, // Associate the created PaymentMethod documents
+      payment_methods: payment_methods.map((method: any, index: number) => ({
+        method_id: index + 1,
+        name: method,
+        account_number: "1", // Default account number
+        status: "active", // Default status
+        payments: [], // Initialize with an empty array
+      })),
+      opening_hours: convertedOpeningHours, // Use the converted format
+      delivery_fee,
     });
 
     // Create new admin

@@ -25,6 +25,8 @@ export default function InputQuantity() {
     { type: string; quantity: number }[]
   >([]);
 
+  const [soapProvided, setSoapProvided] = useState(false); // State for soap checkbox
+
   const handleQuantityChange = (type: string, value: number) => {
     setQuantities((prev) => ({
       ...prev,
@@ -63,6 +65,7 @@ export default function InputQuantity() {
     const queryParams = new URLSearchParams({
       services: services.join(","),
       clothing: JSON.stringify(allClothing),
+      soap: soapProvided.toString(), // Pass the soap state as a string
     }).toString();
 
     router.push(`/auth/order/${shop_id}/pickup?${queryParams}`);
@@ -97,6 +100,22 @@ export default function InputQuantity() {
               />
             </div>
           ))}
+        </div>
+
+        {/* Soap Provision */}
+        <div className="mt-6">
+          <h3 className="text-lg font-bold mb-2">Soap Provision</h3>
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">
+              Will you provide the soap?
+            </label>
+            <input
+              type="checkbox"
+              checked={soapProvided}
+              onChange={(e) => setSoapProvided(e.target.checked)} // Update soap state
+              className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+            />
+          </div>
         </div>
 
         {/* Custom Clothing Types */}

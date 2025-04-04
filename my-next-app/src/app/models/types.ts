@@ -49,3 +49,34 @@ export interface Service {
   price_per_kg: number | null;
   description: string | null;
 }
+
+// New OpeningHours Interface
+export interface OpeningHours {
+  day: string; // e.g., "Monday"
+  open: string; // e.g., "09:00"
+  close: string; // e.g., "17:00"
+}
+
+// Updated Shop Interface
+export interface Shop {
+  shop_id: string;
+  type: ShopType;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  services: Service[];
+  clothing_types: ClothingType[];
+  orders: string[]; // Array of Order IDs
+  payment_methods: string[]; // Array of PaymentMethod IDs
+  delivery_fee: boolean;
+  feedbacks: string[];
+  opening_hours: OpeningHours[]; // Array of OpeningHours
+}
+
+// ClothingType Interface (if applicable)
+export interface ClothingType {
+  type_id: number;
+  name: string;
+  price_per_item: number;
+}

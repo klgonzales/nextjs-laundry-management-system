@@ -18,7 +18,7 @@ interface PaymentDocument extends Document {
   account_number: string | null;
   status: string;
   payments: Payment[];
-  shop: mongoose.Types.ObjectId; // Reference to Shop collection
+  shop: null; // Reference to Shop collection
 }
 
 const PaymentSchema = new Schema<Payment>({
@@ -38,7 +38,7 @@ const PaymentMethodSchema = new Schema<PaymentDocument>({
   account_number: { type: String, required: false },
   status: { type: String, required: true },
   payments: [PaymentSchema],
-  shop: { type: mongoose.Schema.Types.ObjectId, ref: "Shop", required: true }, // Reference to Shop
+  shop: { type: mongoose.Schema.Types.ObjectId, default: null }, // Reference to Shop
 });
 
 export const PaymentMethod =

@@ -25,6 +25,10 @@ export default function RegisterForm() {
     }[];
     customService?: string;
     payment_methods: string[];
+    opening_hours: {
+      [day: string]: { start: string; end: string };
+    };
+    delivery_fee?: boolean;
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -40,6 +44,16 @@ export default function RegisterForm() {
     shop_type: "self-service",
     services: [],
     payment_methods: [],
+    opening_hours: {
+      Monday: { start: "09:00", end: "17:00" },
+      Tuesday: { start: "09:00", end: "17:00" },
+      Wednesday: { start: "09:00", end: "17:00" },
+      Thursday: { start: "09:00", end: "17:00" },
+      Friday: { start: "09:00", end: "17:00" },
+      Saturday: { start: "09:00", end: "17:00" },
+      Sunday: { start: "09:00", end: "17:00" },
+    },
+    delivery_fee: false, // Default value for boolean, can be overridden if admin answers yes
   });
   const [error, setError] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
@@ -245,7 +259,7 @@ export default function RegisterForm() {
               <div>
                 <select
                   required
-                  className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   value={formData.shop_type}
                   onChange={(e) =>
                     setFormData({ ...formData, shop_type: e.target.value })
@@ -254,6 +268,151 @@ export default function RegisterForm() {
                   <option value="self-service">Self-Service</option>
                   <option value="pickup-delivery">Pickup & Delivery</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Free Delivery
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="freeDeliveryYes"
+                      name="freeDelivery"
+                      value="yes"
+                      checked={formData.delivery_fee === true}
+                      onChange={() =>
+                        setFormData({ ...formData, delivery_fee: true })
+                      }
+                      className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="freeDeliveryYes"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
+                      Yes
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="freeDeliveryNo"
+                      name="freeDelivery"
+                      value="no"
+                      checked={formData.delivery_fee === false}
+                      onChange={() =>
+                        setFormData({ ...formData, delivery_fee: false })
+                      }
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label
+                      htmlFor="freeDeliveryNo"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
+                      No
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Opening Hours and Days
+                </label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Opening Hours and Days
+                  </label>
+                  <div className="space-y-4">
+                    {[
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday",
+                      "Sunday",
+                    ].map((day) => (
+                      <div key={day} className="space-y-2">
+                        {/* Checkbox to Enable/Disable Day */}
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={day}
+                            value={day}
+                            checked={formData.opening_hours[day] !== undefined} // Check if the day exists in the object
+                            onChange={(e) => {
+                              const updatedHours = {
+                                ...formData.opening_hours,
+                              };
+                              if (e.target.checked) {
+                                updatedHours[day] = {
+                                  start: "09:00",
+                                  end: "17:00",
+                                }; // Add default hours
+                              } else {
+                                delete updatedHours[day]; // Remove the day if unchecked
+                              }
+                              setFormData({
+                                ...formData,
+                                opening_hours: updatedHours,
+                              });
+                            }}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label
+                            htmlFor={day}
+                            className="block text-sm text-gray-700"
+                          >
+                            {day}
+                          </label>
+                        </div>
+
+                        {/* Time Inputs for Start and End Times */}
+                        {formData.opening_hours[day] && (
+                          <div className="flex space-x-2">
+                            <input
+                              type="time"
+                              value={formData.opening_hours[day].start} // Access the start time
+                              onChange={(e) => {
+                                const updatedHours = {
+                                  ...formData.opening_hours,
+                                  [day]: {
+                                    ...formData.opening_hours[day],
+                                    start: e.target.value,
+                                  }, // Update start time
+                                };
+                                setFormData({
+                                  ...formData,
+                                  opening_hours: updatedHours,
+                                });
+                              }}
+                              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                            <span className="text-gray-700">to</span>
+                            <input
+                              type="time"
+                              value={formData.opening_hours[day].end} // Access the end time
+                              onChange={(e) => {
+                                const updatedHours = {
+                                  ...formData.opening_hours,
+                                  [day]: {
+                                    ...formData.opening_hours[day],
+                                    end: e.target.value,
+                                  }, // Update end time
+                                };
+                                setFormData({
+                                  ...formData,
+                                  opening_hours: updatedHours,
+                                });
+                              }}
+                              className="appearance-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

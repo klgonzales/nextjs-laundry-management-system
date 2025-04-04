@@ -19,8 +19,8 @@ export default function PickupDetails() {
   const [payment_method, setPaymentMethod] = useState("");
   const [customerAddress, setAddress] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState(""); // New state for delivery instructions
-
   const customer_id = user?.customer_id;
+  const soap = searchParams.get("soap") === "true"; // Convert the string to a boolean
 
   const clothingArray = Object.entries(clothing)
     .filter(([type, quantity]) => type !== "customClothing") // Exclude customClothing for now
@@ -51,6 +51,7 @@ export default function PickupDetails() {
           payment_method,
           address: customerAddress,
           delivery_instructions: deliveryInstructions, // Include delivery instructions
+          soap,
         }),
       });
 
