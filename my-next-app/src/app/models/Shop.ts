@@ -21,7 +21,7 @@ interface OpeningHours {
 }
 
 interface ShopDocument extends Document {
-  shop_id: number;
+  shop_id: string;
   type: string;
   name: string;
   phone: string;
@@ -55,7 +55,7 @@ const OpeningHoursSchema = new Schema<OpeningHours>({
 });
 
 const ShopSchema = new Schema<ShopDocument>({
-  shop_id: { type: Number, required: true, unique: true },
+  shop_id: { type: String, required: true, unique: true },
   type: { type: String, required: true },
   name: { type: String, required: true },
   phone: { type: String, required: true },

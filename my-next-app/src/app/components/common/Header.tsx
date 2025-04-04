@@ -16,7 +16,7 @@ export default function Header({ userType }: HeaderProps) {
 
   return (
     <div className="bg-white p-4 flex items-center justify-between">
-      <h2 className="text-2xl font-bold">
+      <h2 className="text-2xl font-bold text-black">
         Welcome Back,{" "}
         {user?.name
           ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
@@ -33,7 +33,7 @@ export default function Header({ userType }: HeaderProps) {
           }
           className="border-0 hover:bg-transparent focus:outline-none"
         >
-          <FaRegBell className="h-6 w-6 text-gray-600 hover:text-[#3D4EB0]" />
+          <FaRegBell className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
         </a>
 
         {/* User Profile Icon */}
@@ -41,7 +41,7 @@ export default function Header({ userType }: HeaderProps) {
           href={userType === "admin" ? "/admin/profile" : "/auth/profile"}
           className="border-0 hover:bg-transparent focus:outline-none"
         >
-          <FaRegUserCircle className="h-6 w-6 text-gray-600 hover:text-[#3D4EB0]" />
+          <FaRegUserCircle className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
         </a>
       </div>
     </div>

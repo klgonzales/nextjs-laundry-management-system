@@ -12,7 +12,7 @@ interface User {
   id: string; // Customer ID
   name: string;
   email: string;
-  customer_id: number;
+  customer_id: string;
   phone: number;
   address: string;
   role: "customer" | "admin";

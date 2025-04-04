@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       phone,
       address,
       role: "customer",
-      customer_id: Date.now(),
+      customer_id: Math.floor(Date.now()).toString(),
     });
 
     return NextResponse.json(

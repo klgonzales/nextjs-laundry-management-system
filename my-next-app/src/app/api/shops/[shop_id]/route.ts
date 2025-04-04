@@ -22,6 +22,8 @@ export async function GET(
   try {
     await dbConnect();
 
+    console.log("Querying shop_id:", shop_id); // Log the shop_id being queried
+
     const shop = await Shop.findOne({ shop_id }).lean();
     if (!shop) {
       return NextResponse.json(

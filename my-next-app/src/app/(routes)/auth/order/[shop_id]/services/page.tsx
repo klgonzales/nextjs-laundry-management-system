@@ -95,7 +95,7 @@ export default function ChooseService() {
                 htmlFor={`service-${index}`}
                 className="ml-2 text-sm text-gray-700"
               >
-                {service.description} - ₱{service.price_per_kg}/kg
+                {service.name} - ₱{service.price_per_kg}/kg
               </label>
             </div>
           ))}

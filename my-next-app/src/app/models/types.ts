@@ -9,17 +9,17 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
-  customer_id: number;
+  customer_id: string;
 }
 
 export interface Customer extends User {
-  customer_id: number;
+  customer_id: string;
   address: string;
 }
 
 export interface Admin extends User {
   admin_id: number;
-  shop_id: number;
+  shop_id: string;
   shop_type: ShopType;
 }
 
@@ -30,7 +30,7 @@ export interface Rider extends User {
 
 export interface Order {
   order_id: number;
-  customer_id: number;
+  customer_id: string;
   order_type: "self-service" | "pickup&delivery";
   service_ids: number[];
   machine_id?: number;

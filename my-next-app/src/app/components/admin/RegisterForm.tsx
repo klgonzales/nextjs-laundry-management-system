@@ -11,7 +11,7 @@ export default function RegisterForm() {
     email: string;
     password: string;
     confirmPassword: string;
-    shop_id: number;
+    shop_id: string;
     shop_name: string;
     shop_address: string;
     shop_phone: string;
@@ -32,7 +32,7 @@ export default function RegisterForm() {
     email: "",
     password: "",
     confirmPassword: "",
-    shop_id: Date.now(), // Ensure shop_id is a number
+    shop_id: Date.now().toString(), // Ensure shop_id is a string
     shop_name: "",
     shop_address: "",
     shop_phone: "",

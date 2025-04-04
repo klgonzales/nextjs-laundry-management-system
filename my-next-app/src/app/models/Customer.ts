@@ -1,25 +1,25 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-interface customerDocument extends Document {
+export interface CustomerDocument extends Document {
   name: string;
   email: string;
   password: string;
   phone: string;
   address: string;
   role: string;
-  customer_id: string;
+  customer_id: string; // Ensure this is a string
 }
 
-const customerSchema = new Schema<customerDocument>({
+const CustomerSchema = new Schema<CustomerDocument>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   phone: { type: String, required: true },
   address: { type: String, required: true },
   role: { type: String, required: true, enum: ["customer", "admin"] },
-  customer_id: { type: String, required: true },
+  customer_id: { type: String, required: true }, // Ensure this is a string
 });
 
 export const Customer =
   mongoose.models.Customer ||
-  mongoose.model<customerDocument>("Customer", customerSchema);
+  mongoose.model<CustomerDocument>("Customer", CustomerSchema);

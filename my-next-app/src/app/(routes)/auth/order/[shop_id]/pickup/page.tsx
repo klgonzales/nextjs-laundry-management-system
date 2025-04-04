@@ -16,7 +16,7 @@ export default function PickupDetails() {
   // console.log(clothing);
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
+  const [payment_method, setPaymentMethod] = useState("");
   const [customerAddress, setAddress] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState(""); // New state for delivery instructions
 
@@ -48,7 +48,7 @@ export default function PickupDetails() {
           clothing: finalClothingArray,
           pickupDate,
           pickupTime,
-          paymentMethod: paymentMethod,
+          payment_method,
           address: customerAddress,
           delivery_instructions: deliveryInstructions, // Include delivery instructions
         }),
@@ -59,6 +59,9 @@ export default function PickupDetails() {
       }
 
       const data = await response.json();
+
+      console.log("WAASDFDSHFHDSHFDSH");
+      console.log(payment_method);
 
       // Navigate to the confirmation page
       router.push(`/auth/order/confirmation?order_id=${data.order_id}`);
@@ -106,7 +109,7 @@ export default function PickupDetails() {
             Payment Method
           </label>
           <select
-            value={paymentMethod}
+            value={payment_method}
             onChange={(e) => setPaymentMethod(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           >

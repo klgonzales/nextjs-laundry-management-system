@@ -20,7 +20,7 @@ export default function Order() {
     name: string;
     address: string;
     type: string;
-    services: { description: string; price_per_kg: number }[];
+    services: { name: string; price_per_kg: number }[];
     payment_methods: { name: string }[];
   }
 
@@ -84,7 +84,7 @@ export default function Order() {
         : true;
       const matchesService = service
         ? shop.services.some((s) =>
-            s.description.toLowerCase().includes(service.toLowerCase())
+            s.name.toLowerCase().includes(service.toLowerCase())
           ) || shop.name.toLowerCase().includes(service.toLowerCase())
         : true;
 
@@ -223,7 +223,7 @@ export default function Order() {
                     <ul className="list-disc list-inside text-sm text-gray-600">
                       {shop.services.map((service, index) => (
                         <li key={index}>
-                          {service.description} - ₱{service.price_per_kg}/kg
+                          {service.name} - ₱{service.price_per_kg}/kg
                         </li>
                       ))}
                     </ul>

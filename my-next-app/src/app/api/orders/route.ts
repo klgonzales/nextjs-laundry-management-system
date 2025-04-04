@@ -2,6 +2,33 @@ import { NextResponse } from "next/server";
 import { Order } from "@/app/models/Orders";
 import dbConnect from "@/app/lib/mongodb";
 
+export async function GET() {
+  try {
+    await dbConnect();
+
+    // Fetch all orders from the database
+    const orders = await Order.find({}).lean();
+
+    // Ensure all orders have a valid total
+    const sanitizedOrders = orders.map((order) => ({
+      ...order,
+      total: order.total || 0, // Default to 0 if total is missing
+    }));
+
+    console.log("Fetched orders:", sanitizedOrders);
+
+    // Return the sanitized orders as a JSON response
+    return NextResponse.json(sanitizedOrders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch orders" },
+      { status: 500 }
+    );
+  }
+}
+
+// Handle POST requests to create a new order
 export async function POST(request: Request) {
   try {
     await dbConnect();

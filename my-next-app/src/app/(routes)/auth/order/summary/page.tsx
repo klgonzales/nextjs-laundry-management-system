@@ -1,9 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Home from "@/app/components/common/Home";
 
 export default function OrderSummary() {
+  const router = useRouter(); // Initialize the router
   const searchParams = useSearchParams();
   const order_id = searchParams.get("order_id"); // Get order_id from query params
 
@@ -57,7 +59,9 @@ export default function OrderSummary() {
           throw new Error("Failed to fetch customer details");
         }
         const customerData = await customerResponse.json();
-        setCustomerAddress(customerData.address); // Set the customer address
+        console.log(customerData);
+
+        setCustomerAddress(customerData.customer.address); // Set the customer address
       } catch (error) {
         console.error(
           "Error fetching order, shop, or customer details:",
@@ -101,9 +105,12 @@ export default function OrderSummary() {
     timeZoneName: "short",
   }).format(new Date(date));
 
+  console.log(payment_method);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full bg-white shadow rounded-lg p-6">
+        <Home href="/auth/confirmation" />
         <h2 className="text-2xl font-bold mb-4">Order Summary</h2>
         <div className="space-y-4">
           <p>
@@ -143,14 +150,27 @@ export default function OrderSummary() {
             {payment_status.charAt(0).toUpperCase() + payment_status.slice(1)}
           </p>
           <p>
-            <strong>Payment Method:</strong> {payment_method}
+            <strong>Payment Method:</strong>{" "}
+            {payment_method.charAt(0).toUpperCase() + payment_method.slice(1)}
           </p>
           <p>
-            <strong>Pickup Address:</strong> {customerAddress || "Loading..."}
+            <strong>Pickup Address:</strong>{" "}
+            {customerAddress
+              ? customerAddress.charAt(0).toUpperCase() +
+                customerAddress.slice(1)
+              : "Loading..."}
           </p>
           <p>
             <strong>Delivery Instructions:</strong> {delivery_instructions}
           </p>
+          <div className="mt-6">
+            <button
+              onClick={() => router.push("/auth/dashboard")} // Navigate to /auth/dashboard
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Go back home
+            </button>
+          </div>
         </div>
       </div>
     </div>
