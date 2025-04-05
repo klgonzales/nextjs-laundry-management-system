@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 
 interface SidebarProps {
   userType: "client" | "admin";
@@ -9,8 +10,11 @@ interface SidebarProps {
 export default function Sidebar({ userType, handleScroll }: SidebarProps) {
   const router = useRouter();
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    router.push("/");
+    logout(); // Call the logout function from useAuth
+    router.push("/"); // Redirect to the home page
   };
 
   return (

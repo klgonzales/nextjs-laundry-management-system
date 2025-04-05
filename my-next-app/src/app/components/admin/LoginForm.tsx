@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 
 export default function AdminLoginForm() {
   const router = useRouter();
+  const { login } = useAuth(); // Get the login function from useAuth
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -31,11 +33,19 @@ export default function AdminLoginForm() {
       }
 
       const shopType = data.admin.shops[0].type;
+      console.log(data);
       console.log(shopType);
+      console.log(data.admin.role);
 
       if (shopType === "pickup-delivery") {
+        console.log("ahdhsa");
+        login(data.admin); // Assuming the backend returns a `user` object with `id`, `name`, and `email`
+        console.log("User logged in:", data.admin.role);
         router.push("/admin/shop-pickup-delivery/dashboard"); // Redirect to pickup & delivery dashboard
+        console.log("dfshjfdgsfhdsd");
       } else if (shopType === "self-service") {
+        login(data.admin); // Assuming the backend returns a `user` object with `id`, `name`, and `email`
+        console.log("User logged in:", data.admin.role);
         router.push("/admin/shop-self-service/dashboard"); // Redirect to self-service dashboard
       } else {
         throw new Error("Unknown shop type");

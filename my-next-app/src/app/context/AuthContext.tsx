@@ -9,12 +9,15 @@ import {
 } from "react";
 
 interface User {
-  id: string; // Customer ID
+  id: string; // User ID
   name: string;
   email: string;
-  customer_id: string;
-  phone: number;
-  address: string;
+  customer_id?: string; // Optional for customers
+  phone?: number; // Optional for customers
+  address?: string; // Optional for customers
+  admin_id?: string; // Optional for admins
+  shops?: string[]; // Optional for admins
+  orders?: string[]; // Optional for admins
   role: "customer" | "admin";
 }
 
@@ -33,17 +36,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(storedUser ? JSON.parse(storedUser) : null);
+      } catch (error) {
+        console.error("Failed to parse user data from localStorage:", error);
+        setUser(null);
+      }
     }
   }, []);
 
   const login = (userData: User) => {
-    console.log("Logging in user:", userData); // Debugging
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+    if (userData.role === "customer" || userData.role === "admin") {
+      console.log("Logging in customer:", userData); // Debugging
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+    } else {
+      console.error("Invalid user role:", userData.role); // Debugging
+    }
   };
 
   const logout = () => {
+    console.log("Logging out user with role:", user?.role); // Debugging
     setUser(null);
     localStorage.removeItem("user"); // Remove user from localStorage
   };

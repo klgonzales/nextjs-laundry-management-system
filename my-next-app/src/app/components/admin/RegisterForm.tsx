@@ -29,6 +29,7 @@ export default function RegisterForm() {
       [day: string]: { start: string; end: string };
     };
     delivery_fee?: boolean;
+    role: string;
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -54,6 +55,7 @@ export default function RegisterForm() {
       Sunday: { start: "09:00", end: "17:00" },
     },
     delivery_fee: false, // Default value for boolean, can be overridden if admin answers yes
+    role: "admin", // Default role for the admin
   });
   const [error, setError] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);

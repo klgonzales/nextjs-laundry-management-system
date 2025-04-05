@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       id: admin._id,
       email: admin.email,
       admin_id: admin.admin_id,
-      role: "admin",
+      role: admin.role,
     };
 
     return NextResponse.json({
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
       admin: {
         admin_id: admin.admin_id,
         shops: admin.shops, // Include shops in the response
+        role: admin.role,
       },
     });
   } catch (error) {

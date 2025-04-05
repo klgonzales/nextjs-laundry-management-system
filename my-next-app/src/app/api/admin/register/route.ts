@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       payment_methods,
       opening_hours, // Opening hours object from the frontend
       delivery_fee,
+      role,
     } = await request.json();
 
     // Convert opening_hours to the array format
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
       })),
       opening_hours: convertedOpeningHours, // Use the converted format
       delivery_fee,
+      role,
     });
 
     // Create new admin
@@ -94,14 +96,21 @@ export async function POST(request: Request) {
       password: hashedPassword,
       admin_id: Math.floor(Math.random() * 1000000),
       shops: [newShop],
+      role: "admin", // Default role for admin
     });
+
+    console.log("Admin registered successfully:", admin);
+    // Populate the shops field
+    const populatedAdmin = await Admin.findById(admin._id).populate("shops");
 
     return NextResponse.json({
       message: "Admin registered successfully",
       admin: {
-        id: admin._id,
-        email: admin.email,
-        admin_id: admin.admin_id,
+        id: populatedAdmin._id,
+        email: populatedAdmin.email,
+        admin_id: populatedAdmin.admin_id,
+        role: populatedAdmin.role,
+        shops: populatedAdmin.shops, // Full shop details
       },
     });
   } catch (error) {

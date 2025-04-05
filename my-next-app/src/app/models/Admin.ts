@@ -5,8 +5,9 @@ interface AdminDocument extends Document {
   name: string;
   email: string;
   password: string;
-  shops: mongoose.Types.ObjectId[]; // Reference to Shop collection
+  shops: Record<string, any>[]; // Array of full shop objects
   orders: mongoose.Types.ObjectId[]; // Reference to Order collection
+  role: string; // Role of the admin (e.g., "admin")
 }
 
 const AdminSchema = new Schema<AdminDocument>({
@@ -14,8 +15,9 @@ const AdminSchema = new Schema<AdminDocument>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  shops: [{ type: mongoose.Schema.Types.ObjectId, ref: "Shop" }], // Reference to Shop
+  shops: [{ type: Object }], // Store full shop objects
   orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }], // Reference to Order
+  role: { type: String, required: true, enum: ["admin"] }, // Role of the admin
 });
 
 export const Admin =

@@ -21,6 +21,7 @@ export interface Admin extends User {
   admin_id: number;
   shop_id: string;
   shop_type: ShopType;
+  role: "admin";
 }
 
 export interface Rider extends User {
