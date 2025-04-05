@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Header from "./components/common/Header";
 import { AuthProvider } from "./context/AuthContext"; // Import the AuthProvider
+import { AdminAuthProvider } from "./context/AdminContext";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
