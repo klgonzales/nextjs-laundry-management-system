@@ -85,7 +85,7 @@ export default function PickupDetails() {
           </label>
           <input
             type="date"
-            value={pickupDate}
+            value={pickupDate} // Format the date to YYYY-MM-DD
             onChange={(e) => setPickupDate(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />
@@ -98,7 +98,7 @@ export default function PickupDetails() {
           </label>
           <input
             type="time"
-            value={pickupTime}
+            value={pickupTime.toString().slice(0, 5)} // Format the time to HH:MM
             onChange={(e) => setPickupTime(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           />

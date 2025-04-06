@@ -56,6 +56,37 @@ const PaymentMethodSchema = new Schema<PaymentMethod>({
   payments: { type: [String], required: true },
 });
 
+// Machine Interface and Schema
+interface Machine {
+  machine_id: string; // Unique identifier for the machine
+  minimum_kg: number; // Minimum weight the machine can handle
+  date_available: string; // Date when the machine is available
+  time_available: string; // Time when the machine is available
+  price_per_minimum_kg: number; // Price for the minimum weight
+  customer_id: string | null; // Customer ID if the machine is booked
+  appointments: {
+    date: string;
+    time: string;
+    customer_id: string;
+  }[]; // Array of appointments
+}
+
+const MachineSchema = new Schema<Machine>({
+  machine_id: { type: String, required: true },
+  minimum_kg: { type: Number, required: true },
+  date_available: { type: String, required: true },
+  time_available: { type: String, required: true },
+  price_per_minimum_kg: { type: Number, required: true },
+  customer_id: { type: String, default: null },
+  appointments: [
+    {
+      date: { type: String, required: true },
+      time: { type: String, required: true },
+      customer_id: { type: String, required: true },
+    },
+  ],
+});
+
 // Shop Interface and Schema
 interface ShopDocument extends Document {
   shop_id: string;
@@ -66,11 +97,12 @@ interface ShopDocument extends Document {
   address: string;
   services: Service[];
   clothing_types: ClothingType[];
-  orders: mongoose.Types.ObjectId[]; // Reference to Orders collection
+  orders: Record<string, any>[]; // Array of full shop objects
   payment_methods: PaymentMethod[]; // Embedded payment methods
   delivery_fee: boolean;
   feedbacks: string[];
   opening_hours: OpeningHours[];
+  machines: Machine[]; // Array of machines
 }
 
 const ShopSchema = new Schema<ShopDocument>({
@@ -82,11 +114,12 @@ const ShopSchema = new Schema<ShopDocument>({
   address: { type: String, required: true },
   services: { type: [ServiceSchema], required: true },
   clothing_types: { type: [ClothingTypeSchema], required: true },
-  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }],
+  orders: [{ type: Object }], // Store full shop objects
   payment_methods: { type: [PaymentMethodSchema], default: [] }, // Embedded payment methods
   delivery_fee: { type: Boolean, required: true },
   feedbacks: { type: [String], default: [] },
   opening_hours: { type: [OpeningHoursSchema], default: [] },
+  machines: { type: [MachineSchema], default: [] }, // Embedded machines
 });
 
 export const Shop =

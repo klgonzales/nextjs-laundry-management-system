@@ -8,6 +8,8 @@ export interface CustomerDocument extends Document {
   address: string;
   role: string;
   customer_id: string; // Ensure this is a string
+  shops: Record<string, any>[]; // Array of full shop objects
+  orders: Record<string, any>[]; // Array of full shop objects
 }
 
 const CustomerSchema = new Schema<CustomerDocument>({
@@ -18,6 +20,8 @@ const CustomerSchema = new Schema<CustomerDocument>({
   address: { type: String, required: true },
   role: { type: String, required: true, enum: ["customer", "admin"] },
   customer_id: { type: String, required: true }, // Ensure this is a string
+  shops: [{ type: Object }], // Store full shop objects
+  orders: [{ type: Object }], // Store full shop objects
 });
 
 export const Customer =

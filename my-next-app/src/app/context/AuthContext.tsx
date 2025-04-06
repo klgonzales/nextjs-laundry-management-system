@@ -7,6 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
+import { Order, Service } from "../models/types";
 
 interface User {
   id: string; // User ID
@@ -16,9 +17,16 @@ interface User {
   phone?: number; // Optional for customers
   address?: string; // Optional for customers
   admin_id?: string; // Optional for admins
-  shops?: string[]; // Optional for admins
+  //shops?: string[]; // Optional for admins
   orders?: string[]; // Optional for admins
   role: "customer" | "admin";
+  shops?: {
+    name: string;
+    services?: Service[]; // Define services as an optional array of Service objects
+    shop_id: string;
+    orders?: Order[]; // Optional for admins
+  }[]; // Define shops as an array of objects with a name property and optional services
+  // other properties
 }
 
 interface AuthContextType {

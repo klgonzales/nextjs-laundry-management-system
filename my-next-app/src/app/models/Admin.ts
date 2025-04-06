@@ -6,7 +6,7 @@ interface AdminDocument extends Document {
   email: string;
   password: string;
   shops: Record<string, any>[]; // Array of full shop objects
-  orders: mongoose.Types.ObjectId[]; // Reference to Order collection
+  orders: Record<string, any>[]; // Array of full shop objects
   role: string; // Role of the admin (e.g., "admin")
 }
 
@@ -16,7 +16,7 @@ const AdminSchema = new Schema<AdminDocument>({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   shops: [{ type: Object }], // Store full shop objects
-  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: "Order" }], // Reference to Order
+  orders: [{ type: Object }], // Store full shop objects
   role: { type: String, required: true, enum: ["admin"] }, // Role of the admin
 });
 

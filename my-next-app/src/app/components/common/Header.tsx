@@ -27,22 +27,25 @@ export default function Header({ userType }: HeaderProps) {
 
       <div className="flex items-center space-x-4"></div>
       {/* Notifications Icon */}
-      <a
-        href={
-          userType === "admin" ? "/admin/notifications" : "/auth/notifications"
-        }
-        className="border-0 hover:bg-transparent focus:outline-none"
-      >
-        <FaRegBell className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
-      </a>
+      <div className="flex items-center space-x-2">
+        <a
+          href={
+            userType === "admin"
+              ? "/admin/notifications"
+              : "/auth/notifications"
+          }
+          className="border-0 hover:bg-transparent focus:outline-none"
+        >
+          <FaRegBell className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
+        </a>
 
-      {/* User Profile Icon */}
-      <a
-        href={userType === "admin" ? "/admin/profile" : "/auth/profile"}
-        className="border-0 hover:bg-transparent focus:outline-none"
-      >
-        <FaRegUserCircle className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
-      </a>
+        <a
+          href={userType === "admin" ? "/admin/profile" : "/auth/profile"}
+          className="border-0 hover:bg-transparent focus:outline-none"
+        >
+          <FaRegUserCircle className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
+        </a>
+      </div>
     </div>
   );
 }

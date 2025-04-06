@@ -30,6 +30,8 @@ export interface OrderDocument extends Document {
   };
   shop: { type: String; required: true }; // Reference to Shop
   address: string | null; // Address for pickup/delivery
+  pickup_date: Date | null; // Pickup date
+  pickup_time: string | null; // Pickup time
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -66,6 +68,8 @@ const OrderSchema = new Schema<OrderDocument>({
   },
   shop: { type: String, required: true }, // Reference to Shop
   address: { type: String, default: null }, // Address for pickup/delivery
+  pickup_time: { type: String, default: null }, // Pickup time
+  pickup_date: { type: Date, default: null }, // Pickup date
 });
 
 export const Order =
