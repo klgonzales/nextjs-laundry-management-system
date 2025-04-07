@@ -58,6 +58,25 @@ export interface OpeningHours {
   close: string; // e.g., "17:00"
 }
 
+// Machine Interface
+export interface Machine {
+  machine_id: string; // Unique identifier for the machine
+  minimum_kg: number | null; // Minimum weight the machine can handle
+  minimum_minutes: number | null; // Optional: Minimum minutes for the machine
+  availability: {
+    date: string; // Date when the machine is available
+    open: string; // Time when the machine is available
+    close: string; // Time when the machine is available
+  }[]; // Array of availability slots
+  price_per_minimum_kg: number | null; // Price for the minimum weight
+  customer_id: string | null; // Customer ID if the machine is booked
+  appointments: {
+    date: string; // Date of the appointment
+    time: string; // Time of the appointment
+    customer_id: string; // Customer ID for the appointment
+  }[]; // Array of appointments
+}
+
 // Updated Shop Interface
 export interface Shop {
   shop_id: string;
@@ -73,6 +92,7 @@ export interface Shop {
   delivery_fee: boolean;
   feedbacks: string[];
   opening_hours: OpeningHours[]; // Array of OpeningHours
+  machines: Machine[]; // Array of Machine objects
 }
 
 // ClothingType Interface (if applicable)

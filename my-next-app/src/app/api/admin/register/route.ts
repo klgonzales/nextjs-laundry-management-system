@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       shop_email,
       shop_address,
       services,
+      machines,
       payment_methods,
       opening_hours, // Opening hours object from the frontend
       delivery_fee,
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
       email: shop_email,
       address: shop_address,
       services: validatedServices,
+      machines: machines,
       orders: [],
       payment_methods: payment_methods.map((method: any, index: number) => ({
         method_id: index + 1,

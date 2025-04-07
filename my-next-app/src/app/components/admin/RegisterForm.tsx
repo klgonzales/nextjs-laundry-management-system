@@ -6,6 +6,25 @@ import { useRouter } from "next/navigation";
 export default function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+
+  interface Machine {
+    machine_id: string;
+    minimum_kg: number;
+    minimum_minutes: number;
+    availability: {
+      date: string; // Date when the machine is available
+      open: string; // Time when the machine is available
+      close: string; // Time when the machine is available
+    }[]; // Array of availability slots
+    price_per_minimum_kg: number;
+    customer_id?: string | null;
+    appointments?: {
+      date: string;
+      time: string;
+      customer_id: string;
+    }[];
+  }
+
   interface FormData {
     name: string;
     email: string;
@@ -30,6 +49,7 @@ export default function RegisterForm() {
     };
     delivery_fee?: boolean;
     role: string;
+    machines?: Machine[]; // Optional field for machines
   }
 
   const [formData, setFormData] = useState<FormData>({
@@ -44,6 +64,7 @@ export default function RegisterForm() {
     shop_email: "",
     shop_type: "self-service",
     services: [],
+    machines: [], // Initialize machines as an empty array
     payment_methods: [],
     opening_hours: {
       Monday: { start: "09:00", end: "17:00" },
@@ -58,7 +79,47 @@ export default function RegisterForm() {
     role: "admin", // Default role for the admin
   });
   const [error, setError] = useState("");
+  const [newMachine, setNewMachine] = useState<Machine>({
+    machine_id: "",
+    minimum_kg: 0,
+    minimum_minutes: 0,
+    availability: [],
+    price_per_minimum_kg: 0,
+    customer_id: null,
+    appointments: [],
+  });
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  const handleAddMachine = () => {
+    if (
+      !newMachine.machine_id ||
+      !newMachine.minimum_kg ||
+      !newMachine.minimum_minutes ||
+      !newMachine.availability ||
+      !newMachine.price_per_minimum_kg
+    ) {
+      setError("Please fill out all machine fields.");
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      machines: [...(formData.machines || []), newMachine],
+    });
+
+    // Reset the new machine form
+    setNewMachine({
+      machine_id: "",
+      minimum_kg: 0,
+      minimum_minutes: 0,
+      availability: [],
+      price_per_minimum_kg: 0,
+      customer_id: null,
+      appointments: [],
+    });
+
+    setError("");
+  };
 
   const validatePassword = (password: string) => {
     const errors: string[] = [];
@@ -138,10 +199,11 @@ export default function RegisterForm() {
       <div className="max-w-md w-full space-y-8 h-auto">
         <div>
           <h2 className="mt-6 text-center text-3xl font-regular text-gray-900">
-            {step === 1 && "Set Up Your Shop"}
-            {step === 2 && "Set Up Your Shop"}
-            {step === 3 && "What Services Do You Offer"}
-            {step === 4 && "Payment Methods"}
+            {step === 1 && "Create Your Account"}
+            {step === 2 && "Shop Details"}
+            {step === 3 && "Services Offered"}
+            {step === 4 && "Add Machines"}
+            {step === 5 && "Payment Methods"}
           </h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -542,7 +604,143 @@ export default function RegisterForm() {
               </div>
             </div>
           )}
-          {step === 4 && (
+
+          {step === 4 && formData.shop_type !== "pickup-delivery" && (
+            <div className="rounded-md shadow-sm space-y-4">
+              <h3 className="text-lg font-medium text-gray-900">
+                Add Available Machines
+              </h3>
+              <div className="space-y-2">
+                {/* Machine ID Input */}
+                <input
+                  type="text"
+                  placeholder="Machine ID"
+                  value={newMachine.machine_id}
+                  onChange={(e) =>
+                    setNewMachine({ ...newMachine, machine_id: e.target.value })
+                  }
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+
+                {/* Minimum KG Input */}
+                <input
+                  type="number"
+                  placeholder="Minimum KG"
+                  value={newMachine.minimum_kg}
+                  onChange={(e) =>
+                    setNewMachine({
+                      ...newMachine,
+                      minimum_kg: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+
+                <input
+                  type="number"
+                  placeholder="Minimum minutes"
+                  value={newMachine.minimum_minutes}
+                  onChange={(e) =>
+                    setNewMachine({
+                      ...newMachine,
+                      minimum_minutes: parseInt(e.target.value, 10),
+                    })
+                  }
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+
+                {/* Price per Minimum KG Input */}
+                <input
+                  type="number"
+                  placeholder="Price per Minimum KG"
+                  value={newMachine.price_per_minimum_kg}
+                  onChange={(e) =>
+                    setNewMachine({
+                      ...newMachine,
+                      price_per_minimum_kg: parseFloat(e.target.value),
+                    })
+                  }
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+
+                {/* Add Machine Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      !newMachine.machine_id ||
+                      !newMachine.minimum_kg ||
+                      !newMachine.minimum_minutes ||
+                      !newMachine.price_per_minimum_kg
+                    ) {
+                      setError("Please fill out all machine fields.");
+                      return;
+                    }
+
+                    // Automatically set machine availability to match shop opening hours
+                    const machineAvailability = Object.entries(
+                      formData.opening_hours
+                    ).map(([day, hours]) => ({
+                      date: day,
+                      open: hours.start,
+                      close: hours.end,
+                    }));
+
+                    const machineToAdd = {
+                      ...newMachine,
+                      availability: machineAvailability, // Set availability based on shop opening hours
+                    };
+
+                    setFormData({
+                      ...formData,
+                      machines: [...(formData.machines || []), machineToAdd],
+                    });
+
+                    // Reset the new machine form
+                    setNewMachine({
+                      machine_id: "",
+                      minimum_kg: 0,
+                      minimum_minutes: 0,
+                      availability: [],
+                      price_per_minimum_kg: 0,
+                      customer_id: null,
+                      appointments: [],
+                    });
+
+                    setError("");
+                  }}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                >
+                  Add Machine
+                </button>
+              </div>
+
+              {/* Display Added Machines */}
+              <div className="mt-4">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Added Machines:
+                </h4>
+                <ul className="list-disc list-inside text-sm text-gray-600">
+                  {(formData.machines || []).map((machine, index) => (
+                    <li key={index}>
+                      {machine.machine_id} - {machine.minimum_kg}kg -{" "}
+                      {machine.minimum_minutes} minutes - ₱
+                      {machine.price_per_minimum_kg}
+                      <ul className="list-disc list-inside ml-4">
+                        {machine.availability.map((slot, idx) => (
+                          <li key={idx}>
+                            {slot.date}: {slot.open} - {slot.close}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
             <div className="rounded-md space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Payment Methods
@@ -594,7 +792,7 @@ export default function RegisterForm() {
                 Previous
               </button>
             )}
-            {step < 4 && (
+            {step < 5 && (
               <button
                 type="button"
                 className="group relative flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -603,7 +801,7 @@ export default function RegisterForm() {
                 Next
               </button>
             )}
-            {step === 4 && (
+            {step === 5 && (
               <button
                 type="submit"
                 className="group relative flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
