@@ -26,6 +26,11 @@ interface User {
     shop_id: string;
     orders?: Order[]; // Optional for admins
     type: string;
+    opening_hours?: {
+      date: string; // Date when the shop is open
+      open: string; // Time when the shop opens
+      close: string; // Time when the shop closes
+    }[]; // Array of opening hours
     machines?: {
       machine_id: string; // Unique identifier for the machine
       minimum_kg: number | null; // Minimum weight the machine can handle

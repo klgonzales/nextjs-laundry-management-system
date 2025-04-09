@@ -6,6 +6,86 @@ export default function Machines() {
   const [machines, setMachines] = useState(user?.shops?.[0]?.machines || []); // Get machines from the first shop
   const [editingIndex, setEditingIndex] = useState<number | null>(null); // Track which machine is being edited
   const [editedMachine, setEditedMachine] = useState<any>(null); // Store the edited machine
+  const [isAdding, setIsAdding] = useState(false); // Track if adding a new machine
+  const [newMachine, setNewMachine] = useState<any>({
+    machine_id: "",
+    minimum_kg: 0,
+    minimum_minutes: 0,
+    price_per_minimum_kg: 0,
+    availability: [],
+    appointments: [],
+  }); // Store the new machine details
+  const [error, setError] = useState<string>("");
+
+  const handleAddMachine = async () => {
+    if (
+      !newMachine.machine_id ||
+      !newMachine.minimum_kg ||
+      !newMachine.minimum_minutes ||
+      !newMachine.price_per_minimum_kg
+    ) {
+      setError("Please fill out all fields for the new machine.");
+      return;
+    }
+
+    try {
+      // Automatically set machine availability to match shop opening hours
+      const machineAvailability = (user?.shops?.[0]?.opening_hours || []).map(
+        (hours: any) => ({
+          date: hours.day || "", // Use the day property from opening_hours
+          open: hours.open || "00:00", // Use the open property or default to "00:00"
+          close: hours.close || "00:00", // Use the close property or default to "00:00"
+        })
+      );
+
+      console.log("Machine availability:", machineAvailability);
+      const machineToAdd = {
+        ...newMachine,
+        availability: machineAvailability, // Set availability based on shop opening hours
+        appointments: [], // Initialize appointments as an empty array
+      };
+
+      // Call the API to add the new machine
+      const response = await fetch(`/api/admin/add-machine`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          shop_id: user?.shops?.[0]?.shop_id, // Pass the shop ID
+          machine: machineToAdd, // Pass the new machine details with availability
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add machine");
+      }
+
+      // Update the local state
+      // const addedMachine = await response.json();
+      // setMachines([...machines, addedMachine]);
+
+      const data = await response.json();
+
+      // Update the local state with the updated machines array
+      setMachines(data.machines);
+
+      // Reset the form and state
+      setIsAdding(false);
+      setNewMachine({
+        machine_id: "",
+        minimum_kg: 0,
+        minimum_minutes: 0,
+        price_per_minimum_kg: 0,
+        availability: [],
+        appointments: [],
+      });
+      setError("");
+    } catch (error) {
+      console.error("Error adding machine:", error);
+      setError("An error occurred while adding the machine.");
+    }
+  };
 
   const handleEdit = (index: number) => {
     setEditingIndex(index);
@@ -50,9 +130,9 @@ export default function Machines() {
     setEditedMachine(null);
   };
 
-  const handleDelete = async (index: number) => {
+  const handleDelete = async (machine_id: string) => {
     try {
-      const machineToDelete = machines[index];
+      //const machineToDelete = machines[index];
 
       // Call the API to delete the machine
       const response = await fetch(`/api/admin/delete-machine`, {
@@ -62,7 +142,7 @@ export default function Machines() {
         },
         body: JSON.stringify({
           shop_id: user?.shops?.[0]?.shop_id, // Pass the shop ID
-          machine_id: machineToDelete.machine_id, // Pass the machine ID
+          machine_id,
         }),
       });
 
@@ -71,11 +151,33 @@ export default function Machines() {
       }
 
       // Update the local state
-      const updatedMachines = machines.filter((_, i) => i !== index);
+      const updatedMachines = machines.filter(
+        (machine) => machine.machine_id !== machine_id
+      );
       setMachines(updatedMachines);
     } catch (error) {
       console.error("Error deleting machine:", error);
     }
+  };
+
+  const handleAddAvailability = () => {
+    setEditedMachine({
+      ...editedMachine,
+      availability: [
+        ...editedMachine.availability,
+        { date: "", open: "", close: "" }, // Add a new empty slot
+      ],
+    });
+  };
+
+  const handleDeleteAvailability = (slotIndex: number) => {
+    const updatedAvailability = editedMachine.availability.filter(
+      (_: any, index: number) => index !== slotIndex
+    );
+    setEditedMachine({
+      ...editedMachine,
+      availability: updatedAvailability,
+    });
   };
 
   return (
@@ -85,6 +187,81 @@ export default function Machines() {
           Machines
         </h3>
       </div>
+
+      {!isAdding ? (
+        <button
+          onClick={() => setIsAdding(true)}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          Add New Machine
+        </button>
+      ) : (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+          <h4 className="text-lg font-medium text-gray-800 mb-4">
+            Add New Machine
+          </h4>
+          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+          <input
+            type="text"
+            value={newMachine.machine_id}
+            onChange={(e) =>
+              setNewMachine({ ...newMachine, machine_id: e.target.value })
+            }
+            className="block w-full mb-2 p-2 border rounded"
+            placeholder="Machine ID"
+          />
+          <input
+            type="number"
+            value={newMachine.minimum_kg}
+            onChange={(e) =>
+              setNewMachine({
+                ...newMachine,
+                minimum_kg: Number(e.target.value),
+              })
+            }
+            className="block w-full mb-2 p-2 border rounded"
+            placeholder="Minimum KG"
+          />
+          <input
+            type="number"
+            value={newMachine.minimum_minutes}
+            onChange={(e) =>
+              setNewMachine({
+                ...newMachine,
+                minimum_minutes: Number(e.target.value),
+              })
+            }
+            className="block w-full mb-2 p-2 border rounded"
+            placeholder="Minimum Minutes"
+          />
+          <input
+            type="number"
+            value={newMachine.price_per_minimum_kg}
+            onChange={(e) =>
+              setNewMachine({
+                ...newMachine,
+                price_per_minimum_kg: Number(e.target.value),
+              })
+            }
+            className="block w-full mb-2 p-2 border rounded"
+            placeholder="Price per Minimum KG"
+          />
+
+          <button
+            onClick={handleAddMachine}
+            className="px-4 py-2 bg-green-500 text-white rounded mr-2"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => setIsAdding(false)}
+            className="px-4 py-2 bg-gray-500 text-white rounded"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
           {machines.length > 0 ? (
@@ -155,8 +332,19 @@ export default function Machines() {
                               <input
                                 type="text"
                                 value={slot.date}
-                                readOnly
-                                className="block w-1/3 p-2 border rounded bg-gray-100"
+                                onChange={(e) => {
+                                  const updatedAvailability = [
+                                    ...editedMachine.availability,
+                                  ];
+                                  updatedAvailability[slotIndex].date =
+                                    e.target.value;
+                                  setEditedMachine({
+                                    ...editedMachine,
+                                    availability: updatedAvailability,
+                                  });
+                                }}
+                                className="block w-1/3 p-2 border rounded"
+                                placeholder="Date"
                               />
                               <input
                                 type="time"
@@ -190,9 +378,23 @@ export default function Machines() {
                                 }}
                                 className="block w-1/3 p-2 border rounded"
                               />
+                              <button
+                                onClick={() =>
+                                  handleDeleteAvailability(slotIndex)
+                                }
+                                className="px-2 py-1 bg-red-500 text-white rounded"
+                              >
+                                Delete
+                              </button>
                             </div>
                           )
                         )}
+                        <button
+                          onClick={handleAddAvailability}
+                          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                        >
+                          Add Availability
+                        </button>
                       </div>
                       <button
                         onClick={handleSave}
@@ -227,7 +429,7 @@ export default function Machines() {
                           Availability:
                         </h4>
                         <ul className="list-disc list-inside text-sm text-gray-600">
-                          {machine.availability.map(
+                          {(machine.availability || []).map(
                             (slot: any, slotIndex: number) => (
                               <li key={slotIndex}>
                                 {slot.date}: {slot.open} - {slot.close}
@@ -241,7 +443,7 @@ export default function Machines() {
                           Appointments:
                         </h4>
                         <ul className="list-disc list-inside text-sm text-gray-600">
-                          {machine.appointments.length > 0 ? (
+                          {(machine.appointments ?? []).length > 0 ? (
                             machine.appointments.map(
                               (appointment: any, appointmentIndex: number) => (
                                 <li key={appointmentIndex}>
@@ -260,6 +462,12 @@ export default function Machines() {
                         className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(machine.machine_id)}
+                        className="mt-2 px-4 py-2 bg-red-500 text-white rounded"
+                      >
+                        Delete
                       </button>
                     </div>
                   )}
