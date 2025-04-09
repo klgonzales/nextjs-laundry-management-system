@@ -1,24 +1,76 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 import Sidebar from "../../../../components/common/Sidebar";
+import Header from "../../../../components/common/Header";
 
 import Orders from "../orders/page";
 import Services from "../services/page";
+import Machines from "../machines/page";
 import Feedback from "../feedback/page";
 import Payments from "../payments/page";
 import Analytics from "../analytics/page";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { user } = useAuth(); // Get the logged-in admin's data
+  const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
+  const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
 
   // Create refs for each section
   const ordersRef = useRef<HTMLDivElement>(null);
   const servicesRef = useRef<HTMLDivElement>(null);
+  const machinesRef = useRef<HTMLDivElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
   const paymentsRef = useRef<HTMLDivElement>(null);
   const analyticsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      const detailedOrders = await Promise.all(
+        orders.map(async (order: any) => {
+          try {
+            // Fetch customer details
+            const customerResponse = await fetch(
+              `/api/customers/${order.customer_id}`
+            );
+            const customerData = await customerResponse.json();
+
+            // Fetch shop details
+            const shopResponse = await fetch(`/api/shops/${order.shop}`);
+            const shopData = await shopResponse.json();
+
+            return {
+              ...order,
+              customer_name: customerData?.customer?.name || "Unknown Customer",
+              shop_name: shopData?.shop?.name || "Unknown Shop",
+              shop_type: shopData?.shop?.type || "Unknown Type",
+              delivery_fee: shopData?.shop?.delivery_fee || false,
+            };
+          } catch (error) {
+            console.error("Error fetching order details:", error);
+            return {
+              ...order,
+              customer_name: "Error",
+              shop_name: "Error",
+              shop_type: "Error",
+            };
+          }
+        })
+      );
+      setOrderDetails(detailedOrders);
+
+      // Calculate unique customers
+      const uniqueCustomers = new Set(
+        detailedOrders.map((order) => order.customer_id)
+      );
+      console.log("Total unique customers:", uniqueCustomers.size);
+    };
+
+    fetchOrderDetails();
+  }, [orders]);
 
   const handleScroll = (section: string) => {
     switch (section) {
@@ -26,6 +78,9 @@ export default function AdminDashboard() {
         ordersRef.current?.scrollIntoView({ behavior: "smooth" });
         break;
       case "services":
+        servicesRef.current?.scrollIntoView({ behavior: "smooth" });
+        break;
+      case "machines":
         servicesRef.current?.scrollIntoView({ behavior: "smooth" });
         break;
       case "feedback":
@@ -46,26 +101,21 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   };
 
+  console.log("Shop Type:", user?.shops?.[0]?.type); // Debugging
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <Sidebar userType="admin" handleScroll={handleScroll} />
+      <Sidebar
+        userType="admin"
+        handleScroll={handleScroll}
+        shopType={user?.shops?.[0]?.type} // Pass the shop type dynamically
+      />
 
       {/* Main Content */}
       <div className="flex-1">
-        <nav className="bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold text-purple-600">
-                  Admin Dashboard
-                </h1>
-              </div>
-            </div>
-          </div>
-        </nav>
-
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {/* Header */}
+          <Header userType="admin" />
           <div className="px-4 py-6 sm:px-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Total Customers */}
@@ -92,7 +142,13 @@ export default function AdminDashboard() {
                         <dt className="text-sm font-medium text-gray-500 truncate">
                           Total Customers
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">0</dd>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {
+                            new Set(
+                              orderDetails.map((order) => order.customer_id)
+                            ).size
+                          }
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -170,6 +226,9 @@ export default function AdminDashboard() {
             </div>
             <div ref={servicesRef}>
               <Services />
+            </div>
+            <div ref={machinesRef}>
+              <Machines />
             </div>
             <div ref={feedbackRef}>
               <Feedback />

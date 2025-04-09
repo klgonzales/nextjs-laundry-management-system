@@ -5,9 +5,14 @@ import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 interface SidebarProps {
   userType: "client" | "admin";
   handleScroll: (section: string) => void; // Add this prop
+  shopType?: string; // Add shopType as an optional prop
 }
 
-export default function Sidebar({ userType, handleScroll }: SidebarProps) {
+export default function Sidebar({
+  userType,
+  handleScroll,
+  shopType,
+}: SidebarProps) {
   const router = useRouter();
 
   const { logout } = useAuth();
@@ -62,6 +67,15 @@ export default function Sidebar({ userType, handleScroll }: SidebarProps) {
             >
               Services
             </button>
+            {/* Add Machines button if shop type is self-service */}
+            {shopType === "self-service" && (
+              <button
+                onClick={() => handleScroll("machines")}
+                className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
+              >
+                Machines
+              </button>
+            )}
             <button
               onClick={() => handleScroll("feedback")}
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"

@@ -25,6 +25,24 @@ interface User {
     services?: Service[]; // Define services as an optional array of Service objects
     shop_id: string;
     orders?: Order[]; // Optional for admins
+    type: string;
+    machines?: {
+      machine_id: string; // Unique identifier for the machine
+      minimum_kg: number | null; // Minimum weight the machine can handle
+      minimum_minutes: number | null; // Optional: Minimum minutes for the machine
+      availability: {
+        date: string; // Date when the machine is available
+        open: string; // Time when the machine is available
+        close: string; // Time when the machine is available
+      }[]; // Array of availability slots
+      price_per_minimum_kg: number | null; // Price for the minimum weight
+      customer_id: string | null; // Customer ID if the machine is booked
+      appointments: {
+        date: string;
+        time: string;
+        customer_id: string;
+      }[]; // Array of appointments
+    }[]; // Define machines as an array of objects with machine_id and other properties
   }[]; // Define shops as an array of objects with a name property and optional services
   // other properties
 }
