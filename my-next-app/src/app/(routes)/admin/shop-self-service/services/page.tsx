@@ -6,6 +6,59 @@ export default function Services() {
   const [services, setServices] = useState(user?.shops?.[0]?.services || []); // Get services from the first shop
   const [editingIndex, setEditingIndex] = useState<number | null>(null); // Track which service is being edited
   const [editedService, setEditedService] = useState<any>(null); // Store the edited service
+  const [isAdding, setIsAdding] = useState(false); // Track if adding a new service
+  const [newService, setNewService] = useState({
+    service_id: Math.floor(Math.random() * 1000000), // Generate a random service ID
+    name: "Fold",
+    price_per_kg: 0,
+    description: "Fold service",
+  });
+
+  const handleAddService = async () => {
+    try {
+      // Call the API to add the new service
+      const response = await fetch(`/api/admin/add-service`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          shop_id: user?.shops?.[0]?.shop_id, // Pass the shop ID
+          service: newService, // Pass the new service details
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add service");
+      }
+
+      const data = await response.json();
+
+      // Update the local state with the updated services array
+      setServices(data.shop.services);
+
+      // Reset the form and state
+      setIsAdding(false);
+      setNewService({
+        service_id: Math.floor(Math.random() * 1000000), // Generate a new random service ID
+        name: "Fold",
+        price_per_kg: 0,
+        description: "Fold service",
+      });
+    } catch (error) {
+      console.error("Error adding service:", error);
+    }
+  };
+
+  const handleCancelAdd = () => {
+    setIsAdding(false);
+    setNewService({
+      service_id: Math.floor(Math.random() * 1000000),
+      name: "Fold",
+      price_per_kg: 0,
+      description: "Fold service",
+    });
+  };
 
   const handleEdit = (index: number) => {
     setEditingIndex(index);
@@ -84,6 +137,7 @@ export default function Services() {
           Services
         </h3>
       </div>
+
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
           {services.length > 0 ? (
@@ -176,6 +230,62 @@ export default function Services() {
             </ul>
           ) : (
             <p className="text-gray-500 text-center">No available services</p>
+          )}
+
+          {!isAdding ? (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Add Service
+            </button>
+          ) : (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-lg font-medium text-gray-800 mb-4">
+                Add New Service
+              </h4>
+              <input
+                type="text"
+                value={newService.name}
+                onChange={(e) =>
+                  setNewService({ ...newService, name: e.target.value })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Service Name"
+              />
+              <textarea
+                value={newService.description}
+                onChange={(e) =>
+                  setNewService({ ...newService, description: e.target.value })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Service Description"
+              />
+              <input
+                type="number"
+                value={newService.price_per_kg}
+                onChange={(e) =>
+                  setNewService({
+                    ...newService,
+                    price_per_kg: Number(e.target.value),
+                  })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Price per kg"
+              />
+              <button
+                onClick={handleAddService}
+                className="px-4 py-2 bg-green-500 text-white rounded mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancelAdd}
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>

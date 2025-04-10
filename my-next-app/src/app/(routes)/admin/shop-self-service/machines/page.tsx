@@ -187,81 +187,6 @@ export default function Machines() {
           Machines
         </h3>
       </div>
-
-      {!isAdding ? (
-        <button
-          onClick={() => setIsAdding(true)}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Add New Machine
-        </button>
-      ) : (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
-          <h4 className="text-lg font-medium text-gray-800 mb-4">
-            Add New Machine
-          </h4>
-          {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-          <input
-            type="text"
-            value={newMachine.machine_id}
-            onChange={(e) =>
-              setNewMachine({ ...newMachine, machine_id: e.target.value })
-            }
-            className="block w-full mb-2 p-2 border rounded"
-            placeholder="Machine ID"
-          />
-          <input
-            type="number"
-            value={newMachine.minimum_kg}
-            onChange={(e) =>
-              setNewMachine({
-                ...newMachine,
-                minimum_kg: Number(e.target.value),
-              })
-            }
-            className="block w-full mb-2 p-2 border rounded"
-            placeholder="Minimum KG"
-          />
-          <input
-            type="number"
-            value={newMachine.minimum_minutes}
-            onChange={(e) =>
-              setNewMachine({
-                ...newMachine,
-                minimum_minutes: Number(e.target.value),
-              })
-            }
-            className="block w-full mb-2 p-2 border rounded"
-            placeholder="Minimum Minutes"
-          />
-          <input
-            type="number"
-            value={newMachine.price_per_minimum_kg}
-            onChange={(e) =>
-              setNewMachine({
-                ...newMachine,
-                price_per_minimum_kg: Number(e.target.value),
-              })
-            }
-            className="block w-full mb-2 p-2 border rounded"
-            placeholder="Price per Minimum KG"
-          />
-
-          <button
-            onClick={handleAddMachine}
-            className="px-4 py-2 bg-green-500 text-white rounded mr-2"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => setIsAdding(false)}
-            className="px-4 py-2 bg-gray-500 text-white rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
           {machines.length > 0 ? (
@@ -476,6 +401,80 @@ export default function Machines() {
             </ul>
           ) : (
             <p className="text-gray-500 text-center">No available machines</p>
+          )}
+
+          {!isAdding ? (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+            >
+              Add New Machine
+            </button>
+          ) : (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              <h4 className="text-lg font-medium text-gray-800 mb-4">
+                Add New Machine
+              </h4>
+              {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+              <input
+                type="text"
+                value={newMachine.machine_id}
+                onChange={(e) =>
+                  setNewMachine({ ...newMachine, machine_id: e.target.value })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Machine ID"
+              />
+              <input
+                type="number"
+                value={newMachine.minimum_kg}
+                onChange={(e) =>
+                  setNewMachine({
+                    ...newMachine,
+                    minimum_kg: Number(e.target.value),
+                  })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Minimum KG"
+              />
+              <input
+                type="number"
+                value={newMachine.minimum_minutes}
+                onChange={(e) =>
+                  setNewMachine({
+                    ...newMachine,
+                    minimum_minutes: Number(e.target.value),
+                  })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Minimum Minutes"
+              />
+              <input
+                type="number"
+                value={newMachine.price_per_minimum_kg}
+                onChange={(e) =>
+                  setNewMachine({
+                    ...newMachine,
+                    price_per_minimum_kg: Number(e.target.value),
+                  })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Price per Minimum KG"
+              />
+
+              <button
+                onClick={handleAddMachine}
+                className="px-4 py-2 bg-green-500 text-white rounded mr-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setIsAdding(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>

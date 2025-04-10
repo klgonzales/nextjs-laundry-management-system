@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 import { useEffect, useState } from "react";
 import Home from "@/app/components/common/Home";
 
@@ -10,6 +11,7 @@ export default function ChooseService() {
   interface Shop {
     name: string;
     services: Service[];
+    type: string;
   }
 
   const [shop, setShop] = useState<Shop | null>(null);
@@ -54,14 +56,22 @@ export default function ChooseService() {
 
   const handleProceed = () => {
     if (selectedServices.length > 0) {
-      // Navigate to the quantity page and pass selected services as query parameters
-      router.push(
-        `/auth/order/${shop_id}/quantity?services=${encodeURIComponent(selectedServices.join(","))}`
-      );
+      if (shop?.type === "self-service") {
+        // Navigate to the machine page for self-service shops
+        router.push(
+          `/auth/order/${shop_id}/machine?services=${encodeURIComponent(selectedServices.join(","))}`
+        );
+      } else {
+        // Navigate to the quantity page for other shop types
+        router.push(
+          `/auth/order/${shop_id}/quantity?services=${encodeURIComponent(selectedServices.join(","))}`
+        );
+      }
     } else {
       alert("Please select at least one service to proceed.");
     }
   };
+
   const handleCancel = () => {
     router.push("/auth/order"); // Navigate back to the shop selection page
   };

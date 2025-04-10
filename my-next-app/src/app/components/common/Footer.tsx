@@ -5,9 +5,6 @@ export default function Footer() {
     <footer className="text-gray-400 p-2 text-center text-xs font-thin fixed bottom-0 w-full bg-white">
       <div className="flex items-center justify-center space-x-4">
         <p>&copy; {new Date().getFullYear()} Elbi Wash. All rights reserved.</p>
-        <div className="flex items-center space-x-2"></div>
-        <MdLocationOn />
-        <p>Brgy. Batong Malake, Los Baños, Laguna</p>
 
         <div className="flex items-center space-x-2">
           <MdEmail />
