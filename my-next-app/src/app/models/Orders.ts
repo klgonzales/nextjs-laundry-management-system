@@ -10,7 +10,7 @@ export interface OrderDocument extends Document {
   customer_id: string;
   order_type: string | null; // Type of order (e.g., "self-service", "pickup&delivery")
   service_id: number[];
-  machine_id: number | null;
+  machine_id: string | null;
   payment_status: string;
   order_status: string;
   total_weight: number;
@@ -24,14 +24,11 @@ export interface OrderDocument extends Document {
   payment_method: string;
   services: string[];
   soap: boolean | null;
-  time_range: {
-    t: number | null;
-    i: number | null;
-  };
+  time_range: string[];
   shop: { type: String; required: true }; // Reference to Shop
   address: string | null; // Address for pickup/delivery
   pickup_date: Date | null; // Pickup date
-  pickup_time: string | null; // Pickup time
+  pickup_time: string[] | null; // Pickup time
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -41,10 +38,10 @@ const ClothingItemSchema = new Schema<ClothingItem>({
 
 const OrderSchema = new Schema<OrderDocument>({
   order_id: { type: Number, required: true, unique: true },
-  customer_id: { type: String, required: true },
+  customer_id: { type: String, required: true }, // Customer ID
   order_type: { type: String, default: null },
   service_id: { type: [Number], required: true },
-  machine_id: { type: Number, default: null },
+  machine_id: { type: String, default: null },
   payment_status: { type: String, required: true, enum: ["pending", "paid"] },
   order_status: {
     type: String,
@@ -62,13 +59,15 @@ const OrderSchema = new Schema<OrderDocument>({
   payment_method: { type: String, default: "" },
   services: { type: [String], default: [] },
   soap: { type: Boolean, default: null }, // Indicates if soap is included
-  time_range: {
-    t: { type: Number, default: null }, // Time range for pickup/delivery
-    i: { type: Number, default: null },
-  },
+  time_range: [
+    {
+      start: { type: String, required: true },
+      end: { type: String, required: true },
+    },
+  ], // Update time_range to accept an array of objects
   shop: { type: String, required: true }, // Reference to Shop
   address: { type: String, default: null }, // Address for pickup/delivery
-  pickup_time: { type: String, default: null }, // Pickup time
+  pickup_time: { type: [String], default: null }, // Pickup time
   pickup_date: { type: Date, default: null }, // Pickup date
 });
 

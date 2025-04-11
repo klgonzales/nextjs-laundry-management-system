@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import { useAuth } from "@/app/context/AuthContext"; // Assuming you have an AuthContext to get user details
 
-export default function MachinePage({
-  params,
-}: {
-  params: { shop_id: string };
-}) {
-  const { shop_id } = params;
+export default function MachinePage() {
+  const params = useParams(); // Use useParams to access the params object
+  const shop_id = params.shop_id; // Extract shop_id from params
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [machines, setMachines] = useState<any[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+  const services = searchParams.get("services")?.split(",") || []; // Get services from query params
+  const { user } = useAuth();
 
   // Fetch machines for the shop
   useEffect(() => {
@@ -32,17 +34,24 @@ export default function MachinePage({
       }
     };
 
-    fetchMachines();
+    if (shop_id) {
+      fetchMachines();
+    }
   }, [shop_id]);
 
-  // Handle machine selection
-  const handleMachineClick = (machine: any) => {
-    setSelectedMachine(machine);
+  // Update available times whenever the selected machine or date changes
+  useEffect(() => {
+    if (!selectedMachine || !selectedDate) {
+      setAvailableTimes([]);
+      return;
+    }
 
-    // Extract available times for the selected machine
-    const today = new Date().toISOString().split("T")[0]; // Get today's date
-    const availability = machine.availability.find(
-      (slot: any) => slot.date === today
+    const selectedDayName = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+    }).format(selectedDate); // Get the day name for the selected date
+
+    const availability = selectedMachine.availability.find(
+      (slot: any) => slot.date === selectedDayName
     );
 
     if (availability) {
@@ -51,7 +60,7 @@ export default function MachinePage({
     } else {
       setAvailableTimes([]);
     }
-  };
+  }, [selectedMachine, selectedDate]);
 
   // Generate time slots between open and close times
   const generateTimeSlots = (open: string, close: string) => {
@@ -67,24 +76,87 @@ export default function MachinePage({
     return slots;
   };
 
+  // Handle machine selection
+  const handleMachineClick = (machine: any) => {
+    setSelectedMachine(machine);
+    setSelectedDate(null); // Reset selected date when a new machine is selected
+    setSelectedTimes([]); // Reset selected times
+  };
+
+  // Handle time slot selection
+  const handleTimeClick = (time: string) => {
+    const machineMinMinutes = selectedMachine?.minimum_minutes || 0;
+    const startTime = time;
+    const endTime = new Date(`1970-01-01T${time}:00`);
+    endTime.setMinutes(endTime.getMinutes() + machineMinMinutes);
+    const formattedEndTime = endTime.toTimeString().slice(0, 5);
+
+    console.log("Selected Machine:", selectedMachine);
+    console.log("Start Time:", startTime);
+    console.log("End Time:", formattedEndTime);
+    console.log("Minimum Minutes:", machineMinMinutes);
+
+    // Update selectedTimes with the start and end times
+    setSelectedTimes([startTime, formattedEndTime]);
+  };
+
   // Handle booking confirmation
-  const handleBooking = (time: string) => {
+  const handleBooking = async () => {
     if (!selectedDate) {
       alert("Please select a date first.");
       return;
     }
 
-    const bookingDetails = {
-      shop_id,
-      machine_id: selectedMachine.machine_id,
-      date: selectedDate.toISOString().split("T")[0],
-      time,
-    };
+    if (selectedTimes.length === 0) {
+      alert("Please select at least one time slot.");
+      return;
+    }
 
-    // Redirect to order confirmation page with booking details
-    router.push(
-      `/auth/order/confirmation?details=${encodeURIComponent(JSON.stringify(bookingDetails))}`
-    );
+    const customer_id = user?.customer_id;
+    if (!customer_id) {
+      alert("Customer ID is missing. Please log in again.");
+      return;
+    }
+
+    try {
+      const timeRange = [
+        {
+          start: selectedTimes[0],
+          end: selectedTimes[1],
+        },
+      ];
+
+      console.log("Time Range to Save:", timeRange); // Debugging log
+
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          shop_id: shop_id,
+          machine_id: selectedMachine.machine_id,
+          date: selectedDate.toISOString().split("T")[0],
+          time_range: timeRange, // Pass the time range
+          customer_id: customer_id,
+          payment_method: "pay at the counter",
+          order_type: "self-service",
+          services: services,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save order");
+      }
+
+      const data = await response.json();
+      console.log("Saved Time Range:", data.time_range);
+
+      // Navigate to the confirmation page
+      router.push(`/auth/order/confirmation?order_id=${data.order_id}`);
+    } catch (error) {
+      alert("Failed to save order. Please try again.");
+    }
   };
 
   return (
@@ -113,22 +185,19 @@ export default function MachinePage({
             Booking for Machine: {selectedMachine.machine_id}
           </h2>
 
-          {/* Calendar */}
           <Calendar
             onChange={(value) => {
               if (value instanceof Date) {
                 setSelectedDate(value);
-              } else if (
-                Array.isArray(value) &&
-                value.length > 0 &&
-                value[0] instanceof Date
-              ) {
-                setSelectedDate(value[0]);
-              } else {
-                setSelectedDate(null);
               }
             }}
             value={selectedDate}
+            tileDisabled={({ date }) => {
+              // Disable dates before today
+              const today = new Date();
+              today.setHours(0, 0, 0, 0); // Set time to midnight for accurate comparison
+              return date < today;
+            }}
           />
 
           {/* Time Slots */}
@@ -141,13 +210,23 @@ export default function MachinePage({
                 {availableTimes.map((time) => (
                   <button
                     key={time}
-                    className="p-2 border rounded bg-white hover:bg-blue-100"
-                    onClick={() => handleBooking(time)}
+                    className={`p-2 border rounded ${
+                      selectedTimes.includes(time)
+                        ? "bg-blue-500 text-white"
+                        : "bg-white hover:bg-blue-100"
+                    }`}
+                    onClick={() => handleTimeClick(time)} // Use the handleTimeClick function
                   >
                     {time}
                   </button>
                 ))}
               </div>
+              <button
+                onClick={handleBooking}
+                className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Confirm Booking
+              </button>
             </div>
           )}
         </div>

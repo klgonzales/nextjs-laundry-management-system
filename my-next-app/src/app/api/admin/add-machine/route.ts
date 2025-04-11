@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/app/lib/mongodb";
 import { Shop } from "@/app/models/Shop";
+import { Admin } from "@/app/models/Admin";
 
 export async function POST(request: Request) {
   try {
@@ -52,10 +53,30 @@ export async function POST(request: Request) {
       );
     }
 
+    // Update the machines array in the Admin document
+    const updatedAdmin = await Admin.findOneAndUpdate(
+      { "shops.shop_id": shop_id },
+      {
+        $set: {
+          "shops.$.machines": updatedShop.machines, // Sync the machines array
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedAdmin) {
+      return NextResponse.json(
+        { error: "Admin or shop not found" },
+        { status: 404 }
+      );
+    }
+
     // Return the updated machines array
     return NextResponse.json({
       message: "Machine added successfully",
       machines: updatedShop.machines, // Return the updated machines array
+      shop: updatedShop,
+      admin: updatedAdmin,
     });
   } catch (error) {
     console.error("Error adding machine:", error);

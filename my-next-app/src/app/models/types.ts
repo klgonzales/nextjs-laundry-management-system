@@ -34,7 +34,7 @@ export interface Order {
   customer_id: string;
   order_type: "self-service" | "pickup&delivery";
   service_ids: number[];
-  machine_id?: number;
+  machine_id?: string;
   payment_status: "pending" | "paid" | "failed";
   order_status: "pending" | "in-progress" | "completed" | "cancelled";
   total_weight: number;

@@ -4,6 +4,7 @@ import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 import dbConnect from "@/app/lib/mongodb";
+import { time } from "console";
 
 export async function GET() {
   try {
@@ -36,6 +37,9 @@ export async function POST(request: Request) {
     await dbConnect();
     const body = await request.json();
 
+    // Debugging: Log the incoming request body
+    console.log("Request Body:", body);
+
     // Create the new order
     const newOrder = await Order.create({
       customer_id: body.customer_id,
@@ -47,12 +51,12 @@ export async function POST(request: Request) {
       delivery_instructions: body.delivery_instructions || "",
       payment_method: body.payment_method || "",
       order_status: "pending", // Default to "pending"
-      order_type: " ",
+      order_type: body.order_type,
       payment_status: "pending", // Default to "pending"
       total_weight: body.total_weight || 0, // Optional
       total_price: body.total_price || 0, // Optional
       date_completed: null,
-      time_range: body.time_range || { t: null, i: null },
+      time_range: body.time_range || [], // Add time_range
       soap: body.soap || null,
       machine_id: body.machine_id || null,
       date: body.date || new Date(), // Default to current date if not provided
@@ -61,6 +65,7 @@ export async function POST(request: Request) {
       pickup_date: body.pickupDate || null,
     });
 
+    console.log(newOrder.time_range);
     console.log("New order created:", newOrder);
     console.log(newOrder.pickup_time);
 
@@ -115,46 +120,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-// // Handle POST requests to create a new order
-// export async function POST(request: Request) {
-//   try {
-//     await dbConnect();
-//     const body = await request.json();
-
-//     // Create the new order
-//     const newOrder = await Order.create({
-//       customer_id: body.customer_id,
-//       order_id: Math.floor(Math.random() * 1000000000).toString(), // Generate a unique ID
-//       shop: body.shop_id, // Store shop_id as a string
-//       services: body.services || [],
-//       clothes: body.clothing, // Ensure clothing items are valid
-//       date_placed: new Date(),
-//       delivery_instructions: body.delivery_instructions || "",
-//       payment_method: body.payment_method || "",
-//       order_status: "pending", // Default to "pending"
-//       order_type: " ",
-//       payment_status: "pending", // Default to "pending"
-//       total_weight: body.total_weight || 0, // Optional
-//       total_price: body.total_price || 0, // Optional
-//       date_completed: null,
-//       time_range: body.time_range || { t: null, i: null },
-//       soap: body.soap || null,
-//       machine_id: body.machine_id || null,
-//       date: body.date || new Date(), // Default to current date if not provided
-//       address: body.address || "",
-//     });
-
-//     console.log("New order created:", newOrder);
-
-//     return NextResponse.json({ success: true, order_id: newOrder._id });
-//   } catch (error) {
-//     console.error("Error saving order:", error);
-//     const errorMessage =
-//       error instanceof Error ? error.message : "Unknown error";
-//     return NextResponse.json(
-//       { success: false, error: errorMessage },
-//       { status: 500 }
-//     );
-//   }
-// }

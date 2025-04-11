@@ -17,6 +17,7 @@ export default function OrderSummary() {
   interface OrderDetails {
     date: string;
     shop_name: string;
+    shop_type: string; // Add shop_type to differentiate between self-service and other types
     services: string[];
     clothes: clothesItem[] | undefined; // Allow clothes to be undefined
     total: string | null;
@@ -27,6 +28,12 @@ export default function OrderSummary() {
     delivery_instructions: string;
     shop: string;
     address: string;
+    machine_id?: string; // For self-service shops
+    time_range?: { start: string; end: string }[] | undefined; // For self-service shops
+    customer_id?: string; // For self-service shops
+    order_type: string;
+    pickup_date?: string; // For pickup-delivery shops
+    pickup_time?: string[]; // For pickup-delivery shops
   }
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
@@ -86,6 +93,7 @@ export default function OrderSummary() {
 
   const {
     date,
+    shop_type,
     services,
     clothes = [], // Default to an empty array if clothes is undefined
     total,
@@ -93,6 +101,11 @@ export default function OrderSummary() {
     payment_status,
     payment_method,
     delivery_instructions,
+    machine_id,
+    time_range,
+    order_type,
+    pickup_date,
+    pickup_time,
   } = orderDetails;
 
   const formattedDate = new Intl.DateTimeFormat("en-US", {
@@ -106,6 +119,7 @@ export default function OrderSummary() {
   }).format(new Date(date));
 
   console.log(payment_method);
+  console.log(time_range);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">
@@ -123,21 +137,74 @@ export default function OrderSummary() {
             <strong>Shop Name:</strong> {shopName ? shopName : "Loading..."}
           </p>
           <p>
-            <strong>Services:</strong> {services.join(", ")}
+            <strong>Shop Type:</strong>{" "}
+            {order_type.charAt(0).toUpperCase() + order_type.slice(1)}
           </p>
           <p>
-            <strong>Clothes:</strong>
+            <strong>Services:</strong> {services.join(", ")}
           </p>
-          <ul className="list-disc pl-6">
-            {clothes
-              .filter((item) => item.quantity > 0) // Only show clothes with quantity > 0
-              .map((item, index) => (
-                <li key={index}>
-                  {item.type.charAt(0).toUpperCase() + item.type.slice(1)}:{" "}
-                  {item.quantity}
-                </li>
-              ))}
-          </ul>
+
+          {/* Conditional Rendering for Self-Service Shops */}
+          {order_type === "self-service" && (
+            <>
+              <p>
+                <strong>Machine ID:</strong> {machine_id}
+              </p>
+              <p>
+                <strong>Time Range:</strong>{" "}
+                {time_range
+                  ? time_range
+                      .map((range) => `${range.start} - ${range.end}`)
+                      .join(", ")
+                  : "Not specified"}
+              </p>
+            </>
+          )}
+
+          {/* Clothes Section */}
+          {order_type === "pickup-delivery" && (
+            <>
+              <p>
+                <strong>Clothes:</strong>
+              </p>
+              <ul className="list-disc pl-6">
+                {clothes
+                  .filter((item) => item.quantity > 0) // Only show clothes with quantity > 0
+                  .map((item, index) => (
+                    <li key={index}>
+                      {item.type.charAt(0).toUpperCase() + item.type.slice(1)}:{" "}
+                      {item.quantity}
+                    </li>
+                  ))}
+              </ul>
+              <p>
+                <strong>Pickup Address:</strong>{" "}
+                {customerAddress
+                  ? customerAddress.charAt(0).toUpperCase() +
+                    customerAddress.slice(1)
+                  : "Loading..."}
+              </p>
+              <p>
+                <strong>Pickup Date:</strong>{" "}
+                {pickup_date
+                  ? new Intl.DateTimeFormat("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).format(new Date(pickup_date))
+                  : "Not specified"}{" "}
+                <br />
+                <strong>Pickup Time:</strong>{" "}
+                {pickup_time && pickup_time.length > 0
+                  ? pickup_time.join(", ")
+                  : "Not specified"}
+              </p>
+              <p>
+                <strong>Delivery Instructions:</strong> {delivery_instructions}
+              </p>
+            </>
+          )}
+
           <p>
             <strong>Total:</strong> {total || "To be calculated"}
           </p>
@@ -152,16 +219,6 @@ export default function OrderSummary() {
           <p>
             <strong>Payment Method:</strong>{" "}
             {payment_method.charAt(0).toUpperCase() + payment_method.slice(1)}
-          </p>
-          <p>
-            <strong>Pickup Address:</strong>{" "}
-            {customerAddress
-              ? customerAddress.charAt(0).toUpperCase() +
-                customerAddress.slice(1)
-              : "Loading..."}
-          </p>
-          <p>
-            <strong>Delivery Instructions:</strong> {delivery_instructions}
           </p>
           <div className="mt-6">
             <button
