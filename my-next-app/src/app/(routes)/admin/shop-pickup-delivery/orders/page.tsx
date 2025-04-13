@@ -1,3 +1,5 @@
+"use client";
+
 import { useAuth } from "@/app/context/AuthContext";
 import { useState, useEffect } from "react";
 
@@ -7,6 +9,7 @@ export default function Orders() {
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
+  const [ongoingSubcategory, setOngoingSubcategory] = useState<string>(""); // Track the selected subcategory for ongoing
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -47,16 +50,95 @@ export default function Orders() {
     fetchOrderDetails();
   }, [orders]);
 
-  // Filter orders based on the selected status
+  // Filter orders based on the selected status and subcategory
   useEffect(() => {
     if (filterStatus === "all") {
       setFilteredOrders(orderDetails);
+    } else if (filterStatus === "ongoing" && ongoingSubcategory) {
+      setFilteredOrders(
+        orderDetails.filter(
+          (order) => order.order_status === ongoingSubcategory // Match the subcategory
+        )
+      );
     } else {
       setFilteredOrders(
         orderDetails.filter((order) => order.order_status === filterStatus)
       );
     }
-  }, [filterStatus, orderDetails]);
+  }, [filterStatus, ongoingSubcategory, orderDetails]);
+
+  const handleAccept = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newStatus: "to be picked up" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to accept order");
+      }
+
+      const updatedOrder = await response.json();
+      setOrderDetails((prev) =>
+        prev.map((order) =>
+          order._id === orderId
+            ? { ...order, order_status: "to be picked up" }
+            : order
+        )
+      );
+    } catch (error) {
+      console.error("Error accepting order:", error);
+    }
+  };
+
+  const handleDecline = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newStatus: "cancelled" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to decline order");
+      }
+
+      const updatedOrder = await response.json();
+      setOrderDetails((prev) =>
+        prev.map((order) =>
+          order._id === orderId
+            ? { ...order, order_status: "cancelled" }
+            : order
+        )
+      );
+    } catch (error) {
+      console.error("Error declining order:", error);
+    }
+  };
+
+  const handleMoveToNextStage = async (orderId: string, nextStage: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/update`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newStatus: nextStage }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to move order to next stage");
+      }
+
+      const updatedOrder = await response.json();
+      setOrderDetails((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, order_status: nextStage } : order
+        )
+      );
+    } catch (error) {
+      console.error("Error moving order to next stage:", error);
+    }
+  };
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
@@ -64,7 +146,10 @@ export default function Orders() {
         <h3 className="text-lg leading-6 font-medium text-gray-900">Orders</h3>
         <div className="mt-4 flex space-x-4">
           <button
-            onClick={() => setFilterStatus("all")}
+            onClick={() => {
+              setFilterStatus("all");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
             className={`px-4 py-2 rounded ${
               filterStatus === "all"
                 ? "bg-indigo-500 text-white"
@@ -74,7 +159,10 @@ export default function Orders() {
             All
           </button>
           <button
-            onClick={() => setFilterStatus("pending")}
+            onClick={() => {
+              setFilterStatus("pending");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
             className={`px-4 py-2 rounded ${
               filterStatus === "pending"
                 ? "bg-indigo-500 text-white"
@@ -94,7 +182,10 @@ export default function Orders() {
             Ongoing
           </button>
           <button
-            onClick={() => setFilterStatus("completed")}
+            onClick={() => {
+              setFilterStatus("completed");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
             className={`px-4 py-2 rounded ${
               filterStatus === "completed"
                 ? "bg-indigo-500 text-white"
@@ -104,6 +195,32 @@ export default function Orders() {
             Completed
           </button>
         </div>
+
+        {/* Subcategories for Ongoing */}
+        {filterStatus === "ongoing" && (
+          <div className="mt-4 flex space-x-4">
+            {[
+              "to be picked up",
+              "sorting",
+              "washing",
+              "drying",
+              "folding",
+              "to be delivered",
+            ].map((subcategory) => (
+              <button
+                key={subcategory}
+                onClick={() => setOngoingSubcategory(subcategory)}
+                className={`px-4 py-2 rounded ${
+                  ongoingSubcategory === subcategory
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
@@ -161,6 +278,74 @@ export default function Orders() {
                   <p className="text-sm text-gray-600">
                     Pickup Time: {order.pickup_time}
                   </p>
+                  <div className="mt-4 flex space-x-4">
+                    {order.order_status === "pending" && (
+                      <>
+                        <button
+                          onClick={() => handleAccept(order._id)}
+                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleDecline(order._id)}
+                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                        >
+                          Decline
+                        </button>
+                      </>
+                    )}
+                    {order.order_status === "to be picked up" && (
+                      <button
+                        onClick={() =>
+                          handleMoveToNextStage(order._id, "sorting")
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Sorting
+                      </button>
+                    )}
+                    {order.order_status === "sorting" && (
+                      <button
+                        onClick={() =>
+                          handleMoveToNextStage(order._id, "washing")
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Washing
+                      </button>
+                    )}
+                    {order.order_status === "washing" && (
+                      <button
+                        onClick={() =>
+                          handleMoveToNextStage(order._id, "drying")
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Drying
+                      </button>
+                    )}
+                    {order.order_status === "drying" && (
+                      <button
+                        onClick={() =>
+                          handleMoveToNextStage(order._id, "folding")
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Folding
+                      </button>
+                    )}
+                    {order.order_status === "folding" && (
+                      <button
+                        onClick={() =>
+                          handleMoveToNextStage(order._id, "to be delivered")
+                        }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Delivery
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

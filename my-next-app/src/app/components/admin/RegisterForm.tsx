@@ -746,7 +746,7 @@ export default function RegisterForm() {
                 Payment Methods
               </label>
               <div className="space-y-2">
-                {["cash", "credit-card", "paypal", "bank-transfer"].map(
+                {["cash", "credit-card", "gcash", "bank-transfer"].map(
                   (method) => (
                     <div key={method} className="flex items-center">
                       <input

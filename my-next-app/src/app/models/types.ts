@@ -36,7 +36,17 @@ export interface Order {
   service_ids: number[];
   machine_id?: string;
   payment_status: "pending" | "paid" | "failed";
-  order_status: "pending" | "in-progress" | "completed" | "cancelled";
+  order_status:
+    | "pending"
+    | "in-progress"
+    | "to be picked up"
+    | "sorting"
+    | "washing"
+    | "drying"
+    | "folding"
+    | "to be delivered"
+    | "completed"
+    | "cancelled";
   total_weight: number;
   total_price: number;
   date_placed: Date;

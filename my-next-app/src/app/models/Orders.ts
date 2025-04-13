@@ -6,7 +6,7 @@ interface ClothingItem {
 }
 
 export interface OrderDocument extends Document {
-  order_id: number;
+  order_id: string;
   customer_id: string;
   order_type: string | null; // Type of order (e.g., "self-service", "pickup&delivery")
   service_id: number[];
@@ -37,16 +37,31 @@ const ClothingItemSchema = new Schema<ClothingItem>({
 });
 
 const OrderSchema = new Schema<OrderDocument>({
-  order_id: { type: Number, required: true, unique: true },
+  order_id: { type: String, required: true, unique: true },
   customer_id: { type: String, required: true }, // Customer ID
   order_type: { type: String, default: null },
   service_id: { type: [Number], required: true },
   machine_id: { type: String, default: null },
-  payment_status: { type: String, required: true, enum: ["pending", "paid"] },
+  payment_status: {
+    type: String,
+    required: true,
+    enum: ["pending", "paid", "cancelled"],
+  },
   order_status: {
     type: String,
     required: true,
-    enum: ["pending", "in progress", "completed", "cancelled"],
+    enum: [
+      "pending",
+      "in progress",
+      "to be picked up",
+      "sorting",
+      "washing",
+      "drying",
+      "folding",
+      "to be delivered",
+      "completed",
+      "cancelled",
+    ],
   },
   total_weight: { type: Number, required: true },
   total_price: { type: Number, required: true },
