@@ -69,7 +69,7 @@ export default function Orders() {
 
   const handleAccept = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/update`, {
+      const response = await fetch(`/api/orders/${orderId}/update-order`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newStatus: "to be picked up" }),
@@ -94,17 +94,32 @@ export default function Orders() {
 
   const handleDecline = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/update`, {
+      // Update order status to "cancelled"
+      const orderResponse = await fetch(`/api/orders/${orderId}/update-order`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newStatus: "cancelled" }),
       });
 
-      if (!response.ok) {
+      if (!orderResponse.ok) {
         throw new Error("Failed to decline order");
       }
 
-      const updatedOrder = await response.json();
+      // Update payment status to "cancelled"
+      const paymentResponse = await fetch(
+        `/api/orders/${orderId}/update-paymentstatus`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPaymentStatus: "cancelled" }),
+        }
+      );
+
+      if (!paymentResponse.ok) {
+        throw new Error("Failed to update payment status");
+      }
+
+      const updatedOrder = await orderResponse.json();
       setOrderDetails((prev) =>
         prev.map((order) =>
           order._id === orderId
@@ -119,7 +134,7 @@ export default function Orders() {
 
   const handleMoveToNextStage = async (orderId: string, nextStage: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/update`, {
+      const response = await fetch(`/api/orders/${orderId}/update-order`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newStatus: nextStage }),
@@ -193,6 +208,19 @@ export default function Orders() {
             }`}
           >
             Completed
+          </button>
+          <button
+            onClick={() => {
+              setFilterStatus("cancelled");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
+            className={`px-4 py-2 rounded ${
+              filterStatus === "cancelled"
+                ? "bg-indigo-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            Cancelled
           </button>
         </div>
 

@@ -43,7 +43,7 @@ export default function Payments() {
             .filter(
               (order: Order) =>
                 order.customer_id === user.customer_id &&
-                order.order_status.toLowerCase() === "pending" // Filter orders by customer_id and pending payment
+                order.payment_status.toLowerCase() === "pending" // Filter orders by customer_id and pending payment
             )
             .map(async (order: Order) => {
               try {

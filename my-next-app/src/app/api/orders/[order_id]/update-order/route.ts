@@ -19,8 +19,8 @@ export async function PATCH(
     console.log("Updating order:", orderId);
     console.log("New status:", newStatus);
 
-    // Check all orders in the Orders collection to find a match by _id
-    const orders = await Order.find(); // Fetch all orders
+    // Update main Orders collection
+    const orders = await Order.find();
     const updatedOrder = orders.find(
       (order) => order._id.toString() === orderId
     );
@@ -30,54 +30,70 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Update the order status if a match is found
     updatedOrder.order_status = newStatus;
     await updatedOrder.save();
 
-    console.log("Order updated in Orders collection:");
-
-    // Update the order status in all Shops' orders arrays
-    const shops = await Shop.find(); // Fetch all shops
+    // Update order status in all Shops
+    const shops = await Shop.find();
     for (const shop of shops) {
+      let modified = false;
+
       shop.orders.forEach(
         (order: { _id: { toString: () => string }; order_status: any }) => {
           if (order._id.toString() === orderId) {
-            order.order_status = newStatus; // Update the order_status if _id matches
+            order.order_status = newStatus;
+            modified = true;
           }
         }
       );
-      const shopUpdateResult = await shop.save(); // Save the updated shop document
-      console.log("Shop update result for shop:");
+
+      if (modified) {
+        shop.markModified("orders");
+        await shop.save();
+        console.log("Shop updated:", shop._id);
+      }
     }
 
-    // Update the order status in the Admin's shops array
-    const admins = await Admin.find({ "shops.orders._id": orderId }); // Find all admins containing the order
+    // Update order status in Admins
+    const admins = await Admin.find();
     for (const admin of admins) {
+      let modified = false;
+
       admin.shops.forEach((shop: { orders: any[] }) => {
-        shop.orders.forEach(
-          (order: { _id: { toString: () => string }; order_status: any }) => {
-            if (order._id.toString() === orderId) {
-              order.order_status = newStatus; // Update the order_status if _id matches
-            }
+        shop.orders.forEach((order) => {
+          if (order._id.toString() === orderId) {
+            order.order_status = newStatus;
+            modified = true;
           }
-        );
+        });
       });
-      const adminUpdateResult = await admin.save(); // Save the updated admin document
-      console.log("Admin update result:");
+
+      if (modified) {
+        admin.markModified("shops");
+        await admin.save();
+        console.log("Admin updated:", admin._id);
+      }
     }
 
-    // Update the order status in the Customer's orders array
-    const customers = await Customer.find({ "orders._id": orderId }); // Find all customers containing the order
+    // Update order status in Customers
+    const customers = await Customer.find();
     for (const customer of customers) {
+      let modified = false;
+
       customer.orders.forEach(
         (order: { _id: { toString: () => string }; order_status: any }) => {
           if (order._id.toString() === orderId) {
-            order.order_status = newStatus; // Update the order_status if _id matches
+            order.order_status = newStatus;
+            modified = true;
           }
         }
       );
-      const customerUpdateResult = await customer.save(); // Save the updated customer document
-      console.log("Customer update result:");
+
+      if (modified) {
+        customer.markModified("orders");
+        await customer.save();
+        console.log("Customer updated:", customer._id);
+      }
     }
 
     return NextResponse.json({ success: true, updatedOrder });
