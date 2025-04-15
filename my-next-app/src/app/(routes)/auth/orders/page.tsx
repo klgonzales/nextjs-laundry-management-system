@@ -7,11 +7,14 @@ interface Order {
   _id: string;
   customer_id: string;
   date: string;
-  total: number;
+  total_price: number;
+  total_weight: number;
+  notes: string;
   order_status: string;
   shop_name?: string; // Optional, will be fetched
   shop_type?: string; // Optional, will be fetched
   shop: string; // shop_id
+  date_completed: string; // Optional, will be fetched
 }
 
 export default function Orders() {
@@ -110,13 +113,30 @@ export default function Orders() {
                   <strong>Date:</strong> {new Date(order.date).toLocaleString()}
                 </p>
                 <p>
-                  <strong>Total:</strong> ${order.total.toFixed(2)}
+                  <strong>Total Price:</strong> {order.total_price || "Pending"}
+                </p>
+                <p>
+                  <strong>Total Weight:</strong>{" "}
+                  {order.total_weight || "Pending"}
                 </p>
                 <p>
                   <strong>Order Status:</strong>{" "}
                   {order.order_status.charAt(0).toUpperCase() +
                     order.order_status.slice(1)}
                 </p>
+                {order.order_status === "completed" && (
+                  <>
+                    <p>
+                      <strong>Date Completed:</strong>{" "}
+                      {new Date(order.date_completed).toLocaleString()}
+                    </p>
+                    <p>
+                      <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Add Feedback
+                      </button>
+                    </p>
+                  </>
+                )}
               </li>
             ))}
           </ul>

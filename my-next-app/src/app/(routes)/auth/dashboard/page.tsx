@@ -21,11 +21,8 @@ export default function Dashboard() {
       case "orders":
         ordersRef.current?.scrollIntoView({ behavior: "smooth" });
         break;
-      case "services":
-        // servicesRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
       case "payments":
-        // paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
+        paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
         break;
       default:
         break;
@@ -50,7 +47,7 @@ export default function Dashboard() {
         <main className="flex-1 container mx-auto px-4 py-6">
           <div className="px-4 py-6 sm:px-0">
             {/* Services Section */}
-            <div className=" bg-white shadow rounded-lg">
+            <div className="bg-white shadow rounded-lg">
               <div className="px-4 py-5 sm:px-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">
                   Services
@@ -82,8 +79,16 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <Orders />
-            <Payments />
+
+            {/* Orders Section */}
+            <div ref={ordersRef}>
+              <Orders />
+            </div>
+
+            {/* Payments Section */}
+            <div ref={paymentsRef}>
+              <Payments />
+            </div>
           </div>
         </main>
       </div>

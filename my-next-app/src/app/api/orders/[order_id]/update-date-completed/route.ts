@@ -14,10 +14,10 @@ export async function PATCH(
 
   try {
     await dbConnect();
-    const { newStatus } = await request.json();
+    const newDateCompleted = new Date().toISOString();
 
     console.log("Updating order:", orderId);
-    console.log("New status:", newStatus);
+    console.log("New date_completed:", newDateCompleted);
 
     // Update main Orders collection
     const orders = await Order.find();
@@ -30,22 +30,20 @@ export async function PATCH(
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    updatedOrder.payment_status = newStatus;
+    updatedOrder.date_completed = newDateCompleted;
     await updatedOrder.save();
 
-    // Update order status in all Shops
+    // Update date_completed in all Shops
     const shops = await Shop.find();
     for (const shop of shops) {
       let modified = false;
 
-      shop.orders.forEach(
-        (order: { _id: { toString: () => string }; payment_status: any }) => {
-          if (order._id.toString() === orderId) {
-            order.payment_status = newStatus;
-            modified = true;
-          }
+      shop.orders.forEach((order: { _id: string; date_completed: string }) => {
+        if (order._id.toString() === orderId) {
+          order.date_completed = newDateCompleted;
+          modified = true;
         }
-      );
+      });
 
       if (modified) {
         shop.markModified("orders");
@@ -54,19 +52,23 @@ export async function PATCH(
       }
     }
 
-    // Update order status in Admins
+    // Update date_completed in Admins
     const admins = await Admin.find();
     for (const admin of admins) {
       let modified = false;
 
-      admin.shops.forEach((shop: { orders: any[] }) => {
-        shop.orders.forEach((order) => {
-          if (order._id.toString() === orderId) {
-            order.payment_status = newStatus;
-            modified = true;
-          }
-        });
-      });
+      admin.shops.forEach(
+        (shop: { orders: { _id: string; date_completed: string }[] }) => {
+          shop.orders.forEach(
+            (order: { _id: string; date_completed: string }) => {
+              if (order._id.toString() === orderId) {
+                order.date_completed = newDateCompleted;
+                modified = true;
+              }
+            }
+          );
+        }
+      );
 
       if (modified) {
         admin.markModified("shops");
@@ -75,15 +77,15 @@ export async function PATCH(
       }
     }
 
-    // Update order status in Customers
+    // Update date_completed in Customers
     const customers = await Customer.find();
     for (const customer of customers) {
       let modified = false;
 
       customer.orders.forEach(
-        (order: { _id: { toString: () => string }; payment_status: any }) => {
+        (order: { _id: string; date_completed: string }) => {
           if (order._id.toString() === orderId) {
-            order.payment_status = newStatus;
+            order.date_completed = newDateCompleted;
             modified = true;
           }
         }
@@ -98,7 +100,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, updatedOrder });
   } catch (error) {
-    console.error("Error updating order status:", error);
+    console.error("Error updating date_completed:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -29,6 +29,8 @@ export interface OrderDocument extends Document {
   address: string | null; // Address for pickup/delivery
   pickup_date: Date | null; // Pickup date
   pickup_time: string[] | null; // Pickup time
+  note: String | null; // Note for the order
+  proof_of_payment: String | null; // Proof of payment
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -45,7 +47,7 @@ const OrderSchema = new Schema<OrderDocument>({
   payment_status: {
     type: String,
     required: true,
-    enum: ["pending", "paid", "cancelled"],
+    enum: ["pending", "for review", "paid", "cancelled"],
   },
   order_status: {
     type: String,
@@ -84,6 +86,8 @@ const OrderSchema = new Schema<OrderDocument>({
   address: { type: String, default: null }, // Address for pickup/delivery
   pickup_time: { type: [String], default: null }, // Pickup time
   pickup_date: { type: Date, default: null }, // Pickup date
+  note: { type: String, default: null }, // Note for the order
+  proof_of_payment: { type: String, default: null }, // Proof of payment
 });
 
 export const Order =

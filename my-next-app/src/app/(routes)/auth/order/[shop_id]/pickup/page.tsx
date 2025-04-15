@@ -190,6 +190,7 @@ export default function PickupDetails() {
           address: customerAddress,
           delivery_instructions: deliveryInstructions, // Include delivery instructions
           soap,
+          notes: "",
           order_type: "pickup-delivery",
         }),
       });

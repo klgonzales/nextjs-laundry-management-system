@@ -9,6 +9,49 @@ export default function Orders() {
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
+
+  const [editOrderId, setEditOrderId] = useState<string | null>(null); // Track the order being edited
+  const [editDetails, setEditDetails] = useState({
+    total_weight: 0,
+    total_price: 0,
+    notes: "",
+  });
+
+  const handleEditOrder = (order: any) => {
+    setEditOrderId(order._id); // Set the order being edited
+    setEditDetails({
+      total_weight: order.total_weight || 0,
+      total_price: order.total_price || 0,
+      notes: order.notes || "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const response = await fetch(`/api/orders/${editOrderId}/update-price`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editDetails),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update order details");
+      }
+
+      const updatedOrder = await response.json();
+      setOrderDetails((prev) =>
+        prev.map((order) =>
+          order._id === editOrderId
+            ? { ...order, ...editDetails } // Update the order in the state
+            : order
+        )
+      );
+
+      setEditOrderId(null); // Close the edit form
+    } catch (error) {
+      console.error("Error updating order details:", error);
+    }
+  };
+
   const [ongoingSubcategory, setOngoingSubcategory] = useState<string>(""); // Track the selected subcategory for ongoing
 
   useEffect(() => {
@@ -69,11 +112,14 @@ export default function Orders() {
 
   const handleAccept = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/update-order`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newStatus: "to be picked up" }),
-      });
+      const response = await fetch(
+        `/api/orders/${orderId}/update-order-status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newStatus: "to be picked up" }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to accept order");
@@ -95,19 +141,22 @@ export default function Orders() {
   const handleDecline = async (orderId: string) => {
     try {
       // Update order status to "cancelled"
-      const orderResponse = await fetch(`/api/orders/${orderId}/update-order`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newStatus: "cancelled" }),
-      });
+      const orderResponse = await fetch(
+        `/api/orders/${orderId}/update-order-status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newStatus: "cancelled" }),
+        }
+      );
 
       if (!orderResponse.ok) {
         throw new Error("Failed to decline order");
       }
 
-      // Update payment status to "cancelled"
+      // Update payment sta-tus to "cancelled"
       const paymentResponse = await fetch(
-        `/api/orders/${orderId}/update-paymentstatus`,
+        `/api/orders/${orderId}/update-payment-status`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -134,10 +183,13 @@ export default function Orders() {
 
   const handleMoveToNextStage = async (orderId: string, nextStage: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/update-order`, {
+      let apiUrl = `/api/orders/${orderId}/update-order-status`;
+      let body = { newStatus: nextStage };
+
+      const response = await fetch(apiUrl, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newStatus: nextStage }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -147,11 +199,47 @@ export default function Orders() {
       const updatedOrder = await response.json();
       setOrderDetails((prev) =>
         prev.map((order) =>
-          order._id === orderId ? { ...order, order_status: nextStage } : order
+          order._id === orderId
+            ? {
+                ...order,
+                order_status: nextStage,
+                date_completed: updatedOrder.date_completed,
+              }
+            : order
         )
       );
     } catch (error) {
       console.error("Error moving order to next stage:", error);
+    }
+  };
+
+  const handleUpdateDateCompleted = async (orderId: string) => {
+    try {
+      const newDateCompleted = new Date().toISOString();
+
+      const response = await fetch(
+        `/api/orders/${orderId}/update-date-completed`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dateCompleted: newDateCompleted }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update date completed");
+      }
+
+      const updatedOrder = await response.json();
+      setOrderDetails((prev) =>
+        prev.map((order) =>
+          order._id === editOrderId
+            ? { ...order, date_completed: updatedOrder.date_completed }
+            : order
+        )
+      );
+    } catch (error) {
+      console.error("Error updating date completed:", error);
     }
   };
 
@@ -304,8 +392,117 @@ export default function Orders() {
                     })}
                   </p>
                   <p className="text-sm text-gray-600">
+                    Total Weight: {order.total_weight} kg
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Total Price: ₱{order.total_price}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Notes: {order.notes || "No notes added"}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
                     Pickup Time: {order.pickup_time}
                   </p>
+                  <p className="text-sm text-gray-600">
+                    Pickup Date: {order.pickup_date}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Delivery Instructions: {order.delivery_instructions}
+                  </p>
+
+                  <p className="text-sm text-gray-600">
+                    Date Completed: {order.date_completed || "Pending"}
+                  </p>
+
+                  {order.order_status !== "cancelled" &&
+                    order.order_status !== "pending" &&
+                    order.order_status !== "completed" && (
+                      <div className="mt-4 flex space-x-4">
+                        <button
+                          onClick={() => handleEditOrder(order)}
+                          className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
+                        >
+                          Edit Order Details
+                        </button>
+                      </div>
+                    )}
+
+                  {/* Edit Form */}
+                  {editOrderId === order._id &&
+                    order.order_status !== "cancelled" &&
+                    order.order_status !== "pending" &&
+                    order.order_status !== "completed" && (
+                      <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                        <h4 className="text-md font-semibold text-gray-800">
+                          Edit Order Details
+                        </h4>
+                        <div className="mt-2 space-y-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Total Weight (kg)
+                            </label>
+                            <input
+                              type="number"
+                              value={editDetails.total_weight}
+                              onChange={(e) =>
+                                setEditDetails({
+                                  ...editDetails,
+                                  total_weight: parseFloat(e.target.value),
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Total Price (₱)
+                            </label>
+                            <input
+                              type="number"
+                              value={editDetails.total_price}
+                              onChange={(e) =>
+                                setEditDetails({
+                                  ...editDetails,
+                                  total_price: parseFloat(e.target.value),
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Notes
+                            </label>
+                            <textarea
+                              value={editDetails.notes}
+                              onChange={(e) =>
+                                setEditDetails({
+                                  ...editDetails,
+                                  notes: e.target.value,
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex space-x-4">
+                          <button
+                            onClick={handleSaveEdit}
+                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditOrderId(null)}
+                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                   <div className="mt-4 flex space-x-4">
                     {order.order_status === "pending" && (
                       <>
@@ -368,6 +565,17 @@ export default function Orders() {
                         onClick={() =>
                           handleMoveToNextStage(order._id, "to be delivered")
                         }
+                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                      >
+                        Move to Delivery
+                      </button>
+                    )}
+                    {order.order_status === "to be delivered" && (
+                      <button
+                        onClick={async () => {
+                          await handleMoveToNextStage(order._id, "completed");
+                          await handleUpdateDateCompleted(order._id);
+                        }}
                         className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                       >
                         Move to Delivery
