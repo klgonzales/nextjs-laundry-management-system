@@ -4,6 +4,24 @@ interface ClothingItem {
   type: string; // Type of clothing (e.g., "Shirt", "Pants", "Jacket")
   quantity: number; // Quantity of this type of clothing
 }
+interface Feedback {
+  feedback_id: string; // Unique identifier for the feedback
+  customer_id: string; // ID of the customer providing feedback
+
+  order_id: string; // ID of the order associated with the feedback
+  rating: number; // Rating given by the customer (e.g., 1 to 5)
+  comments: string; // Comments provided by the customer
+  date_submitted: Date; // Date when the feedback was submitted
+}
+
+const FeedbackSchema = new Schema({
+  feedback_id: { type: String, required: true },
+  customer_id: { type: String, required: true },
+  order_id: { type: String, required: true },
+  rating: { type: Number, required: true },
+  comments: { type: String },
+  date_submitted: { type: Date, default: Date.now },
+});
 
 export interface OrderDocument extends Document {
   order_id: string;
@@ -20,7 +38,7 @@ export interface OrderDocument extends Document {
   clothes: ClothingItem[]; // Array of clothing items with type and quantity
   date: Date | null;
   delivery_instructions: string;
-  feedbacks: string[];
+  feedbacks: Feedback[]; // Array of feedback objects
   payment_method: string;
   services: string[];
   soap: boolean | null;
@@ -72,7 +90,7 @@ const OrderSchema = new Schema<OrderDocument>({
   clothes: { type: [ClothingItemSchema], default: [] }, // Array of clothing items
   date: { type: Date, default: null }, // Date of order placement
   delivery_instructions: { type: String, default: "" },
-  feedbacks: { type: [String], default: [] },
+  feedbacks: { type: [FeedbackSchema], default: [] },
   payment_method: { type: String, default: "" },
   services: { type: [String], default: [] },
   soap: { type: Boolean, default: null }, // Indicates if soap is included
