@@ -14,6 +14,34 @@ interface Feedback {
   date_submitted: Date; // Date when the feedback was submitted
 }
 
+interface Payment {
+  amount_sent: number; // Amount sent by the customer
+  amount_paid: number; // Amount sent by the customer
+  reference_number: string; // Reference number for the payment
+  paid_the_driver: boolean; // Whether the driver was paid
+  payment_method: string; // Payment method used (e.g., "cash", "credit card")
+  payment_date: Date; // Date of the payment
+  customer_id: string; // ID of the customer making the payment
+  order_id: string; // ID of the associated order
+  shop_id: string; // ID of the shop where the payment was made
+  payment_id: string; // Unique identifier for the payment
+  screenshot: string; // Optional screenshot of the payment
+}
+
+const PaymentSchema = new Schema<Payment>({
+  amount_sent: { type: Number }, // Amount sent by the customer
+  amount_paid: { type: Number }, // Amount sent by the customer
+  reference_number: { type: String }, // Reference number for the payment
+  paid_the_driver: { type: Boolean }, // Whether the driver was paid
+  payment_method: { type: String, required: true }, // Payment method used (e.g., "cash", "credit card")
+  payment_date: { type: Date, required: true }, // Date of the payment
+  customer_id: { type: String, required: true }, // ID of the customer making the payment
+  order_id: { type: String, required: true }, // ID of the associated order
+  shop_id: { type: String, required: true }, // ID of the shop where the payment was made
+  payment_id: { type: String, required: true }, // Unique identifier for the payment
+  screenshot: { type: String }, // Optional screenshot of the payment
+});
+
 const FeedbackSchema = new Schema({
   feedback_id: { type: String, required: true },
   customer_id: { type: String, required: true },
@@ -48,7 +76,7 @@ export interface OrderDocument extends Document {
   pickup_date: Date | null; // Pickup date
   pickup_time: string[] | null; // Pickup time
   note: String | null; // Note for the order
-  proof_of_payment: String | null; // Proof of payment
+  proof_of_payment: Payment[]; // Proof of payment
 }
 
 const ClothingItemSchema = new Schema<ClothingItem>({
@@ -65,7 +93,7 @@ const OrderSchema = new Schema<OrderDocument>({
   payment_status: {
     type: String,
     required: true,
-    enum: ["pending", "for review", "paid", "cancelled"],
+    enum: ["pending", "for review", "paid", "cancelled", "failed"],
   },
   order_status: {
     type: String,
@@ -105,7 +133,7 @@ const OrderSchema = new Schema<OrderDocument>({
   pickup_time: { type: [String], default: null }, // Pickup time
   pickup_date: { type: Date, default: null }, // Pickup date
   note: { type: String, default: null }, // Note for the order
-  proof_of_payment: { type: String, default: null }, // Proof of payment
+  proof_of_payment: { type: [PaymentSchema], default: [] }, // Proof of payment
 });
 
 export const Order =

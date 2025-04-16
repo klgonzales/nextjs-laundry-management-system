@@ -7,18 +7,34 @@ interface Order {
   _id: string;
   customer_id: string;
   date: string;
-  total: number;
+  total_price: number;
   order_status: string;
-  shop_name?: string; // Optional, will be fetched
-  shop_type?: string; // Optional, will be fetched
-  shop: string; // shop_id
-  payment_status: string; // Added payment_status
+  shop_name?: string;
+  shop_type?: string;
+  shop: string;
+  payment_status: string;
+  payment_method: string;
 }
 
 export default function Payments() {
-  const { user } = useAuth(); // Get the current user from useAuth
-  const [orders, setOrders] = useState<Order[]>([]); // State to store orders
-  const [loading, setLoading] = useState(true); // State to track loading
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null); // Track the selected order for payment
+  const [paymentDetails, setPaymentDetails] = useState<any>({
+    amount_sent: "",
+    screenshot: "",
+    reference_number: "",
+    payment_method: "",
+    payment_date: "",
+    status: "paid",
+    customer_id: "",
+    order_id: "",
+    shop_id: "",
+    payment_id: "",
+    amount_paid: "",
+    paid_the_driver: false,
+  });
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -35,16 +51,9 @@ export default function Payments() {
         }
         const data = await response.json();
 
-        console.log("Fetched orders:", data); // Debug the API response
-
-        // Fetch shop details for each order
         const ordersWithShopDetails = await Promise.all(
           data
-            .filter(
-              (order: Order) =>
-                order.customer_id === user.customer_id &&
-                order.payment_status.toLowerCase() === "pending" // Filter orders by customer_id and pending payment
-            )
+            .filter((order: Order) => order.customer_id === user.customer_id)
             .map(async (order: Order) => {
               try {
                 const shopResponse = await fetch(`/api/shops/${order.shop}`);
@@ -56,20 +65,20 @@ export default function Payments() {
                 const shopData = await shopResponse.json();
                 return {
                   ...order,
-                  shop_name: shopData.shop.name, // Add shop name
-                  shop_type: shopData.shop.type, // Add shop type
+                  shop_name: shopData.shop.name,
+                  shop_type: shopData.shop.type,
                 };
               } catch (error) {
                 console.error(
                   `Error fetching shop details for shop_id: ${order.shop}`,
                   error
                 );
-                return { ...order, shop_name: "Unknown", shop_type: "Unknown" }; // Fallback values
+                return { ...order, shop_name: "Unknown", shop_type: "Unknown" };
               }
             })
         );
 
-        setOrders(ordersWithShopDetails); // Update orders with shop details
+        setOrders(ordersWithShopDetails);
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
@@ -79,6 +88,92 @@ export default function Payments() {
 
     fetchOrders();
   }, [user?.customer_id]);
+
+  const handleSettlePayment = (order: Order) => {
+    setSelectedOrderId(order._id);
+    setPaymentDetails({
+      ...paymentDetails,
+      payment_method: order.payment_method,
+      customer_id: order.customer_id,
+      order_id: order._id,
+      shop_id: order.shop,
+      payment_id: Date.now().toString(), // Generate a unique payment ID
+    });
+  };
+
+  const handleSubmitPayment = async () => {
+    try {
+      const response = await fetch(
+        `/api/orders/${selectedOrderId}/add-payment`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(paymentDetails),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to settle payment");
+      }
+
+      const updatedOrder = await response.json();
+
+      // Update the local state
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === selectedOrderId
+            ? { ...order, payment_status: "for review" }
+            : order
+        )
+      );
+
+      setSelectedOrderId(null); // Close the form
+      try {
+        const updateResponse = await fetch(
+          `/api/orders/${selectedOrderId}/update-payment-status`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ newPaymentStatus: "for review" }),
+          }
+        );
+
+        if (!updateResponse.ok) {
+          throw new Error("Failed to update payment status");
+        }
+
+        console.log("Payment settled successfully!");
+      } catch (error) {
+        console.error("Error updating payment status:", error);
+        console.log(
+          "Payment was settled, but failed to update payment status."
+        );
+      }
+    } catch (error) {
+      console.error("Error settling payment:", error);
+      console.log("Failed to settle payment. Please try again.");
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const base64 = await convertToBase64(file);
+      setPaymentDetails({
+        ...paymentDetails,
+        screenshot: base64, // Save the Base64 string
+      });
+    }
+  };
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   if (loading) {
     return <p className="text-center text-gray-500">Loading payments...</p>;
@@ -100,35 +195,156 @@ export default function Payments() {
                   <strong>Order ID:</strong> {order._id}
                 </p>
                 <p>
-                  <strong>Shop Name:</strong>{" "}
-                  {order.shop_name
-                    ?.split(" ")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
+                  <strong>Shop Name:</strong> {order.shop_name}
                 </p>
                 <p>
-                  <strong>Shop Type:</strong>{" "}
-                  {order.shop_type
-                    ?.split(" ")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}
+                  <strong>Total Price:</strong> {order.total_price}
                 </p>
                 <p>
-                  <strong>Date:</strong> {new Date(order.date).toLocaleString()}
+                  <strong>Order Status:</strong> {order.order_status}
                 </p>
                 <p>
-                  <strong>Total:</strong> ${order.total.toFixed(2)}
+                  <strong>Payment Status:</strong> {order.payment_status}
                 </p>
                 <p>
-                  <strong>Payment Status:</strong>{" "}
-                  {order.payment_status.charAt(0).toUpperCase() +
-                    order.payment_status.slice(1)}
+                  <strong>Payment Method:</strong> {order.payment_method}
                 </p>
-                <p>
-                  <strong>Order Status:</strong>{" "}
-                  {order.order_status.charAt(0).toUpperCase() +
-                    order.order_status.slice(1)}
-                </p>
+                {(order.payment_status.toLowerCase() === "pending" ||
+                  order.payment_status.toLowerCase() === "failed") &&
+                  order.order_status === "completed" && (
+                    <button
+                      onClick={() => handleSettlePayment(order)}
+                      className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      Settle Payment
+                    </button>
+                  )}
+
+                {/* Inline Payment Form */}
+                {selectedOrderId === order._id && (
+                  <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-800">
+                      Settle Payment
+                    </h4>
+                    <form className="mt-4 space-y-4">
+                      {paymentDetails.payment_method === "gcash" && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Amount Sent
+                            </label>
+                            <input
+                              type="number"
+                              value={paymentDetails.amount_sent}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  amount_sent: parseFloat(e.target.value),
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Screenshot
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Reference Number
+                            </label>
+                            <input
+                              type="text"
+                              value={paymentDetails.reference_number}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  reference_number: e.target.value,
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                        </>
+                      )}
+                      {paymentDetails.payment_method === "cash" && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Amount Paid
+                            </label>
+                            <input
+                              type="number"
+                              value={paymentDetails.amount_paid}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  amount_paid: parseFloat(e.target.value),
+                                })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">
+                              Paid the Driver
+                            </label>
+                            <input
+                              type="checkbox"
+                              checked={paymentDetails.paid_the_driver}
+                              onChange={(e) =>
+                                setPaymentDetails({
+                                  ...paymentDetails,
+                                  paid_the_driver: e.target.checked,
+                                })
+                              }
+                              className="mt-1"
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          Payment Date
+                        </label>
+                        <input
+                          type="date"
+                          value={paymentDetails.payment_date}
+                          onChange={(e) =>
+                            setPaymentDetails({
+                              ...paymentDetails,
+                              payment_date: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                      </div>
+                      <div className="flex space-x-4">
+                        <button
+                          type="button"
+                          onClick={handleSubmitPayment}
+                          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                        >
+                          Submit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderId(null)}
+                          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

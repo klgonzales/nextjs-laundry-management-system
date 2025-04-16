@@ -23,6 +23,7 @@ interface Order {
   shop: string;
   date_completed: string;
   feedbacks?: Feedback[];
+  payment_status: string;
 }
 
 export default function Orders() {
@@ -215,63 +216,64 @@ export default function Orders() {
                   <strong>Order Status:</strong> {order.order_status}
                 </p>
 
-                {order.order_status === "completed" && (
-                  <>
-                    <button
-                      onClick={() => setFeedbackOrderId(order._id)}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      Add Feedback
-                    </button>
-                    {order.feedbacks && order.feedbacks.length > 0 && (
-                      <div className="mt-4 bg-gray-50 p-4 rounded">
-                        <h4 className="font-semibold mb-2 text-gray-700">
-                          Your Feedbacks
-                        </h4>
-                        <ul className="space-y-2">
-                          {order.feedbacks.map((fb) => (
-                            <li
-                              key={fb.feedback_id}
-                              className="bg-white p-3 border border-gray-200 rounded"
-                            >
-                              <p>
-                                <strong>Rating:</strong> {fb.rating}
-                              </p>
-                              <p>
-                                <strong>Comment:</strong> {fb.comments}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Submitted:{" "}
-                                {new Date(fb.date_submitted).toLocaleString()}
-                              </p>
-                              <div className="flex gap-2 mt-2">
-                                <button
-                                  onClick={() =>
-                                    handleEditFeedback(fb, order._id)
-                                  }
-                                  className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteFeedback(
-                                      order._id,
-                                      fb.feedback_id
-                                    )
-                                  }
-                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                )}
+                {order.order_status === "completed" &&
+                  order.payment_status === "paid" && (
+                    <>
+                      <button
+                        onClick={() => setFeedbackOrderId(order._id)}
+                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Add Feedback
+                      </button>
+                      {order.feedbacks && order.feedbacks.length > 0 && (
+                        <div className="mt-4 bg-gray-50 p-4 rounded">
+                          <h4 className="font-semibold mb-2 text-gray-700">
+                            Your Feedbacks
+                          </h4>
+                          <ul className="space-y-2">
+                            {order.feedbacks.map((fb) => (
+                              <li
+                                key={fb.feedback_id}
+                                className="bg-white p-3 border border-gray-200 rounded"
+                              >
+                                <p>
+                                  <strong>Rating:</strong> {fb.rating}
+                                </p>
+                                <p>
+                                  <strong>Comment:</strong> {fb.comments}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Submitted:{" "}
+                                  {new Date(fb.date_submitted).toLocaleString()}
+                                </p>
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={() =>
+                                      handleEditFeedback(fb, order._id)
+                                    }
+                                    className="px-3 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteFeedback(
+                                        order._id,
+                                        fb.feedback_id
+                                      )
+                                    }
+                                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
 
                 {feedbackOrderId === order._id && (
                   <div className="mt-4 p-4 bg-gray-100 rounded-lg">

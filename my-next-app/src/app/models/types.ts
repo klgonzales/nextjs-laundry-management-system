@@ -35,7 +35,7 @@ export interface Order {
   order_type: "self-service" | "pickup&delivery";
   service_ids: number[];
   machine_id?: string;
-  payment_status: "pending" | "for review" | "paid" | "failed";
+  payment_status: "pending" | "for review" | "paid" | "failed" | "cancelled";
   order_status:
     | "pending"
     | "in-progress"
