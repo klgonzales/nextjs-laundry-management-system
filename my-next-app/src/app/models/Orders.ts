@@ -100,6 +100,7 @@ const OrderSchema = new Schema<OrderDocument>({
     required: true,
     enum: [
       "pending",
+      "scheduled",
       "in progress",
       "to be picked up",
       "sorting",

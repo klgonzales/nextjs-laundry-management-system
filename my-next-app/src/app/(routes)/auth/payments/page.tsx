@@ -227,7 +227,9 @@ export default function Payments() {
                       Settle Payment
                     </h4>
                     <form className="mt-4 space-y-4">
-                      {paymentDetails.payment_method === "gcash" && (
+                      {(paymentDetails.payment_method === "gcash" ||
+                        paymentDetails.payment_method === "bank transfer" ||
+                        paymentDetails.payment_method === "credit card") && (
                         <>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -274,7 +276,9 @@ export default function Payments() {
                           </div>
                         </>
                       )}
-                      {paymentDetails.payment_method === "cash" && (
+                      {(paymentDetails.payment_method === "cash" ||
+                        paymentDetails.payment_method ===
+                          "pay at the counter") && (
                         <>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">
@@ -292,22 +296,24 @@ export default function Payments() {
                               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Paid the Driver
-                            </label>
-                            <input
-                              type="checkbox"
-                              checked={paymentDetails.paid_the_driver}
-                              onChange={(e) =>
-                                setPaymentDetails({
-                                  ...paymentDetails,
-                                  paid_the_driver: e.target.checked,
-                                })
-                              }
-                              className="mt-1"
-                            />
-                          </div>
+                          {order.shop_type !== "self-service" && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Paid the Driver
+                              </label>
+                              <input
+                                type="checkbox"
+                                checked={paymentDetails.paid_the_driver}
+                                onChange={(e) =>
+                                  setPaymentDetails({
+                                    ...paymentDetails,
+                                    paid_the_driver: e.target.checked,
+                                  })
+                                }
+                                className="mt-1"
+                              />
+                            </div>
+                          )}
                         </>
                       )}
                       <div>

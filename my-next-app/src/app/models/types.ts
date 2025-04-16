@@ -39,6 +39,7 @@ export interface Order {
   order_status:
     | "pending"
     | "in-progress"
+    | "scheduled"
     | "to be picked up"
     | "sorting"
     | "washing"

@@ -180,7 +180,18 @@ export default function AdminDashboard() {
                           Total Revenue
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          ₱0.00
+                          {orderDetails
+                            .filter(
+                              (order) =>
+                                order.order_status === "completed" &&
+                                order.payment_status === "paid"
+                            )
+                            .reduce(
+                              (total, order) =>
+                                total + (order.total_price || 0),
+                              0
+                            )
+                            .toFixed(2)}
                         </dd>
                       </dl>
                     </div>
@@ -212,7 +223,13 @@ export default function AdminDashboard() {
                         <dt className="text-sm font-medium text-gray-500 truncate">
                           Completed Orders
                         </dt>
-                        <dd className="text-lg font-medium text-gray-900">0</dd>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {
+                            orderDetails.filter(
+                              (order) => order.order_status === "completed"
+                            ).length
+                          }
+                        </dd>
                       </dl>
                     </div>
                   </div>
