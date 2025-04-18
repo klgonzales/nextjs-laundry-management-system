@@ -23,6 +23,7 @@ export default function RegisterForm() {
       time: string;
       customer_id: string;
     }[];
+    type: string;
   }
 
   interface FormData {
@@ -87,12 +88,14 @@ export default function RegisterForm() {
     price_per_minimum_kg: 0,
     customer_id: null,
     appointments: [],
+    type: "",
   });
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const handleAddMachine = () => {
     if (
       !newMachine.machine_id ||
+      !newMachine.type ||
       !newMachine.minimum_kg ||
       !newMachine.minimum_minutes ||
       !newMachine.availability ||
@@ -116,6 +119,7 @@ export default function RegisterForm() {
       price_per_minimum_kg: 0,
       customer_id: null,
       appointments: [],
+      type: "",
     });
 
     setError("");
@@ -622,6 +626,17 @@ export default function RegisterForm() {
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
 
+                {/* Machine Type Input */}
+                <input
+                  type="text"
+                  placeholder="Machine Type"
+                  value={newMachine.type}
+                  onChange={(e) =>
+                    setNewMachine({ ...newMachine, type: e.target.value })
+                  }
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+
                 {/* Minimum KG Input */}
                 <input
                   type="number"
@@ -670,6 +685,7 @@ export default function RegisterForm() {
                     if (
                       !newMachine.machine_id ||
                       !newMachine.minimum_kg ||
+                      !newMachine.type ||
                       !newMachine.minimum_minutes ||
                       !newMachine.price_per_minimum_kg
                     ) {
@@ -705,6 +721,7 @@ export default function RegisterForm() {
                       price_per_minimum_kg: 0,
                       customer_id: null,
                       appointments: [],
+                      type: "",
                     });
 
                     setError("");
@@ -723,9 +740,9 @@ export default function RegisterForm() {
                 <ul className="list-disc list-inside text-sm text-gray-600">
                   {(formData.machines || []).map((machine, index) => (
                     <li key={index}>
-                      {machine.machine_id} - {machine.minimum_kg}kg -{" "}
-                      {machine.minimum_minutes} minutes - ₱
-                      {machine.price_per_minimum_kg}
+                      {machine.machine_id} ({machine.type}) -{" "}
+                      {machine.minimum_kg}kg - {machine.minimum_minutes} minutes
+                      - ₱{machine.price_per_minimum_kg}
                       <ul className="list-disc list-inside ml-4">
                         {machine.availability.map((slot, idx) => (
                           <li key={idx}>

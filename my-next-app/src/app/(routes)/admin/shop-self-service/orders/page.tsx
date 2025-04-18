@@ -328,6 +328,10 @@ export default function Orders() {
                       order.machine_id.slice(1)}
                   </p>
                   <p className="text-sm text-gray-600">
+                    Machine Type:{" "}
+                    {order.type.charAt(0).toUpperCase() + order.type.slice(1)}
+                  </p>
+                  <p className="text-sm text-gray-600">
                     Schedule:{" "}
                     {new Date(order.date).toLocaleDateString("en-US", {
                       year: "numeric",

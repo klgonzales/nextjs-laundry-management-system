@@ -175,6 +175,25 @@ export default function Payments() {
     });
   };
 
+  const [filterType, setFilterType] = useState<string>("all"); // Track the selected type
+  const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected status
+  const typeOptions = [
+    "all",
+    "pending",
+    "for review",
+    "paid",
+    "cancelled",
+    "failed",
+  ];
+
+  const filteredOrders = orders.filter((order) => {
+    const typeMatch =
+      filterType === "all" ||
+      order.payment_status?.toLowerCase() === filterType.toLowerCase();
+
+    return typeMatch;
+  });
+
   if (loading) {
     return <p className="text-center text-gray-500">Loading payments...</p>;
   }
@@ -186,10 +205,33 @@ export default function Payments() {
           Payments
         </h3>
       </div>
+
+      <div className="px-4 py-2 flex gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Type
+          </label>
+          <select
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setFilterStatus("all"); // Reset status when type changes
+            }}
+            className="border border-gray-300 rounded px-3 py-2"
+          >
+            {typeOptions.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <div className="border-t border-gray-200">
         {orders.length > 0 ? (
           <ul className="divide-y divide-gray-200">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <li key={order._id} className="px-4 py-5 sm:p-6">
                 <p>
                   <strong>Order ID:</strong> {order._id}

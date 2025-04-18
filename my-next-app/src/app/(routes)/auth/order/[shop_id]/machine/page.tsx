@@ -172,6 +172,7 @@ export default function MachinePage() {
             onClick={() => handleMachineClick(machine)}
           >
             <h2 className="text-lg font-semibold">{machine.machine_id}</h2>
+            <p>Machine Type: {machine.type}</p>
             <p>Minimum KG: {machine.minimum_kg}</p>
             <p>Price per Minimum KG: ₱{machine.price_per_minimum_kg}</p>
           </div>

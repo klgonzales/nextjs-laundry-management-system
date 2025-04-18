@@ -14,6 +14,7 @@ export default function Machines() {
     price_per_minimum_kg: 0,
     availability: [],
     appointments: [],
+    type: "",
   }); // Store the new machine details
   const [error, setError] = useState<string>("");
 
@@ -22,6 +23,7 @@ export default function Machines() {
       !newMachine.machine_id ||
       !newMachine.minimum_kg ||
       !newMachine.minimum_minutes ||
+      !newMachine.type ||
       !newMachine.price_per_minimum_kg
     ) {
       setError("Please fill out all fields for the new machine.");
@@ -79,6 +81,7 @@ export default function Machines() {
         price_per_minimum_kg: 0,
         availability: [],
         appointments: [],
+        type: "",
       });
       setError("");
     } catch (error) {
@@ -212,6 +215,18 @@ export default function Machines() {
                         placeholder="Machine ID"
                       />
                       <input
+                        type="text"
+                        value={editedMachine.type}
+                        onChange={(e) =>
+                          setEditedMachine({
+                            ...editedMachine,
+                            type: e.target.value,
+                          })
+                        }
+                        className="block w-full mb-2 p-2 border rounded"
+                        placeholder="Machine Type"
+                      />
+                      <input
                         type="number"
                         value={editedMachine.minimum_kg}
                         onChange={(e) =>
@@ -341,6 +356,9 @@ export default function Machines() {
                         {machine.machine_id}
                       </h4>
                       <p className="text-sm text-gray-600">
+                        Machine Type: {machine.type}
+                      </p>
+                      <p className="text-sm text-gray-600">
                         Minimum KG: {machine.minimum_kg}
                       </p>
                       <p className="text-sm text-gray-600">
@@ -424,6 +442,15 @@ export default function Machines() {
                 }
                 className="block w-full mb-2 p-2 border rounded"
                 placeholder="Machine ID"
+              />
+              <input
+                type="text"
+                value={newMachine.type}
+                onChange={(e) =>
+                  setNewMachine({ ...newMachine, type: e.target.value })
+                }
+                className="block w-full mb-2 p-2 border rounded"
+                placeholder="Machine Type"
               />
               <input
                 type="number"

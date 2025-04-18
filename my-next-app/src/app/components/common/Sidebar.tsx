@@ -50,6 +50,13 @@ export default function Sidebar({
             >
               Payments
             </button>
+
+            <button
+              onClick={() => handleScroll("payments")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Messages
+            </button>
           </>
         )}
 
@@ -66,6 +73,12 @@ export default function Sidebar({
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Services
+            </button>
+            <button
+              onClick={() => handleScroll("payments")}
+              className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Messages
             </button>
             {/* Add Machines button if shop type is self-service */}
             {shopType === "self-service" && (

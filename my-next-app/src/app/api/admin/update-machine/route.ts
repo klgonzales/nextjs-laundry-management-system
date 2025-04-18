@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         $set: {
           "machines.$.machine_id": machine.machine_id,
           "machines.$.minimum_kg": machine.minimum_kg,
+          "machines.$.type": machine.type,
           "machines.$.minimum_minutes": machine.minimum_minutes,
           "machines.$.availability": machine.availability.map((slot: any) => ({
             date: slot.date,

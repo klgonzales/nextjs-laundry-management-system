@@ -40,6 +40,7 @@ export async function POST(request: Request) {
             })),
             price_per_minimum_kg: machine.price_per_minimum_kg,
             appointments: [], // Ensure appointments is initialized as an empty array
+            type: machine.type,
           },
         },
       },

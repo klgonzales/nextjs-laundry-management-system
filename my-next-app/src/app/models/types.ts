@@ -73,6 +73,7 @@ export interface OpeningHours {
 export interface Machine {
   machine_id: string; // Unique identifier for the machine
   minimum_kg: number | null; // Minimum weight the machine can handle
+  type: string;
   minimum_minutes: number | null; // Optional: Minimum minutes for the machine
   availability: {
     date: string; // Date when the machine is available

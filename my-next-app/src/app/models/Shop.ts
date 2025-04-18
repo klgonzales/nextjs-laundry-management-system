@@ -75,6 +75,7 @@ interface Machine {
     time: string;
     customer_id: string;
   }[]; // Array of appointments
+  type: string; // Type of machine (e.g., "Washing Machine", "Dryer")
 }
 
 const MachineSchema = new Schema<Machine>({
@@ -97,6 +98,7 @@ const MachineSchema = new Schema<Machine>({
       customer_id: { type: String, required: true }, // Customer ID for the appointment
     },
   ],
+  type: { type: String, required: true }, // Type of machine (e.g., "Washing Machine", "Dryer")
 });
 
 // Shop Interface and Schema
