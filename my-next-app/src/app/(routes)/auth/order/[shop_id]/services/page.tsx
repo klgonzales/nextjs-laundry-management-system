@@ -7,7 +7,7 @@ import Home from "@/app/components/common/Home";
 
 export default function ChooseService() {
   const router = useRouter();
-  const { shop_id } = useParams(); // Extract shop_id from the URL
+  const { shop_id } = useParams() as { shop_id: string }; // Explicitly type shop_id
   interface Shop {
     name: string;
     services: Service[];

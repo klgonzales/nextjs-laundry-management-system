@@ -1,11 +1,11 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
+import { useAuth } from "@/app/context/AuthContext";
 
 interface SidebarProps {
   userType: "client" | "admin";
-  handleScroll: (section: string) => void; // Add this prop
-  shopType?: string; // Add shopType as an optional prop
+  handleScroll: (section: string) => void;
+  shopType?: string;
 }
 
 export default function Sidebar({
@@ -14,12 +14,11 @@ export default function Sidebar({
   shopType,
 }: SidebarProps) {
   const router = useRouter();
-
   const { logout } = useAuth();
 
   const handleLogout = () => {
-    logout(); // Call the logout function from useAuth
-    router.push("/"); // Redirect to the home page
+    logout();
+    router.push("/");
   };
 
   return (
@@ -43,20 +42,18 @@ export default function Sidebar({
             >
               Orders
             </button>
-
             <button
               onClick={() => handleScroll("payments")}
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Payments
             </button>
-
-            <button
-              onClick={() => handleScroll("payments")}
+            <Link
+              href="/auth/chat"
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Messages
-            </button>
+            </Link>
           </>
         )}
 
@@ -74,13 +71,12 @@ export default function Sidebar({
             >
               Services
             </button>
-            <button
-              onClick={() => handleScroll("payments")}
+            <Link
+              href="/admin/chat"
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Messages
-            </button>
-            {/* Add Machines button if shop type is self-service */}
+            </Link>
             {shopType === "self-service" && (
               <button
                 onClick={() => handleScroll("machines")}

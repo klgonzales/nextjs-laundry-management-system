@@ -10,6 +10,7 @@ export interface CustomerDocument extends Document {
   customer_id: string; // Ensure this is a string
   shops: Record<string, any>[]; // Array of full shop objects
   orders: Record<string, any>[]; // Array of full shop objects
+  messages: Record<string, any>[]; // Array of full message objects
 }
 
 const CustomerSchema = new Schema<CustomerDocument>({
@@ -22,6 +23,7 @@ const CustomerSchema = new Schema<CustomerDocument>({
   customer_id: { type: String, required: true }, // Ensure this is a string
   shops: [{ type: Object }], // Store full shop objects
   orders: [{ type: Object }], // Store full shop objects
+  messages: [{ type: Object }], // Store full message objects
 });
 
 export const Customer =

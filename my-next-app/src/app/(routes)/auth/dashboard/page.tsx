@@ -92,8 +92,6 @@ export default function Dashboard() {
           </div>
         </main>
       </div>
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { useAuth } from "@/app/context/AuthContext"; // Assuming you have an Aut
 
 export default function MachinePage() {
   const params = useParams(); // Use useParams to access the params object
-  const shop_id = params.shop_id; // Extract shop_id from params
+  const shop_id = params?.shop_id || ""; // Extract shop_id from params with a fallback
   const router = useRouter();
   const searchParams = useSearchParams();
   const [machines, setMachines] = useState<any[]>([]);
@@ -16,7 +16,7 @@ export default function MachinePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
-  const services = searchParams.get("services")?.split(",") || []; // Get services from query params
+  const services = searchParams?.get("services")?.split(",") || []; // Get services from query params
   const { user } = useAuth();
 
   // Fetch machines for the shop

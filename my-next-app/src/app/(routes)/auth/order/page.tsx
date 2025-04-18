@@ -13,7 +13,7 @@ export default function Order() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialShopType = searchParams.get("shopType") || ""; // Get shopType from query params
+  const initialShopType = searchParams?.get("shopType") || ""; // Get shopType from query params
 
   interface Shop {
     shop_id: string;

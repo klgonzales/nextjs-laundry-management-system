@@ -329,7 +329,9 @@ export default function Orders() {
                   </p>
                   <p className="text-sm text-gray-600">
                     Machine Type:{" "}
-                    {order.type.charAt(0).toUpperCase() + order.type.slice(1)}
+                    {order.type
+                      ? order.type.charAt(0).toUpperCase() + order.type.slice(1)
+                      : "Unknown"}
                   </p>
                   <p className="text-sm text-gray-600">
                     Schedule:{" "}
