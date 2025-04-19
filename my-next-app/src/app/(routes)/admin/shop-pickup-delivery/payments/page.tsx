@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 
-export default function Payments({ shop_id }: { shop_id: string }) {
+export default function Payments() {
+  const { user } = useAuth(); // Get the user from the AuthContext
+  const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
   const [payments, setPayments] = useState<any[]>([]); // Store all payments
   const [filteredPayments, setFilteredPayments] = useState<any[]>([]); // Store filtered payments
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter

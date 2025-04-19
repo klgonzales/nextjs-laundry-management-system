@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation"; // Import useRouter
 import { io } from "socket.io-client";
 import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
+import { initializeSocket } from "@/app/utils/socket";
+import { disconnect } from "process";
 
 // Initialize the socket connection outside the component
 const socket = io("http://localhost:3000/api/socket", {
@@ -52,17 +54,31 @@ export default function Chat() {
     fetchShops();
     fetchMessages();
 
-    // Listen for incoming messages
-    socket.on("receiveMessage", (newMessage: any) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+    const socket = initializeSocket();
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server");
     });
 
-    // Cleanup the socket connection on component unmount
+    socket.on("disconnect", () => {
+      console.log("Disconnected from WebSocket server");
+    });
+
+    socket.on("receiveMessage", (newMessage: any) => {
+      if (
+        newMessage.customer_id === customer_id &&
+        newMessage.shop_id === selectedShop
+      ) {
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      }
+    });
+
     return () => {
-      socket.off("receiveMessage"); // Remove the listener
-      socket.disconnect();
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("receiveMessage");
     };
-  }, [customer_id]);
+  }, [customer_id, selectedShop]);
 
   const sendMessage = async () => {
     if (message.trim() && selectedShop) {
@@ -88,6 +104,9 @@ export default function Chat() {
         const savedMessage = await response.json();
         setMessages((prevMessages) => [...prevMessages, savedMessage]);
         setMessage("");
+
+        // Emit the message to the socket for real-time updates
+        socket.emit("sendMessage", savedMessage); // Ensure this is emitted
       } catch (error) {
         console.error("Error sending message:", error);
       }
@@ -133,14 +152,16 @@ export default function Chat() {
       {/* Chat Messages */}
       <div className="mt-4 h-64 overflow-y-auto border p-2">
         {messages
-          .filter((msg) => msg.shop_id === selectedShop) // Show messages for the selected shop
+          .filter(
+            (msg) =>
+              msg.shop_id === selectedShop && msg.customer_id === customer_id
+          ) // Ensure both conditions are checked
           .map((msg, index) => (
             <div key={index} className="mb-2">
               <strong>{msg.sender}:</strong> {msg.text}
             </div>
           ))}
       </div>
-
       {/* Message Input */}
       <div className="mt-4 flex">
         <input

@@ -1,13 +1,21 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext"; // Import the AuthContext
-
 import Home from "../../../components/common/Home";
 import Footer from "../../../components/common/Footer";
 
 export default function Order() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OrderContent />
+    </Suspense>
+  );
+}
+
+function OrderContent() {
   const { user } = useAuth(); // Retrieve the authenticated user
   const customer_id = user?.id; // Assume `id` is the customer_id
 

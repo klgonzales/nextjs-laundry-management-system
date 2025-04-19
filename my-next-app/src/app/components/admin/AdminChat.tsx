@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { useRouter } from "next/navigation"; // Import useRouter for navigation
 import { useAuth } from "@/app/context/AuthContext"; // Import useAuth to get shop_id
+import { initializeSocket } from "@/app/utils/socket";
 
 // Initialize the socket connection outside the component
 const socket = io("http://localhost:3000/api/socket", {
@@ -45,24 +46,32 @@ export default function AdminChat() {
 
     fetchMessages();
 
-    // Listen for incoming messages directed to this shop
+    const socket = initializeSocket();
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server");
+    });
+
+    socket.on("disconnect", () => {
+      console.log("Disconnected from WebSocket server");
+    });
+
     socket.on("receiveMessage", (newMessage: any) => {
       if (newMessage.shop_id === shop_id) {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
 
-        // Update the unique users list if a new user sends a message
         if (!uniqueUsers.includes(newMessage.customer_id)) {
           setUniqueUsers((prevUsers) => [...prevUsers, newMessage.customer_id]);
         }
       }
     });
 
-    // Cleanup the socket connection and event listener on component unmount
     return () => {
-      socket.off("receiveMessage"); // Remove the listener
-      socket.disconnect(); // Disconnect the socket
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("receiveMessage");
     };
-  }, [shop_id, uniqueUsers]); // Re-run the effect if shop_id or uniqueUsers changes
+  }, [shop_id, uniqueUsers]);
 
   const sendMessage = async () => {
     if (message.trim() && selectedUser) {
@@ -88,6 +97,9 @@ export default function AdminChat() {
         const savedMessage = await response.json();
         setMessages((prevMessages) => [...prevMessages, savedMessage]);
         setMessage("");
+
+        // Emit the message to the socket for real-time updates
+        socket.emit("sendMessage", savedMessage); // Ensure this is emitted
       } catch (error) {
         console.error("Error sending message:", error);
       }

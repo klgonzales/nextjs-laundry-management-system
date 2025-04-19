@@ -6,10 +6,7 @@ import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 
-export async function PUT(
-  request: Request,
-  context: { params: { order_id: string } }
-) {
+export async function PUT(request: Request, context: { params: any }) {
   const { order_id } = context.params;
 
   try {

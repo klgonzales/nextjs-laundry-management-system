@@ -6,9 +6,10 @@ import Home from "@/app/components/common/Home";
 
 export default function InputQuantity() {
   const router = useRouter();
-  const { shop_id } = useParams(); // Extract shop_id from the URL path
+  const params = useParams(); // Extract params from the URL path
+  const shop_id = params?.shop_id as string | undefined; // Safely extract shop_id
   const searchParams = useSearchParams();
-  const services = searchParams.get("services")?.split(",") || []; // Get selected services from query params
+  const services = searchParams?.get("services")?.split(",") || []; // Get selected services from query params
 
   const [quantities, setQuantities] = useState({
     shirt: 0,

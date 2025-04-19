@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { Order } from "@/app/models/Orders";
 import dbConnect from "@/app/lib/mongodb";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { order_id: string } }
-) {
+export async function GET(request: Request, { params }: { params: any }) {
   try {
     await dbConnect();
 

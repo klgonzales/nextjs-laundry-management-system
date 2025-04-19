@@ -8,10 +8,13 @@ import Home from "@/app/components/common/Home";
 export default function PickupDetails() {
   const router = useRouter();
   const { user } = useAuth(); // Get the logged-in user from AuthContext
-  const { shop_id } = useParams(); // Extract shop_id from the URL path
+  const params = useParams();
+  const shop_id = params?.shop_id as string; // Safely extract shop_id and cast it to string
   const searchParams = useSearchParams();
-  const services = searchParams.get("services")?.split(",") || []; // Get services from query params
-  const clothing = JSON.parse(searchParams.get("clothing") || "{}"); // Parse clothing from query params
+  const services = searchParams?.get("services")?.split(",") || []; // Get services from query params
+  const clothing = searchParams
+    ? JSON.parse(searchParams.get("clothing") || "{}")
+    : {}; // Safely parse clothing from query params
 
   // console.log(clothing);
   const [openingHours, setOpeningHours] = useState<
@@ -91,7 +94,7 @@ export default function PickupDetails() {
 
   const [deliveryInstructions, setDeliveryInstructions] = useState(""); // New state for delivery instructions
   const customer_id = user?.customer_id;
-  const soap = searchParams.get("soap") === "true"; // Convert the string to a boolean
+  const soap = searchParams?.get("soap") === "true"; // Convert the string to a boolean
 
   useEffect(() => {
     const fetchShopData = async () => {

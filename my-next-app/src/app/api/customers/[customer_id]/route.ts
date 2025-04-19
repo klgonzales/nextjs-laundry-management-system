@@ -1,32 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/app/lib/mongodb";
 import { Customer } from "@/app/models/Customer";
 
-interface RequestParams {
-  params: {
-    customer_id: string;
-  };
-}
-
-interface CustomerResponse {
-  customer: Record<string, any> | null;
-  error?: string;
-}
-export async function GET(request: Request, { params }: RequestParams) {
-  const { customer_id } = params;
+export async function GET(request: NextRequest, context: any) {
+  const { customer_id } = context.params;
 
   try {
     await dbConnect();
-
-    console.log("Querying customer_id:", customer_id); // Log the customer_id being queried
-
     const customer = await Customer.findOne({ customer_id }).lean();
-
-    console.log("Query result:", customer); // Log the query result
 
     if (!customer) {
       return NextResponse.json(
-        { customer: null, error: "customer not found" },
+        { customer: null, error: "Customer not found" },
         { status: 404 }
       );
     }

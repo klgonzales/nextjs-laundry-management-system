@@ -1,13 +1,21 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Home from "@/app/components/common/Home";
 
 export default function OrderSummary() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OrderSummaryContent />
+    </Suspense>
+  );
+}
+function OrderSummaryContent() {
   const router = useRouter(); // Initialize the router
   const searchParams = useSearchParams();
-  const order_id = searchParams.get("order_id"); // Get order_id from query params
+  const order_id = searchParams ? searchParams.get("order_id") : null; // Safely get order_id from query params
 
   interface clothesItem {
     type: string;

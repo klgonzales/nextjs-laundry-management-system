@@ -1,13 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/app/lib/mongodb";
 import { Message } from "@/app/models/Message";
 import { Customer } from "@/app/models/Customer";
 
-export async function GET(
-  req: Request,
-  { params }: { params: { customer_id: string } }
-) {
-  const { customer_id } = params;
+export async function GET(request: NextRequest, context: any) {
+  const { customer_id } = context.params;
 
   try {
     await dbConnect();
@@ -26,11 +23,8 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: Request,
-  { params }: { params: { customer_id: string } }
-) {
-  const { customer_id } = params;
+export async function POST(req: NextRequest, context: any) {
+  const { customer_id } = context.params;
 
   try {
     await dbConnect();

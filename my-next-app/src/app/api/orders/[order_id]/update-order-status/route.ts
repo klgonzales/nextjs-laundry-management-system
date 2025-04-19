@@ -5,10 +5,7 @@ import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 
-export async function PATCH(
-  request: Request,
-  context: { params: { order_id: string } }
-) {
+export async function PATCH(request: Request, context: { params: any }) {
   const { params } = context;
   const orderId = params.order_id;
 

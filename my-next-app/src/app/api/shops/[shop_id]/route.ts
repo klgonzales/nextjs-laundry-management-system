@@ -3,9 +3,7 @@ import dbConnect from "@/app/lib/mongodb";
 import { Shop } from "@/app/models/Shop";
 
 interface RequestParams {
-  params: {
-    shop_id: string;
-  };
+  params: any;
 }
 
 interface ShopResponse {

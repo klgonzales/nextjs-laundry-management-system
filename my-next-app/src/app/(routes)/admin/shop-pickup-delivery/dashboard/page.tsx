@@ -238,7 +238,7 @@ export default function AdminDashboard() {
               <Feedback />
             </div>
             <div ref={paymentsRef}>
-              <Payments shop_id={user?.shops?.[0]?.shop_id || ""} />
+              <Payments />
             </div>
             <div ref={analyticsRef}>
               <Analytics />

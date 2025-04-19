@@ -1,12 +1,21 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Home from "@/app/components/common/Home";
 
 export default function OrderConfirmation() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OrderConfirmationContent />
+    </Suspense>
+  );
+}
+
+function OrderConfirmationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const order_id = searchParams.get("order_id"); // Get order_id from query params
+  const order_id = searchParams?.get("order_id") || ""; // Get order_id from query params, default to an empty string if null
 
   const handleTrackOrder = () => {
     // Pass the order_id to the summary page

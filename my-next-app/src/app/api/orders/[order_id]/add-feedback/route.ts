@@ -1,16 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/app/lib/mongodb";
 import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 
-export async function PATCH(
-  request: Request,
-  context: { params: { order_id: string } }
-) {
-  const { params } = context;
-  const orderId = params.order_id;
+export async function PATCH(request: NextRequest, context: any) {
+  const { order_id } = context.params;
+  const orderId = order_id;
 
   try {
     await dbConnect();
