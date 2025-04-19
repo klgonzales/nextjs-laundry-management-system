@@ -35,9 +35,15 @@ export async function POST(req: NextRequest, context: any) {
     // Create a new message with the customer_id
     const newMessage = await Message.create({
       ...body,
-      customer_id, // Ensure the customer_id is included
-      timestamp: new Date(), // Add a timestamp
+      customer_id,
+      timestamp: new Date(),
     });
+
+    // Add the message to the customer's messages array
+    await Customer.findOneAndUpdate(
+      { customer_id },
+      { $push: { messages: newMessage._id } }
+    );
 
     return NextResponse.json(newMessage, { status: 201 });
   } catch (error) {

@@ -117,7 +117,7 @@ interface ShopDocument extends Document {
   feedbacks: string[];
   opening_hours: OpeningHours[];
   machines: Machine[]; // Array of machines
-  messages: Record<string, any>[]; // Array of full message objects
+  messages: mongoose.Types.ObjectId[]; // Array of message IDs
 }
 
 const ShopSchema = new Schema<ShopDocument>({
@@ -135,7 +135,7 @@ const ShopSchema = new Schema<ShopDocument>({
   feedbacks: { type: [String], default: [] },
   opening_hours: { type: [OpeningHoursSchema], default: [] },
   machines: { type: [MachineSchema], default: [] }, // Embedded machines
-  messages: [{ type: Object }], // Store full message objects
+  messages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Message" }], // Reference Message model
 });
 
 export const Shop =
