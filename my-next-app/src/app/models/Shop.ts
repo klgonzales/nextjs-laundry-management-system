@@ -46,7 +46,6 @@ interface PaymentMethod {
   method_id: number;
   name: string;
   account_number: string;
-  status: string;
   payments: string[]; // Optional: If you want to track payments
 }
 
@@ -54,7 +53,6 @@ const PaymentMethodSchema = new Schema<PaymentMethod>({
   method_id: { type: Number, required: true },
   name: { type: String, required: true },
   account_number: { type: String, required: false },
-  status: { type: String, required: true },
   payments: { type: [String], required: true },
 });
 
@@ -75,7 +73,7 @@ interface Machine {
     time: string;
     customer_id: string;
   }[]; // Array of appointments
-  type: string; // Type of machine (e.g., "Washing Machine", "Dryer")
+  type: string | null; // Type of machine (e.g., "Washing Machine", "Dryer")
 }
 
 const MachineSchema = new Schema<Machine>({
@@ -98,7 +96,7 @@ const MachineSchema = new Schema<Machine>({
       customer_id: { type: String, required: true }, // Customer ID for the appointment
     },
   ],
-  type: { type: String, required: true }, // Type of machine (e.g., "Washing Machine", "Dryer")
+  type: { type: String, default: null }, // Type of machine (e.g., "Washing Machine", "Dryer")
 });
 
 // Shop Interface and Schema

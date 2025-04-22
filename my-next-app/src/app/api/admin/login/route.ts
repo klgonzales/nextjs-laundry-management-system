@@ -36,11 +36,17 @@ export async function POST(request: Request) {
       role: admin.role,
     };
 
+    console.log("AASDFADSFFD");
+    console.log("Admin ID:", admin.name); // Debugging
+    console.log("Admin login successful:", adminData);
     return NextResponse.json({
       message: "Login successful",
       admin: {
+        id: admin._id.toString(), // Convert ObjectId to string
+        name: admin.name, // Add name
+        email: admin.email, // Add email
         admin_id: admin.admin_id,
-        shops: admin.shops, // Include shops in the response
+        shops: admin.shops,
         role: admin.role,
       },
     });

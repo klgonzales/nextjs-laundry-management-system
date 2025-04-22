@@ -22,7 +22,7 @@ export default function ChooseService() {
       try {
         const response = await fetch(`/api/shops/${shop_id}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch shop details");
+          console.log("Failed to fetch shop details");
         }
         const data = await response.json();
         setShop(data.shop); // Assuming the API returns { shop: {...} }

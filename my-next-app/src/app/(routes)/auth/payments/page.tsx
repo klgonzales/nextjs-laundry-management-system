@@ -39,7 +39,7 @@ export default function Payments() {
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user?.customer_id) {
-        console.error("No customer_id found for the current user");
+        console.log("No customer_id found for the current user");
         setLoading(false);
         return;
       }
@@ -47,7 +47,7 @@ export default function Payments() {
       try {
         const response = await fetch("/api/orders");
         if (!response.ok) {
-          throw new Error("Failed to fetch orders");
+          console.log("Failed to fetch orders");
         }
         const data = await response.json();
 
@@ -58,7 +58,7 @@ export default function Payments() {
               try {
                 const shopResponse = await fetch(`/api/shops/${order.shop}`);
                 if (!shopResponse.ok) {
-                  throw new Error(
+                  console.log(
                     `Failed to fetch shop details for shop_id: ${order.shop}`
                   );
                 }

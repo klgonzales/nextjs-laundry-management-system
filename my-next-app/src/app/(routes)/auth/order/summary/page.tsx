@@ -53,7 +53,7 @@ function OrderSummaryContent() {
       try {
         const response = await fetch(`/api/orders/${order_id}`); // Fetch order details from backend
         if (!response.ok) {
-          throw new Error("Failed to fetch order details");
+          console.log("Failed to fetch order details");
         }
         const data = await response.json();
         setOrderDetails(data);
@@ -61,7 +61,7 @@ function OrderSummaryContent() {
         // Fetch the shop name using the shop ID
         const shopResponse = await fetch(`/api/shops/${data.shop}`);
         if (!shopResponse.ok) {
-          throw new Error("Failed to fetch shop details");
+          console.log("Failed to fetch shop details");
         }
         const shopData = await shopResponse.json();
         setShopName(shopData.shop.name); // Set the shop name
@@ -71,7 +71,7 @@ function OrderSummaryContent() {
           `/api/customers/${data.customer_id}`
         );
         if (!customerResponse.ok) {
-          throw new Error("Failed to fetch customer details");
+          console.log("Failed to fetch customer details");
         }
         const customerData = await customerResponse.json();
         console.log(customerData);

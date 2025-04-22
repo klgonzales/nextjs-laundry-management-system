@@ -51,7 +51,7 @@ export default function Orders() {
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user?.customer_id) {
-        console.error("No customer_id found");
+        console.log("No customer_id found");
         setLoading(false);
         return;
       }
@@ -92,7 +92,7 @@ export default function Orders() {
   const fetchFeedbacks = async (orderId: string) => {
     try {
       const response = await fetch(`/api/orders/${orderId}/feedback`);
-      if (!response.ok) throw new Error("Failed to fetch feedbacks");
+      if (!response.ok) console.log("Failed to fetch feedbacks");
 
       const feedbacks = await response.json();
 

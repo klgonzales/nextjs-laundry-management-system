@@ -83,7 +83,6 @@ export async function POST(request: Request) {
         method_id: index + 1,
         name: method,
         account_number: "1", // Default account number
-        status: "active", // Default status
         payments: [], // Initialize with an empty array
       })),
       opening_hours: convertedOpeningHours, // Use the converted format

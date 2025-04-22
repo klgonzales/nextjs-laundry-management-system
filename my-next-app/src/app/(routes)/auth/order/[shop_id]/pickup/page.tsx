@@ -29,7 +29,6 @@ export default function PickupDetails() {
       method_id: number;
       name: string;
       account_number: string;
-      status: string;
     }[]
   >([]); // List of payment methods
   const [payment_method, setPaymentMethod] = useState("");
@@ -39,7 +38,7 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/shops/${shop_id}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch shop data");
+          console.log("Failed to fetch shop data");
         }
         const data = await response.json();
         setPaymentMethods(data.shop.payment_methods || []); // Set payment methods from the API response
@@ -61,7 +60,7 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/customers/${user?.customer_id}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch addresses");
+          console.log("Failed to fetch addresses");
         }
         const data = await response.json();
         setSuggestedAddresses(data.customer.address || ""); // Set the single address
@@ -101,7 +100,7 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/shops/${shop_id}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch shop data");
+          console.log("Failed to fetch shop data");
         }
         const data = await response.json();
         setOpeningHours(data.shop.opening_hours); // Set opening_hours from the API response

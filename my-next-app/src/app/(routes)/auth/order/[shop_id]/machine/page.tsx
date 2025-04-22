@@ -25,7 +25,7 @@ export default function MachinePage() {
       try {
         const response = await fetch(`/api/shops/${shop_id}/machines`);
         if (!response.ok) {
-          throw new Error("Failed to fetch machines");
+          console.log("Failed to fetch machines");
         }
         const data = await response.json();
         setMachines(data.machines);

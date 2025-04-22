@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FaRegBell, FaRegUserCircle } from "react-icons/fa";
 import { useAuth } from "@/app/context/AuthContext";
 //import { checkUserRole } from "@/app/utils/authUtils"; // Adjust the path as needed
+import Notification from "@/app/components/common/Notification"; // Ensure this component exists
 
 interface HeaderProps {
   userType: "client" | "admin"; // Define the userType prop
@@ -26,24 +27,23 @@ export default function Header({ userType }: HeaderProps) {
       </h2>
 
       <div className="flex items-center space-x-4"></div>
-      {/* Notifications Icon */}
-      <div className="flex items-center space-x-2">
-        <a
-          href={
-            userType === "admin"
-              ? "/admin/notifications"
-              : "/auth/notifications"
-          }
-          className="border-0 hover:bg-transparent focus:outline-none"
-        >
-          <FaRegBell className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
-        </a>
-
+      {/* Icons Container */}
+      <div className="flex items-center space-x-3 md:space-x-4">
+        {/* Adjusted spacing */}
+        {/* Notifications Component */}
+        {user && (
+          <Notification
+            userType={userType}
+            userId={userType === "client" ? user.customer_id : user.admin_id}
+          />
+        )}
+        {/* Profile Icon Link */}
         <a
           href={userType === "admin" ? "/admin/profile" : "/auth/profile"}
-          className="border-0 hover:bg-transparent focus:outline-none"
+          className="p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" // Added padding and focus ring
+          aria-label="View Profile"
         >
-          <FaRegUserCircle className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
+          <FaRegUserCircle className="h-6 w-6 text-black" />
         </a>
       </div>
     </div>

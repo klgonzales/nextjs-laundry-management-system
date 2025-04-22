@@ -4,6 +4,12 @@ import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 import dbConnect from "@/app/lib/mongodb";
+
+import { Notification } from "@/app/models/Notification"; // Import Notification model
+import { createClient } from "redis"; // Import Redis client
+import { NextApiResponseServerIO } from "@/app/types/io"; // Import the custom response type
+import { Server as SocketIOServer } from "socket.io"; // Import Socket.IO Server type
+
 import { time } from "console";
 
 export async function GET() {
@@ -33,12 +39,19 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let redisClient;
   try {
     await dbConnect();
     const body = await request.json();
 
     // Debugging: Log the incoming request body
     console.log("Request Body:", body);
+
+    // Fetch Shop Name for potential use in notification message
+    const shop = (await Shop.findOne({ shop_id: body.shop_id })
+      .select("name")
+      .lean()) as { name?: string } | null;
+    const shopName = shop?.name || "the shop"; // Fallback name
 
     // Create the new order
     const newOrder = await Order.create({
@@ -85,7 +98,7 @@ export async function POST(request: Request) {
       { "shops.shop_id": body.shop_id },
       { $push: { "shops.$.orders": newOrder } }, // Add the new order to the Admin's orders array
       { new: true }
-    );
+    ).select("admin_id");
 
     if (!updatedAdmin) {
       throw new Error("Admin not found");
@@ -102,6 +115,65 @@ export async function POST(request: Request) {
     }
 
     console.log("Order added to Shop and Admin and Customer successfully");
+
+    // --- !! NOTIFICATION & ORDER UPDATE LOGIC (Using Redis) !! ---
+    if (updatedAdmin && updatedAdmin.admin_id) {
+      try {
+        // 1. Create Notification Document in DB (remains the same)
+        const notificationMessage = `New ${body.order_type} order (#${newOrder._id.toString().slice(-6)}) received for ${shopName}.`;
+        const notificationLink = `/admin/orders/${newOrder._id}`;
+        const newNotification = new Notification({
+          message: notificationMessage,
+          link: notificationLink,
+          recipient_id: updatedAdmin.admin_id,
+          recipient_type: "admin",
+          read: false,
+          timestamp: new Date(),
+        });
+        await newNotification.save();
+        console.log(
+          "Notification saved to DB for admin:",
+          updatedAdmin.admin_id
+        );
+
+        // 2. Publish Events to Redis
+        redisClient = createClient({ url: process.env.REDIS_URL });
+        await redisClient.connect();
+        console.log("Connected to Redis for publishing.");
+
+        // Publish notification event
+        const notificationChannel = `admin-notifications:${updatedAdmin.admin_id}`;
+        await redisClient.publish(
+          notificationChannel,
+          JSON.stringify(newNotification.toObject())
+        );
+        console.log(
+          `Published notification to Redis channel: ${notificationChannel}`
+        );
+        // Publish new order event
+        const orderChannel = `new-orders:admin:${updatedAdmin.admin_id}`;
+        await redisClient.publish(
+          orderChannel,
+          JSON.stringify(newOrder.toObject())
+        );
+        console.log(`Published new order to Redis channel: ${orderChannel}`);
+
+        await redisClient.disconnect(); // Disconnect after publishing
+        console.log("Disconnected from Redis publisher.");
+        redisClient = undefined; // Clear reference
+      } catch (pubSubError) {
+        console.error(
+          "Failed to save notification or publish to Redis:",
+          pubSubError
+        );
+        // Log the error but allow the main order process to succeed
+        if (redisClient?.isOpen) {
+          await redisClient.disconnect(); // Ensure disconnection on error
+          redisClient = undefined;
+        }
+      }
+    }
+    // --- !! END NOTIFICATION & ORDER UPDATE LOGIC !! ---
 
     return NextResponse.json({
       success: true,

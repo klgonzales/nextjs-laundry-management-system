@@ -30,6 +30,7 @@ export interface Rider extends User {
 }
 
 export interface Order {
+  shop: any;
   order_id: number;
   customer_id: string;
   order_type: "self-service" | "pickup&delivery";

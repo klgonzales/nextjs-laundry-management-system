@@ -16,7 +16,7 @@ export default function Payments() {
         // Fetch payments for the current shop
         const shopResponse = await fetch(`/api/payments/${shop_id}`);
         if (!shopResponse.ok) {
-          throw new Error("Failed to fetch payments");
+          console.log("Failed to fetch payments");
         }
         const data = await shopResponse.json();
         setPayments(data.orders || []); // Set all payments
