@@ -39,7 +39,6 @@ export default function Payments() {
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user?.customer_id) {
-        console.log("No customer_id found for the current user");
         setLoading(false);
         return;
       }
@@ -47,7 +46,6 @@ export default function Payments() {
       try {
         const response = await fetch("/api/orders");
         if (!response.ok) {
-          console.log("Failed to fetch orders");
         }
         const data = await response.json();
 
@@ -58,9 +56,6 @@ export default function Payments() {
               try {
                 const shopResponse = await fetch(`/api/shops/${order.shop}`);
                 if (!shopResponse.ok) {
-                  console.log(
-                    `Failed to fetch shop details for shop_id: ${order.shop}`
-                  );
                 }
                 const shopData = await shopResponse.json();
                 return {
@@ -141,17 +136,11 @@ export default function Payments() {
         if (!updateResponse.ok) {
           throw new Error("Failed to update payment status");
         }
-
-        console.log("Payment settled successfully!");
       } catch (error) {
         console.error("Error updating payment status:", error);
-        console.log(
-          "Payment was settled, but failed to update payment status."
-        );
       }
     } catch (error) {
       console.error("Error settling payment:", error);
-      console.log("Failed to settle payment. Please try again.");
     }
   };
 

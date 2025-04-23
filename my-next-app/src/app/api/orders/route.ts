@@ -6,11 +6,7 @@ import { Customer } from "@/app/models/Customer";
 import dbConnect from "@/app/lib/mongodb";
 
 import { Notification } from "@/app/models/Notification"; // Import Notification model
-import { createClient } from "redis"; // Import Redis client
-import { NextApiResponseServerIO } from "@/app/types/io"; // Import the custom response type
-import { Server as SocketIOServer } from "socket.io"; // Import Socket.IO Server type
-
-import { time } from "console";
+import { pusherServer } from "@/app/lib/pusherServer"; // Import pusher server instance
 
 export async function GET() {
   try {
@@ -24,8 +20,6 @@ export async function GET() {
       ...order,
       total: order.total || 0, // Default to 0 if total is missing
     }));
-
-    console.log("Fetched orders:", sanitizedOrders);
 
     // Return the sanitized orders as a JSON response
     return NextResponse.json(sanitizedOrders);
@@ -45,7 +39,6 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     // Debugging: Log the incoming request body
-    console.log("Request Body:", body);
 
     // Fetch Shop Name for potential use in notification message
     const shop = (await Shop.findOne({ shop_id: body.shop_id })
@@ -77,10 +70,6 @@ export async function POST(request: Request) {
       pickup_time: body.pickupTime || null,
       pickup_date: body.pickupDate || null,
     });
-
-    console.log(newOrder.time_range);
-    console.log("New order created:", newOrder);
-    console.log(newOrder.pickup_time);
 
     // Add the new order to the Shop's orders array
     const updatedShop = await Shop.findOneAndUpdate(
@@ -114,8 +103,6 @@ export async function POST(request: Request) {
       throw new Error("Customer not found");
     }
 
-    console.log("Order added to Shop and Admin and Customer successfully");
-
     // --- !! NOTIFICATION & ORDER UPDATE LOGIC (Using Redis) !! ---
     if (updatedAdmin && updatedAdmin.admin_id) {
       try {
@@ -131,15 +118,10 @@ export async function POST(request: Request) {
           timestamp: new Date(),
         });
         await newNotification.save();
-        console.log(
-          "Notification saved to DB for admin:",
-          updatedAdmin.admin_id
-        );
 
         // 2. Publish Events to Redis
         redisClient = createClient({ url: process.env.REDIS_URL });
         await redisClient.connect();
-        console.log("Connected to Redis for publishing.");
 
         // Publish notification event
         const notificationChannel = `admin-notifications:${updatedAdmin.admin_id}`;
@@ -147,9 +129,7 @@ export async function POST(request: Request) {
           notificationChannel,
           JSON.stringify(newNotification.toObject())
         );
-        console.log(
-          `Published notification to Redis channel: ${notificationChannel}`
-        );
+
         // Publish new order event
         const orderChannel = `new-orders:admin:${updatedAdmin.admin_id}`;
         await redisClient.publish(

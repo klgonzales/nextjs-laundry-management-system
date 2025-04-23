@@ -13,16 +13,6 @@ export async function PATCH(request: Request, context: { params: any }) {
     await dbConnect();
     const { total_weight, total_price, notes } = await request.json();
 
-    console.log("Updating order:", orderId);
-    console.log(
-      "Weight:",
-      total_weight,
-      "Price:",
-      total_price,
-      "Notes:",
-      notes
-    );
-
     // Update main Orders collection
     const orders = await Order.find();
     const updatedOrder = orders.find(
@@ -62,7 +52,6 @@ export async function PATCH(request: Request, context: { params: any }) {
       if (modified) {
         shop.markModified("orders");
         await shop.save();
-        console.log("Shop updated:", shop._id);
       }
     }
 
@@ -92,7 +81,6 @@ export async function PATCH(request: Request, context: { params: any }) {
       if (modified) {
         admin.markModified("shops");
         await admin.save();
-        console.log("Admin updated:", admin._id);
       }
     }
 
@@ -120,13 +108,11 @@ export async function PATCH(request: Request, context: { params: any }) {
       if (modified) {
         customer.markModified("orders");
         await customer.save();
-        console.log("Customer updated:", customer._id);
       }
     }
 
     return NextResponse.json({ success: true, updatedOrder });
   } catch (error) {
-    console.error("Error updating order:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

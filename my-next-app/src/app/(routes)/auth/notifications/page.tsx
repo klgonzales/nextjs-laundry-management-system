@@ -8,7 +8,7 @@ export default function ChatPage() {
 
   return (
     <div className="p-4">
-      <Notification userType="client" customer_id={user?.customer_id} />
+      <Notification />
     </div>
   );
 }

@@ -16,7 +16,6 @@ export default function PickupDetails() {
     ? JSON.parse(searchParams.get("clothing") || "{}")
     : {}; // Safely parse clothing from query params
 
-  // console.log(clothing);
   const [openingHours, setOpeningHours] = useState<
     { day: string; open: string; close: string }[]
   >([]);
@@ -38,7 +37,6 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/shops/${shop_id}`);
         if (!response.ok) {
-          console.log("Failed to fetch shop data");
         }
         const data = await response.json();
         setPaymentMethods(data.shop.payment_methods || []); // Set payment methods from the API response
@@ -60,7 +58,6 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/customers/${user?.customer_id}`);
         if (!response.ok) {
-          console.log("Failed to fetch addresses");
         }
         const data = await response.json();
         setSuggestedAddresses(data.customer.address || ""); // Set the single address
@@ -100,7 +97,6 @@ export default function PickupDetails() {
       try {
         const response = await fetch(`/api/shops/${shop_id}`);
         if (!response.ok) {
-          console.log("Failed to fetch shop data");
         }
         const data = await response.json();
         setOpeningHours(data.shop.opening_hours); // Set opening_hours from the API response
@@ -173,7 +169,6 @@ export default function PickupDetails() {
   const customClothingArray = clothing.customClothing || [];
   const finalClothingArray = [...clothingArray, ...customClothingArray];
 
-  // console.log(finalClothingArray);
   const handleSubmit = async () => {
     try {
       const response = await fetch("/api/orders", {
@@ -202,9 +197,6 @@ export default function PickupDetails() {
       }
 
       const data = await response.json();
-
-      console.log("WAASDFDSHFHDSHFDSH");
-      console.log(payment_method);
 
       // Navigate to the confirmation page
       router.push(`/auth/order/confirmation?order_id=${data.order_id}`);

@@ -4,10 +4,15 @@ import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
+// --- Add Redis Import ---
+import { createClient } from "redis";
+import { Notification } from "@/app/models/Notification";
+// --- End Import ---
 
 export async function PATCH(request: Request, context: { params: any }) {
   const { params } = context;
   const orderId = params.order_id;
+  let redisClient; // Define redisClient variable
 
   try {
     await dbConnect();
@@ -29,6 +34,88 @@ export async function PATCH(request: Request, context: { params: any }) {
 
     updatedOrder.order_status = newStatus;
     await updatedOrder.save();
+
+    // --- START: Redis Publishing for Client Update ---
+    const customerId = updatedOrder.customer_id; // Get customer ID from the updated order
+    console.log(customerId);
+    if (customerId) {
+      try {
+        redisClient = createClient({ url: process.env.REDIS_URL });
+        redisClient.on("error", (err) =>
+          console.error("[Order Status API] Redis Client Error", err)
+        );
+        await redisClient.connect();
+        console.log(
+          `[Order Status API] Connected to Redis for client update (Customer ID: ${customerId}).`
+        );
+
+        // Define the channel and data
+        const updateChannel = `order-updates:client:${customerId}`;
+        const updateData = {
+          orderId: updatedOrder._id.toString(), // Send order ID
+          newStatus: updatedOrder.order_status, // Send the new status
+          // Include other relevant fields if needed by the client UI
+          // e.g., date_completed: updatedOrder.date_completed
+        };
+
+        // --- 2. Publish & Save Notification ---
+        const notificationChannel = `client-notifications:${customerId}`; // Channel for client notifications
+        const notificationData = {
+          // _id: new mongoose.Types.ObjectId().toString(), // Mongoose adds _id
+          message: `Your order status has been updated to: ${newStatus}`, // Simple message
+          // You could add order ID or shop name if needed: `Order ${updatedOrder.shop_name || orderId} status: ${newStatus}`
+          timestamp: new Date().toISOString(),
+          read: false,
+          link: `/auth/orders`, // Link to customer's orders page
+          recipient_id: customerId,
+          recipient_type: "customer", // Set recipient type
+        };
+
+        // Publish the update
+        await redisClient.publish(updateChannel, JSON.stringify(updateData));
+        console.log(
+          `[Order Status API] Published status update to Redis channel: ${updateChannel}`
+        );
+
+        // Save notification to Database
+        try {
+          await Notification.create(notificationData);
+          console.log(
+            `[Order Status API] Saved status update notification to database for customer ${customerId}`
+          );
+        } catch (dbError) {
+          console.error(
+            `[Order Status API] Failed to save status update notification to database for customer ${customerId}:`,
+            dbError
+          );
+          // Log error but continue
+        }
+        // --- End Notification Logic ---
+
+        await redisClient.disconnect();
+        console.log("[Order Status API] Disconnected Redis publisher.");
+        redisClient = undefined;
+      } catch (redisError) {
+        console.error(
+          `[Order Status API] Error during Redis publishing for customer ${customerId}:`,
+          redisError
+        );
+        if (redisClient?.isOpen) {
+          try {
+            await redisClient.disconnect();
+          } catch (e) {
+            /* ignore */
+          }
+          redisClient = undefined;
+        }
+        // Log error but don't fail the whole request just for Redis failure
+      }
+    } else {
+      console.warn(
+        `[Order Status API] Cannot publish update for order ${orderId}: Customer ID not found.`
+      );
+    }
+    // --- END: Redis Publishing ---
 
     // Update order status in all Shops
     const shops = await Shop.find();
@@ -95,6 +182,15 @@ export async function PATCH(request: Request, context: { params: any }) {
 
     return NextResponse.json({ success: true, updatedOrder });
   } catch (error) {
+    console.error("[Order Status API] Error updating order status:", error);
+    if (redisClient?.isOpen) {
+      // Ensure disconnect on main error
+      try {
+        await redisClient.disconnect();
+      } catch (e) {
+        /* ignore */
+      }
+    }
     console.error("Error updating order status:", error);
     return NextResponse.json(
       { error: "Internal server error" },

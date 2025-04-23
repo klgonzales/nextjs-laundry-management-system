@@ -25,7 +25,6 @@ export default function MachinePage() {
       try {
         const response = await fetch(`/api/shops/${shop_id}/machines`);
         if (!response.ok) {
-          console.log("Failed to fetch machines");
         }
         const data = await response.json();
         setMachines(data.machines);
@@ -91,11 +90,6 @@ export default function MachinePage() {
     endTime.setMinutes(endTime.getMinutes() + machineMinMinutes);
     const formattedEndTime = endTime.toTimeString().slice(0, 5);
 
-    console.log("Selected Machine:", selectedMachine);
-    console.log("Start Time:", startTime);
-    console.log("End Time:", formattedEndTime);
-    console.log("Minimum Minutes:", machineMinMinutes);
-
     // Update selectedTimes with the start and end times
     setSelectedTimes([startTime, formattedEndTime]);
   };
@@ -126,8 +120,6 @@ export default function MachinePage() {
         },
       ];
 
-      console.log("Time Range to Save:", timeRange); // Debugging log
-
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -150,7 +142,6 @@ export default function MachinePage() {
       }
 
       const data = await response.json();
-      console.log("Saved Time Range:", data.time_range);
 
       // Navigate to the confirmation page
       router.push(`/auth/order/confirmation?order_id=${data.order_id}`);

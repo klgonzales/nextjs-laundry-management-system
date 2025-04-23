@@ -64,7 +64,6 @@ export default function AdminDashboard() {
       const uniqueCustomers = new Set(
         detailedOrders.map((order) => order.customer_id)
       );
-      console.log("Total unique customers:", uniqueCustomers.size);
     };
 
     fetchOrderDetails();

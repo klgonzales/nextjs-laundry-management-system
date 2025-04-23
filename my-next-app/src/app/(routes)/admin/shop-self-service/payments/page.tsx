@@ -1,33 +1,128 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+// --- Add Imports ---
+import { useState, useEffect, useRef } from "react";
+// import io, { Socket } from "socket.io-client";
+import { useSocket } from "@/app/context/SocketContext"; // Import useSocket
+// --- Removed Order type import ---
+interface OrderWithPaymentInfo {
+  // Example interface
+  _id: string;
+  customer_name?: string; // Example field
+  total_price: number;
+  payment_status: string;
+  date: string;
+  // ... other relevant fields
+}
+
+//const SOCKET_SERVER_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "/";
+// --- End Imports ---
+
 export default function Payments() {
   const { user } = useAuth();
+  const { socket, isConnected } = useSocket(); // Get socket from context
   const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
+  const adminId = user?.admin_id;
+  //const socketRef = useRef<Socket | null>(null);
 
   const [payments, setPayments] = useState<any[]>([]); // Store all payments
   const [filteredPayments, setFilteredPayments] = useState<any[]>([]); // Store filtered payments
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // --- Initial Fetch Payments ---
   useEffect(() => {
+    // Only fetch if shop_id is available
+    if (!shop_id) {
+      setLoading(false);
+      setError("Shop ID not found for this admin.");
+      setPayments([]);
+      setFilteredPayments([]);
+      return;
+    }
+
     const fetchPayments = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        // Fetch payments for the current shop
-        const shopResponse = await fetch(`/api/payments/${shop_id}`);
-        if (!shopResponse.ok) {
-          console.log("Failed to fetch payments");
+        // Fetch payments (orders) for the current shop
+        // Assuming this endpoint returns orders with payment details
+        const response = await fetch(`/api/payments/${shop_id}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to fetch payments");
         }
-        const data = await shopResponse.json();
-        setPayments(data.orders || []); // Set all payments
-        setFilteredPayments(data.orders || []); // Initially show all payments
-      } catch (error) {
+        const data = await response.json();
+        // Assuming the API returns { success: true, orders: [...] }
+        const initialPayments = data.orders || [];
+        setPayments(initialPayments);
+        // setFilteredPayments(initialPayments); // Filter effect will handle this
+      } catch (error: any) {
         console.error("Error fetching payments:", error);
+        setError(error.message || "Failed to load payments.");
+        setPayments([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPayments();
-  }, [shop_id]);
+  }, [shop_id]); // Depend only on shop_id for initial fetch
+
+  // --- Socket.IO Listener useEffect (using context socket) ---
+  useEffect(() => {
+    // Only attach listeners if the socket from context exists and is connected
+    if (socket && isConnected && adminId) {
+      console.log(
+        "[Payments Page Socket] Context socket connected. Attaching listeners."
+      );
+
+      // Example: Handler for new orders (if payments are shown per order)
+      const handleNewOrder = (newOrder: OrderWithPaymentInfo) => {
+        console.log(">>> RAW EVENT RECEIVED: new_order_added", newOrder);
+        setOrders((prev: any[]) => {
+          // Avoid duplicates
+          if (prev.some((o) => o._id === newOrder._id)) {
+            return prev;
+          }
+          return [newOrder, ...prev]; // Add new order
+        });
+      };
+
+      // Example: Handler for payment status updates (if such an event exists)
+      // const handlePaymentUpdate = (paymentData: { orderId: string; newPaymentStatus: string }) => {
+      //   console.log(">>> RAW EVENT RECEIVED: payment_status_updated", paymentData);
+      //   setOrders((prev) =>
+      //     prev.map((order) =>
+      //       order._id === paymentData.orderId
+      //         ? { ...order, payment_status: paymentData.newPaymentStatus }
+      //         : order
+      //     )
+      //   );
+      // };
+
+      // Attach listeners
+      socket.on("new_order_added", handleNewOrder); // Listen for new orders
+      // socket.on("payment_status_updated", handlePaymentUpdate); // Hypothetical event
+
+      // Cleanup: Remove listeners
+      return () => {
+        console.log("[Payments Page Socket Cleanup] Removing listeners.");
+        if (socket) {
+          socket.off("new_order_added", handleNewOrder);
+          // socket.off("payment_status_updated", handlePaymentUpdate);
+        }
+      };
+    } else {
+      console.log(
+        "[Payments Page Socket] Context socket not ready or not connected, listeners not attached."
+      );
+    }
+    // Depend on socket, connection status, and adminId
+  }, [socket, isConnected, adminId]);
+  // --- End Socket.IO useEffect ---
 
   // Filter payments based on the selected status
   useEffect(() => {
@@ -273,4 +368,7 @@ export default function Payments() {
       </div>
     </div>
   );
+}
+function setOrders(arg0: (prev: any[]) => any[]) {
+  throw new Error("Function not implemented.");
 }

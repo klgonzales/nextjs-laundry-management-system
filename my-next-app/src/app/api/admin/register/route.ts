@@ -100,8 +100,6 @@ export async function POST(request: Request) {
       role: "admin", // Default role for admin
     });
 
-    console.log("Admin registered successfully:", admin);
-    // Populate the shops field
     const populatedAdmin = await Admin.findById(admin._id).populate("shops");
 
     return NextResponse.json({

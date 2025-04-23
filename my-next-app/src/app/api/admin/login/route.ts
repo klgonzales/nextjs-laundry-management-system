@@ -36,9 +36,6 @@ export async function POST(request: Request) {
       role: admin.role,
     };
 
-    console.log("AASDFADSFFD");
-    console.log("Admin ID:", admin.name); // Debugging
-    console.log("Admin login successful:", adminData);
     return NextResponse.json({
       message: "Login successful",
       admin: {

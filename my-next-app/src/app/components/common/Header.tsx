@@ -32,10 +32,8 @@ export default function Header({ userType }: HeaderProps) {
         {/* Adjusted spacing */}
         {/* Notifications Component */}
         {user && (
-          <Notification
-            userType={userType}
-            userId={userType === "client" ? user.customer_id : user.admin_id}
-          />
+          // Remove userType and userId props
+          <Notification />
         )}
         {/* Profile Icon Link */}
         <a

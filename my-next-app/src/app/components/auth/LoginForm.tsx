@@ -34,7 +34,6 @@ export default function LoginForm() {
 
       // Login successful: Set the user in AuthContext
       login(data.user); // Assuming the backend returns a `user` object with `id`, `name`, and `email`
-      console.log("User logged in:", data.user);
       // Redirect to dashboard or home page
       router.push("/auth/dashboard"); // Adjust this route as needed
     } catch (err) {

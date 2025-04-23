@@ -3,8 +3,11 @@ import dbConnect from "@/app/lib/mongodb";
 import { Customer } from "@/app/models/Customer"; // Assuming your model is named Customer
 
 // --- Existing GET Handler ---
-export async function GET(request: NextRequest, context: any) {
-  const { customer_id } = context.params;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { customer_id: string } }
+) {
+  const { customer_id } = params;
 
   try {
     await dbConnect();

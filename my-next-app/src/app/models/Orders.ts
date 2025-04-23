@@ -7,7 +7,8 @@ interface ClothingItem {
 interface Feedback {
   feedback_id: string; // Unique identifier for the feedback
   customer_id: string; // ID of the customer providing feedback
-
+  shop_id: string;
+  admin_id: string;
   order_id: string; // ID of the order associated with the feedback
   rating: number; // Rating given by the customer (e.g., 1 to 5)
   comments: string; // Comments provided by the customer
@@ -44,6 +45,8 @@ const PaymentSchema = new Schema<Payment>({
 
 const FeedbackSchema = new Schema({
   feedback_id: { type: String, required: true },
+  shop_id: { type: String },
+  admin_id: { type: String },
   customer_id: { type: String, required: true },
   order_id: { type: String, required: true },
   rating: { type: Number, required: true },

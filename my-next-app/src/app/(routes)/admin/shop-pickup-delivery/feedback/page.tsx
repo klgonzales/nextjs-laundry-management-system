@@ -13,12 +13,10 @@ export default function Feedback() {
       try {
         const shopId = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
         if (!shopId) {
-          console.log("Shop ID not found");
         }
 
         const response = await fetch(`/api/shops/${shopId}/feedbacks`);
         if (!response.ok) {
-          console.log("Failed to fetch feedbacks");
         }
 
         const data = await response.json();

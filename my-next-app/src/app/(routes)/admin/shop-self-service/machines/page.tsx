@@ -41,7 +41,6 @@ export default function Machines() {
         })
       );
 
-      console.log("Machine availability:", machineAvailability);
       const machineToAdd = {
         ...newMachine,
         availability: machineAvailability, // Set availability based on shop opening hours

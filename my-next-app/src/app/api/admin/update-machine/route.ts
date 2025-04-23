@@ -5,7 +5,6 @@ import { Admin } from "@/app/models/Admin";
 
 export async function POST(request: Request) {
   try {
-    console.log("update-machine API called");
     await dbConnect();
     const { shop_id, machine } = await request.json();
 
@@ -16,7 +15,6 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("update-machine API called");
     // Update the machine in the shop
     const updatedShop = await Shop.findOneAndUpdate(
       { shop_id, "machines.machine_id": machine.machine_id },

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       admin: updatedAdmin,
     });
   } catch (error) {
-    console.error("Error deleting machine:", error);
+    console.log("Error deleting machine:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

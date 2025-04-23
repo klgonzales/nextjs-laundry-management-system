@@ -66,7 +66,6 @@ export default function AdminDashboard() {
       const uniqueCustomers = new Set(
         detailedOrders.map((order) => order.customer_id)
       );
-      console.log("Total unique customers:", uniqueCustomers.size);
     };
 
     fetchOrderDetails();
@@ -101,7 +100,6 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   };
 
-  console.log("Shop Type:", user?.shops?.[0]?.type); // Debugging
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
@@ -112,10 +110,9 @@ export default function AdminDashboard() {
       />
 
       {/* Main Content */}
-      <div className="flex-1">
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Header */}
-          <Header userType="admin" />
+      <div className="flex-1 flex flex-col">
+        <Header userType="admin" />
+        <main className="flex-1 container mx-auto px-4 py-6">
           <div className="px-4 py-6 sm:px-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Total Customers */}

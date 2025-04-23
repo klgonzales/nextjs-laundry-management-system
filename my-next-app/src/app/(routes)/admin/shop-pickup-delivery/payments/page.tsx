@@ -16,14 +16,11 @@ export default function Payments() {
         // Fetch payments for the current shop
         const shopResponse = await fetch(`/api/payments/${shop_id}`);
         if (!shopResponse.ok) {
-          console.log("Failed to fetch payments");
         }
         const data = await shopResponse.json();
         setPayments(data.orders || []); // Set all payments
         setFilteredPayments(data.orders || []); // Initially show all payments
-      } catch (error) {
-        console.log("Error fetching payments:", error);
-      }
+      } catch (error) {}
     };
 
     fetchPayments();
@@ -63,10 +60,8 @@ export default function Payments() {
             : payment
         )
       );
-      console.log("Payment approved successfully!");
     } catch (error) {
       console.error("Error approving payment:", error);
-      console.log("Failed to approve payment. Please try again.");
     }
   };
 
@@ -93,10 +88,8 @@ export default function Payments() {
             : payment
         )
       );
-      console.log("Payment canceled successfully!");
     } catch (error) {
       console.error("Error canceling payment:", error);
-      console.log("Failed to cancel payment. Please try again.");
     }
   };
 

@@ -14,8 +14,6 @@ export async function POST(request: Request) {
       "name email customer_id role phone address password"
     );
 
-    console.log("Query result:", user);
-
     if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password" },

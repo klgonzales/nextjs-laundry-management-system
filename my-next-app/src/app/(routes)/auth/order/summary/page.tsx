@@ -74,7 +74,6 @@ function OrderSummaryContent() {
           console.log("Failed to fetch customer details");
         }
         const customerData = await customerResponse.json();
-        console.log(customerData);
 
         setCustomerAddress(customerData.customer.address); // Set the customer address
       } catch (error) {
@@ -90,10 +89,7 @@ function OrderSummaryContent() {
     }
   }, [order_id]);
 
-  useEffect(() => {
-    console.log("Updated Shop Name:", shopName); // Log the updated shop name
-    console.log("Updated Customer Address:", customerAddress); // Log the updated customer address
-  }, [shopName, customerAddress]);
+  useEffect(() => {}, [shopName, customerAddress]);
 
   if (!orderDetails) {
     return <div>Loading...</div>;
@@ -125,9 +121,6 @@ function OrderSummaryContent() {
     second: "numeric",
     timeZoneName: "short",
   }).format(new Date(date));
-
-  console.log(payment_method);
-  console.log(time_range);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center">

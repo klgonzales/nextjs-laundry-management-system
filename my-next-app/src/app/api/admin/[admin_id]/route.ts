@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: any) {
     }
     return NextResponse.json({ success: true, admin });
   } catch (error) {
-    console.error("Error fetching admin:", error);
+    console.log("Error fetching admin:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch admin" },
       { status: 500 }
@@ -181,7 +181,7 @@ export async function PUT(request: NextRequest, context: any) {
     return NextResponse.json({ success: true, admin: updatedAdmin });
   } catch (error: any) {
     // ... existing error handling ...
-    console.error("Error updating admin/shop:", error);
+    console.log("Error updating admin/shop:", error);
     if (error.name === "ValidationError") {
       return NextResponse.json(
         { success: false, error: "Validation failed", details: error.errors },

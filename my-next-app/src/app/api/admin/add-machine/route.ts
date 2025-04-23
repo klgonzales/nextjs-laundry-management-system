@@ -5,7 +5,6 @@ import { Admin } from "@/app/models/Admin";
 
 export async function POST(request: Request) {
   try {
-    console.log("add-machine API called");
     await dbConnect();
 
     const { shop_id, machine } = await request.json();
@@ -80,7 +79,7 @@ export async function POST(request: Request) {
       admin: updatedAdmin,
     });
   } catch (error) {
-    console.error("Error adding machine:", error);
+    console.log("Error adding machine:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

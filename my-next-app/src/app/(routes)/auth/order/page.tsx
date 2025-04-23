@@ -60,10 +60,8 @@ function OrderContent() {
       try {
         const response = await fetch("/api/shops");
         if (!response.ok) {
-          console.log("Failed to fetch shops");
         }
         const data = await response.json();
-        // console.log("Fetched Shops:", data.shops); // Debugging
         setShops(data.shops);
         setFilteredShops(data.shops); // Initialize filtered shops
       } catch (error) {
