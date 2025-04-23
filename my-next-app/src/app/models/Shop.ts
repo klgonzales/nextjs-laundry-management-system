@@ -46,7 +46,7 @@ interface PaymentMethod {
   method_id: number;
   name: string;
   account_number: string;
-  status: string;
+  //status: string;
   payments: string[]; // Optional: If you want to track payments
 }
 
@@ -54,7 +54,7 @@ const PaymentMethodSchema = new Schema<PaymentMethod>({
   method_id: { type: Number, required: true },
   name: { type: String, required: true },
   account_number: { type: String, required: false },
-  status: { type: String, required: true },
+  //status: { type: String, required: true },
   payments: { type: [String], required: true },
 });
 
