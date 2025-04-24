@@ -1,7 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+import { usePusher } from "@/app/context/PusherContext";
+// --- Remove direct pusherClient import if only using context ---
+// import { pusherClient } from "@/app/lib/pusherClient";
+import type { Channel } from "pusher-js";
 
 interface Feedback {
   feedback_id: string;
@@ -29,12 +33,19 @@ interface Order {
 
 export default function Orders() {
   const { user } = useAuth();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filterType, setFilterType] = useState<string>("all"); // Track the selected type
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected status
 
   const [loading, setLoading] = useState(true);
+
+  // Add this near the top of your component after other state declarations
+  const { pusher, isConnected } = usePusher();
+  const channelRef = useRef<Channel | null>(null);
+
+  const currentUserId = user?.customer_id;
 
   const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState({
@@ -88,6 +99,93 @@ export default function Orders() {
 
     fetchOrders();
   }, [user?.customer_id]);
+
+  // Add this effect after your existing useEffect hooks
+  useEffect(() => {
+    if (!pusher || !isConnected || !currentUserId) {
+      console.log(
+        `[Client Orders] Skipping Pusher subscription: Missing prerequisites.`
+      );
+      return;
+    }
+
+    const channelName = `private-client-${currentUserId}`;
+    console.log(`[Client Orders] Setting up subscription to ${channelName}`);
+
+    // Clean up old subscription if it exists and is different
+    if (channelRef.current && channelRef.current.name !== channelName) {
+      console.log(
+        `[Client Orders] Unsubscribing from old channel: ${channelRef.current.name}`
+      );
+      channelRef.current.unbind("update-order-status");
+      pusher.unsubscribe(channelRef.current.name);
+      channelRef.current = null;
+    }
+
+    // If we don't have a channel reference or it's not subscribed, create a new subscription
+    if (!channelRef.current || !channelRef.current.subscribed) {
+      console.log(`[Client Orders] Subscribing to ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      channelRef.current = channel;
+
+      // Handle subscription events
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(
+          `[Client Orders] Successfully subscribed to ${channelName}`
+        );
+      });
+
+      channel.bind("pusher:subscription_error", (status: any) => {
+        console.error(
+          `[Client Orders] Failed Pusher subscription to ${channelName}, status: ${status}`
+        );
+      });
+
+      // Bind to update-order-status event
+      console.log(
+        `[Client Orders] Binding to update-order-status event on ${channelName}`
+      );
+      // In your client code, modify the update-order-status handler:
+      channel.bind(
+        "update-order-status",
+        (data: { orderId: string; status: string; date_updated: string }) => {
+          console.log(`[Client Orders] Received order status update:`, data);
+
+          // Add logging to debug the status format
+          console.log(`[Client Orders] Current orders:`, orders);
+
+          // Update the order in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.orderId) {
+                console.log(
+                  `[Client Orders] Updating order ${order._id} from "${order.order_status}" to "${data.status}"`
+                );
+                return { ...order, order_status: data.status };
+              }
+              return order;
+            });
+
+            // Log the result to confirm update worked
+            console.log(
+              `[Client Orders] Order update result:`,
+              updatedOrders.find((o) => o._id === data.orderId)?.order_status
+            );
+
+            return updatedOrders;
+          });
+        }
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      console.log(`[Client Orders] Cleaning up handlers for ${channelName}`);
+      if (channelRef.current) {
+        channelRef.current.unbind("update-order-status");
+      }
+    };
+  }, [pusher, isConnected, currentUserId]);
 
   const fetchFeedbacks = async (orderId: string) => {
     try {
@@ -192,7 +290,7 @@ export default function Orders() {
       "all",
       "pending",
       "scheduled",
-      "in-progress",
+      "in progress",
       "completed",
       "cancelled",
     ],
