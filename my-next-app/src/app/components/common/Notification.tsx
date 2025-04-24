@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { FaRegBell } from "react-icons/fa";
 import { useAuth } from "@/app/context/AuthContext";
-// --- Remove SocketContext ---
-// import { useSocket } from "@/app/context/SocketContext";
-// --- Add Pusher Client ---
-import { pusherClient } from "@/app/lib/pusherClient";
-import type { Channel } from "pusher-js"; // Import Channel type
+// --- Import usePusher ---
+import { usePusher } from "@/app/context/PusherContext";
+// --- Remove direct pusherClient import if only using context ---
+// import { pusherClient } from "@/app/lib/pusherClient";
+import type { Channel } from "pusher-js";
+import { useSession } from "next-auth/react";
 
 // Define the structure of a notification item
 interface NotificationItem {
@@ -21,6 +22,8 @@ interface NotificationItem {
 
 export default function Notification() {
   const { user } = useAuth();
+  // --- Use Pusher context ---
+  const { pusher, isConnected } = usePusher();
   // --- Remove socket state ---
   // const { socket, isConnected } = useSocket();
   const [isOpen, setIsOpen] = useState(false);
@@ -70,99 +73,94 @@ export default function Notification() {
     fetchNotifications();
   }, [currentUserId, currentUserType]);
 
-  // --- Pusher Event Handling ---
+  // --- Pusher Event Handling (Modified + Cleaned Up) ---
   useEffect(() => {
-    if (!currentUserId || !currentUserType) {
-      // If user logs out or changes, unsubscribe from previous channel
+    // Early return if essential data is missing
+    if (!pusher || !isConnected || !currentUserId || !currentUserType) {
+      console.log(`[Notifications] Skipping subscription: Missing data.`);
+
+      // Unsubscribe if previously subscribed
       if (channelRef.current) {
         console.log(
-          `Notifications: Unsubscribing from Pusher channel ${channelRef.current.name}`
+          `[Notifications] Unsubscribing from ${channelRef.current.name} due to missing user/connection`
         );
-        channelRef.current.unbind_all(); // Unbind all listeners first
-        pusherClient.unsubscribe(channelRef.current.name);
+        pusher?.unsubscribe(channelRef.current.name);
         channelRef.current = null;
       }
+
       return;
     }
 
-    // Determine the channel name (use private channels for security)
     const channelName = `private-${currentUserType}-${currentUserId}`;
 
-    // Avoid re-subscribing if already on the correct channel
-    if (channelRef.current && channelRef.current.name === channelName) {
-      console.log(`Notifications: Already subscribed to ${channelName}`);
+    // Prevent duplicate subscriptions
+    if (
+      channelRef.current &&
+      channelRef.current.name === channelName &&
+      channelRef.current.subscribed
+    ) {
+      console.log(`[Notifications] Already subscribed to ${channelName}`);
       return;
     }
 
-    // Unsubscribe from any previous channel if name differs
+    // Unsubscribe from previous channel if it differs
     if (channelRef.current && channelRef.current.name !== channelName) {
       console.log(
-        `Notifications: Unsubscribing from old Pusher channel ${channelRef.current.name}`
+        `[Notifications] Switching channel. Unsubscribing from ${channelRef.current.name}`
       );
-      channelRef.current.unbind_all();
-      pusherClient.unsubscribe(channelRef.current.name);
+      pusher.unsubscribe(channelRef.current.name);
       channelRef.current = null;
     }
 
-    console.log(`Notifications: Subscribing to Pusher channel ${channelName}`);
-    const channel = pusherClient.subscribe(channelName);
-    channelRef.current = channel; // Store the channel in the ref
+    console.log(`[Notifications] Subscribing to ${channelName}`);
+    const channel = pusher.subscribe(channelName);
 
-    // Handle subscription success/failure
-    channel.bind("pusher:subscription_succeeded", () => {
-      console.log(`Notifications: Successfully subscribed to ${channelName}`);
-    });
+    if (!channel) {
+      console.warn(`[Notifications] Failed to subscribe to ${channelName}`);
+      return;
+    }
 
-    channel.bind("pusher:subscription_error", (status: number) => {
-      console.error(
-        `Notifications: Failed to subscribe to ${channelName}, status: ${status}. Check auth endpoint.`
-      );
-      // Handle auth failure (e.g., show error, redirect)
-      setError(
-        `Real-time connection failed (Auth Error ${status}). Please refresh.`
-      );
-    });
+    channelRef.current = channel;
 
-    // Bind to the 'new-notification' event
     const handleNewNotification = (newNotification: NotificationItem) => {
-      console.log(
-        "Notifications: Received new_notification via Pusher:",
-        newNotification
-      );
-      setNotifications((prevNotifications) => {
-        // Avoid duplicates
-        if (prevNotifications.some((n) => n._id === newNotification._id)) {
-          return prevNotifications;
+      console.log(`[Notifications] New notification:`, newNotification);
+      setNotifications((prev) => {
+        if (prev.some((n) => n._id === newNotification._id)) {
+          return prev;
         }
-        // Add to the start of the list
-        return [newNotification, ...prevNotifications];
+        return [newNotification, ...prev];
       });
-      // Optional: Trigger a browser notification or sound
     };
 
-    console.log(
-      `Notifications: Binding to 'new-notification' on ${channelName}`
-    );
+    channel.bind("pusher:subscription_succeeded", () => {
+      console.log(`[Notifications] Successfully subscribed to ${channelName}`);
+      setError(null);
+    });
+
+    channel.bind("pusher:subscription_error", (status: any) => {
+      console.error(
+        `[Notifications] Subscription error for ${channelName}:`,
+        status
+      );
+      setError(
+        `Real-time connection failed. Status: ${JSON.stringify(status)}. Check console/server logs.`
+      );
+    });
+
     channel.bind("new-notification", handleNewNotification);
 
-    // Cleanup function
+    // Cleanup on component unmount or dependency change
     return () => {
-      if (channelRef.current && channelRef.current.name === channelName) {
+      if (channelRef.current?.name === channelName) {
         console.log(
-          `Notifications: Unbinding from 'new-notification' on ${channelName}`
+          `[Notifications] Cleanup: Unsubscribing from ${channelName}`
         );
         channelRef.current.unbind("new-notification", handleNewNotification);
-        // Decide if you want to unsubscribe immediately on component unmount
-        // or keep the subscription active across navigation.
-        // For a persistent notification component in a layout, you might not unsubscribe here.
-        // If this component unmounts frequently, keep the unsubscribe.
-        // console.log(`Notifications: Unsubscribing from Pusher channel ${channelName}`);
-        // pusherClient.unsubscribe(channelName);
-        // channelRef.current = null;
+        pusher.unsubscribe(channelName);
+        channelRef.current = null;
       }
     };
-    // Depend on user ID and type to handle login/logout changes
-  }, [currentUserId, currentUserType]);
+  }, [pusher, isConnected, currentUserId, currentUserType]); // <- include currentUserType too!
 
   // --- Click Outside Handler (remains the same) ---
   useEffect(() => {

@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server"; // Use NextRequest
 import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
 import dbConnect from "@/app/lib/mongodb";
-import { time } from "console";
+// --- Import Pusher Server ---
+import { pusherServer } from "@/app/lib/pusherServer";
+// --- Import Notification Model (if creating notification here) ---
+import { Notification } from "@/app/models/Notification";
 
 export async function GET() {
   try {
@@ -102,6 +105,57 @@ export async function POST(request: Request) {
     }
 
     console.log("Order added to Shop and Admin and Customer successfully");
+
+    console.log("Admin found for Pusher trigger:", updatedAdmin); // Log the whole admin object
+    console.log("Admin ID for Pusher:", updatedAdmin?.admin_id); // Log just the ID
+    console.log("Customer found for Pusher trigger:", updatedCustomer); // Log the whole customer object
+    console.log("Customer ID for Pusher:", updatedCustomer?.customer_id); // Log just the ID
+
+    // --- START: Pusher Trigger ---
+    if (updatedAdmin?.admin_id) {
+      const adminId = updatedAdmin.admin_id;
+      const adminChannel = `private-admin-${adminId}`; // Define the private channel name
+
+      try {
+        // 1. Trigger 'new-order' event for the admin orders page
+        // Send the raw newOrder data. The client will fetch details if needed.
+        await pusherServer.trigger(
+          adminChannel,
+          "new-order",
+          newOrder.toObject()
+        );
+        console.log(
+          `Pusher event 'new-order' triggered on channel ${adminChannel}`
+        );
+
+        // 2. (Optional) Create and trigger 'new-notification' event
+        const notificationMessage = `New order placed by customer ${updatedCustomer.name || body.customer_id}.`;
+        const newNotification = await Notification.create({
+          message: notificationMessage,
+          recipient_id: adminId,
+          recipient_type: "admin",
+          related_order_id: newOrder._id, // Link notification to the order
+          read: false,
+          timestamp: new Date(),
+        });
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          newNotification.toObject()
+        );
+        console.log(
+          `Pusher event 'new-notification' triggered on channel ${adminChannel}`
+        );
+      } catch (pusherError) {
+        console.error("Error triggering Pusher event:", pusherError);
+        // Decide how to handle Pusher errors - maybe log but don't fail the request
+      }
+    } else {
+      console.warn(
+        "Could not trigger Pusher event: Admin ID not found after update."
+      );
+    }
+    // --- END: Pusher Trigger ---
 
     return NextResponse.json({
       success: true,

@@ -1,9 +1,44 @@
 "use client";
 import { useAuth } from "@/app/context/AuthContext";
-import { useState, useEffect } from "react";
+// --- Import usePusher ---
+import { usePusher } from "@/app/context/PusherContext";
+// --- Remove direct pusherClient import if only using context ---
+// import { pusherClient } from "@/app/lib/pusherClient";
+import type { Channel } from "pusher-js";
+// --- Add useRef ---
+import { useState, useEffect, useRef, useCallback } from "react";
+
+// --- Define Order and DetailedOrder types (Recommended) ---
+interface Order {
+  _id: string;
+  customer_id: string | number;
+  shop: string; // Assuming shop is shop_id
+  order_status: string;
+  // ... other raw order fields
+  services?: string[];
+  payment_method?: string;
+  machine_id?: string;
+  type?: string; // machine type?
+  date?: string | Date;
+  time_range?: { start: string; end: string }[];
+  date_completed?: string | Date | null;
+  total_weight?: number;
+  total_price?: number;
+  notes?: string;
+}
+
+interface DetailedOrder extends Order {
+  customer_name?: string;
+  shop_name?: string;
+  shop_type?: string;
+  delivery_fee?: boolean;
+}
+// --- End Types ---
 
 export default function Orders() {
   const { user } = useAuth();
+  // --- Use Pusher context ---
+  const { pusher, isConnected } = usePusher();
   const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
@@ -15,6 +50,246 @@ export default function Orders() {
     total_price: 0,
     notes: "",
   });
+
+  // --- Add loading/error states ---
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // --- Add Pusher channel ref ---
+  const channelRef = useRef<Channel | null>(null);
+
+  const adminId = user?.admin_id;
+  const shopId = user?.shops?.[0]?.shop_id; // Get shopId for initial fetch
+
+  // Define fetchOrderDetails as a useCallback to prevent recreating on every render
+  const fetchOrderDetails = useCallback(
+    async (ordersToDetail: Order[]): Promise<DetailedOrder[]> => {
+      if (!Array.isArray(ordersToDetail) || ordersToDetail.length === 0) {
+        return [];
+      }
+      console.log(`Fetching details for ${ordersToDetail.length} orders...`);
+
+      return await Promise.all(
+        ordersToDetail.map(async (order) => {
+          // Basic validation
+          if (!order || !order._id || !order.customer_id || !order.shop) {
+            console.warn(
+              "Skipping invalid order object in fetchOrderDetails:",
+              order
+            );
+            return {
+              ...order,
+              customer_name: "Invalid Data",
+              shop_name: "Invalid Data",
+            } as DetailedOrder;
+          }
+
+          try {
+            // Fetch customer details
+            const customerResponse = await fetch(
+              `/api/customers/${order.customer_id}`
+            );
+            if (!customerResponse.ok)
+              throw new Error(
+                `Customer fetch failed (${customerResponse.status})`
+              );
+            const customerData = await customerResponse.json();
+            const customerName =
+              customerData?.customer?.name || "Unknown Customer";
+
+            // Fetch shop details
+            const shopResponse = await fetch(`/api/shops/${order.shop}`);
+            if (!shopResponse.ok)
+              throw new Error(`Shop fetch failed (${shopResponse.status})`);
+            const shopData = await shopResponse.json();
+            const shopName = shopData?.shop?.name || "Unknown Shop";
+            const shopType = shopData?.shop?.type || "Unknown Type";
+            const deliveryFee = shopData?.shop?.delivery_fee || false;
+
+            return {
+              ...order,
+              customer_name: customerName,
+              shop_name: shopName,
+              shop_type: shopType,
+              delivery_fee: deliveryFee,
+            };
+          } catch (error: any) {
+            console.error(
+              `Error fetching details for order ${order._id}:`,
+              error.message
+            );
+            return {
+              ...order,
+              customer_name: "Error Loading",
+              shop_name: "Error Loading",
+            } as DetailedOrder;
+          }
+        })
+      );
+    },
+    []
+  );
+
+  // Function for Initial Fetch
+  const fetchInitialOrders = useCallback(async () => {
+    if (!shopId) {
+      setError("Shop ID not found for this admin.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch orders specifically for this shop
+      const response = await fetch(`/api/shops/${shopId}/orders`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch initial orders");
+      }
+      let initialOrders = await response.json();
+      setOrders(initialOrders); // Set raw orders
+
+      const detailedOrders = await fetchOrderDetails(initialOrders);
+      setOrderDetails(detailedOrders); // Set detailed orders
+      // Also update filtered orders based on current filter
+      if (filterStatus === "all") {
+        setFilteredOrders(detailedOrders);
+      } else {
+        setFilteredOrders(
+          detailedOrders.filter((order) => order.order_status === filterStatus)
+        );
+      }
+    } catch (err: any) {
+      console.error("Error fetching initial orders:", err);
+      setError(err.message || "An error occurred");
+      setOrderDetails([]); // Clear details on error
+      setFilteredOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [shopId, fetchOrderDetails, filterStatus]);
+
+  // Effect for Initial Fetch
+  useEffect(() => {
+    if (adminId && shopId) {
+      fetchInitialOrders();
+    } else if (user) {
+      setError("Admin or Shop information is missing.");
+      setLoading(false);
+    } else {
+      setLoading(false);
+    }
+  }, [adminId, shopId, fetchInitialOrders, user]);
+
+  // Handle new order received via Pusher
+  const handleNewOrder = useCallback(
+    async (newRawOrderData: Order) => {
+      console.log(`[Admin Orders] Received new order:`, newRawOrderData);
+
+      // Check if this order is for our shop
+      if (newRawOrderData.shop !== shopId) {
+        console.log(`[Admin Orders] Order is for a different shop. Ignoring.`);
+        return;
+      }
+
+      // Check if we already have this order
+      if (orderDetails.some((o) => o._id === newRawOrderData._id)) {
+        console.log(`[Admin Orders] Duplicate order detected. Skipping.`);
+        return;
+      }
+
+      try {
+        const [detailedNewOrder] = await fetchOrderDetails([newRawOrderData]);
+
+        if (detailedNewOrder) {
+          console.log(
+            `[Admin Orders] Adding new detailed order:`,
+            detailedNewOrder
+          );
+
+          // Update both orderDetails and filteredOrders
+          setOrderDetails((prev) => [detailedNewOrder, ...prev]);
+
+          // Only add to filtered orders if it matches the current filter
+          if (
+            filterStatus === "all" ||
+            detailedNewOrder.order_status === filterStatus
+          ) {
+            setFilteredOrders((prev) => [detailedNewOrder, ...prev]);
+          }
+        } else {
+          console.error(
+            `[Admin Orders] Failed to fetch details for order:`,
+            newRawOrderData
+          );
+        }
+      } catch (error) {
+        console.error("[Admin Orders] Error processing new order:", error);
+      }
+    },
+    [orderDetails, fetchOrderDetails, filterStatus, shopId]
+  );
+
+  // Effect for Pusher subscription
+  useEffect(() => {
+    if (!pusher || !isConnected || !adminId) {
+      console.log(
+        `[Admin Orders] Skipping Pusher subscription: Missing prerequisites.`
+      );
+      return;
+    }
+
+    const channelName = `private-admin-${adminId}`;
+    console.log(`[Admin Orders] Setting up subscription to ${channelName}`);
+
+    // Clean up old subscription if it exists and is different
+    if (channelRef.current && channelRef.current.name !== channelName) {
+      console.log(
+        `[Admin Orders] Unsubscribing from old channel: ${channelRef.current.name}`
+      );
+      channelRef.current.unbind("new-order"); // Unbind ALL handlers for this event
+      pusher.unsubscribe(channelRef.current.name);
+      channelRef.current = null;
+    }
+
+    // If we don't have a channel reference or it's not subscribed, create a new subscription
+    if (!channelRef.current || !channelRef.current.subscribed) {
+      console.log(`[Admin Orders] Subscribing to ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      channelRef.current = channel;
+
+      // Handle subscription events
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(`[Admin Orders] Successfully subscribed to ${channelName}`);
+      });
+
+      channel.bind("pusher:subscription_error", (status: any) => {
+        console.error(
+          `[Admin Orders] Failed Pusher subscription to ${channelName}, status: ${status}`
+        );
+        setError(`Real-time updates failed. Status: ${status}`);
+      });
+
+      // Bind to new-order event
+      console.log(
+        `[Admin Orders] Binding to new-order event on ${channelName}`
+      );
+      channel.bind("new-order", handleNewOrder);
+    } else {
+      console.log(`[Admin Orders] Already subscribed to ${channelName}`);
+      // Don't bind again if we're already subscribed - this is crucial to avoid duplicates!
+    }
+
+    // Cleanup function
+    return () => {
+      console.log(`[Admin Orders] Cleaning up handlers for ${channelName}`);
+      if (channelRef.current) {
+        // Remove all handlers for the new-order event to prevent duplicates
+        channelRef.current.unbind("new-order");
+        // Then add our current handler back
+        channelRef.current.bind("new-order", handleNewOrder);
+      }
+    };
+  }, [pusher, isConnected, adminId, handleNewOrder]);
 
   const handleEditOrder = (order: any) => {
     setEditOrderId(order._id); // Set the order being edited
@@ -49,58 +324,6 @@ export default function Orders() {
       console.error("Error updating order details:", error);
     }
   };
-
-  const [ongoingSubcategory, setOngoingSubcategory] = useState<string>(""); // Track the selected subcategory for ongoing
-
-  useEffect(() => {
-    const fetchOrderDetails = async () => {
-      const detailedOrders = await Promise.all(
-        orders.map(async (order: any) => {
-          try {
-            // Fetch customer details
-            const customerResponse = await fetch(
-              `/api/customers/${order.customer_id}`
-            );
-            const customerData = await customerResponse.json();
-
-            // Fetch shop details
-            const shopResponse = await fetch(`/api/shops/${order.shop}`);
-            const shopData = await shopResponse.json();
-
-            return {
-              ...order,
-              customer_name: customerData?.customer?.name || "Unknown Customer",
-              shop_name: shopData?.shop?.name || "Unknown Shop",
-              shop_type: shopData?.shop?.type || "Unknown Type",
-              delivery_fee: shopData?.shop?.delivery_fee || false,
-            };
-          } catch (error) {
-            console.error("Error fetching order details:", error);
-            return {
-              ...order,
-              customer_name: "Error",
-              shop_name: "Error",
-              shop_type: "Error",
-            };
-          }
-        })
-      );
-      setOrderDetails(detailedOrders);
-    };
-
-    fetchOrderDetails();
-  }, [orders]);
-
-  // Filter orders based on the selected status
-  useEffect(() => {
-    if (filterStatus === "all") {
-      setFilteredOrders(orderDetails);
-    } else {
-      setFilteredOrders(
-        orderDetails.filter((order) => order.order_status === filterStatus)
-      );
-    }
-  }, [filterStatus, orderDetails]);
 
   const handleAccept = async (orderId: string) => {
     try {
@@ -234,6 +457,17 @@ export default function Orders() {
       console.error("Error updating date completed:", error);
     }
   };
+
+  // Filter orders based on the selected status
+  useEffect(() => {
+    if (filterStatus === "all") {
+      setFilteredOrders(orderDetails);
+    } else {
+      setFilteredOrders(
+        orderDetails.filter((order) => order.order_status === filterStatus)
+      );
+    }
+  }, [filterStatus, orderDetails]);
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
