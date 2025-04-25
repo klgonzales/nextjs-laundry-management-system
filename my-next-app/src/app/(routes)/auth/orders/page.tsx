@@ -121,6 +121,8 @@ export default function Orders() {
         `[Client Orders] Unsubscribing from old channel: ${channelRef.current.name}`
       );
       channelRef.current.unbind("update-order-status");
+      channelRef.current.unbind("update-order-price"); // Add this line
+      channelRef.current.unbind("update-payment-status"); // Add this line
       pusher.unsubscribe(channelRef.current.name);
       channelRef.current = null;
     }
@@ -174,6 +176,47 @@ export default function Orders() {
               `[Client Orders] Order update result:`,
               updatedOrders.find((o) => o._id === data.orderId)?.order_status
             );
+
+            return updatedOrders;
+          });
+        }
+      );
+
+      // Add this right after your update-order-price binding, around line 184
+      // Bind to update-payment-status event
+      console.log(
+        `[Client Orders] Binding to update-payment-status event on ${channelName}`
+      );
+      channel.bind(
+        "update-payment-status",
+        (data: {
+          order_id: string;
+          payment_status: string;
+          date_updated?: string;
+        }) => {
+          console.log(`[Client Orders] Received payment status update:`, data);
+
+          // Update the order in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Client Orders] Updating order ${order._id} payment status from "${order.payment_status}" to "${data.payment_status}"`
+                );
+                return { ...order, payment_status: data.payment_status };
+              }
+              return order;
+            });
+
+            // Log the result
+            const updatedOrder = updatedOrders.find(
+              (o) => o._id === data.order_id
+            );
+            if (updatedOrder) {
+              console.log(`[Client Orders] Order payment update result:`, {
+                payment_status: updatedOrder.payment_status,
+              });
+            }
 
             return updatedOrders;
           });
@@ -261,6 +304,7 @@ export default function Orders() {
       if (channelRef.current) {
         channelRef.current.unbind("update-order-status");
         channelRef.current.unbind("update-order-price"); // Add this line
+        channelRef.current.unbind("update-payment-status"); // Add this line
       }
     };
   }, [pusher, isConnected, currentUserId]);
@@ -488,10 +532,13 @@ export default function Orders() {
                 </p>
                 <p>
                   <strong>Total Weight:</strong>{" "}
-                  {order.total_weight || "Pending"}kg
+                  {order.total_weight || "Pending"}
                 </p>
                 <p>
                   <strong>Order Status:</strong> {order.order_status}
+                </p>
+                <p>
+                  <strong>Payment Status:</strong> {order.payment_status}
                 </p>
 
                 {order.order_status === "completed" &&

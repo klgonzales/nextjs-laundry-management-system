@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+import { usePusher } from "@/app/context/PusherContext";
+import type { Channel } from "pusher-js";
+
 export default function Payments() {
   const { user } = useAuth();
   const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
-
+  const { pusher, isConnected } = usePusher();
+  const channelRef = useRef<Channel | null>(null);
+  const currentUserId = user?.customer_id;
   const [payments, setPayments] = useState<any[]>([]); // Store all payments
   const [filteredPayments, setFilteredPayments] = useState<any[]>([]); // Store filtered payments
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
@@ -39,6 +44,102 @@ export default function Payments() {
       );
     }
   }, [filterStatus, payments]);
+
+  // Add this useEffect after your existing useEffects
+  useEffect(() => {
+    if (!pusher || !isConnected || !user?.admin_id) {
+      console.log(
+        `[Admin Payments] Skipping Pusher subscription: Missing prerequisites.`
+      );
+      return;
+    }
+
+    const adminId = user.admin_id;
+    const channelName = `private-admin-${adminId}`;
+    console.log(`[Admin Payments] Setting up subscription to ${channelName}`);
+
+    // Clean up old subscription if it exists and is different
+    if (channelRef.current && channelRef.current.name !== channelName) {
+      console.log(
+        `[Admin Payments] Unsubscribing from old channel: ${channelRef.current.name}`
+      );
+      channelRef.current.unbind("update-payment-status");
+      pusher.unsubscribe(channelRef.current.name);
+      channelRef.current = null;
+    }
+
+    // If we don't have a channel reference or it's not subscribed, create a new subscription
+    if (!channelRef.current || !channelRef.current.subscribed) {
+      console.log(`[Admin Payments] Subscribing to ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      channelRef.current = channel;
+
+      // Handle subscription events
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(
+          `[Admin Payments] Successfully subscribed to ${channelName}`
+        );
+      });
+
+      channel.bind("pusher:subscription_error", (status: any) => {
+        console.error(
+          `[Admin Payments] Failed Pusher subscription to ${channelName}, status:`,
+          status
+        );
+      });
+
+      // Bind to update-payment-status event
+      console.log(
+        `[Admin Payments] Binding to update-payment-status event on ${channelName}`
+      );
+      channel.bind(
+        "update-payment-status",
+        (data: { order_id: string; payment_status: string }) => {
+          console.log(`[Admin Payments] Received payment status update:`, data);
+          console.log(`[Admin Payments] Current state:`, {
+            payments: payments.length,
+            channelName,
+            bound: true,
+          });
+
+          // Extract the ID regardless of property name (handle both order_id and orderId)
+          const orderId = data.order_id;
+          const status = data.payment_status;
+
+          if (!orderId || !status) {
+            console.error(
+              "[Admin Payments] Missing required data in update:",
+              data
+            );
+            return;
+          }
+
+          // Update the payments in state
+          setPayments((prevPayments) => {
+            const updatedPayments = prevPayments.map((payment) => {
+              if (payment._id === data.order_id) {
+                console.log(
+                  `[Admin Payments] Updating payment ${payment._id} status from "${payment.payment_status}" to "${data.payment_status}"`
+                );
+                return { ...payment, payment_status: data.payment_status };
+              }
+              return payment;
+            });
+
+            return updatedPayments;
+          });
+        }
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      console.log(`[Admin Payments] Cleaning up handlers for ${channelName}`);
+      if (channelRef.current) {
+        channelRef.current.unbind("update-payment-status");
+      }
+    };
+  }, [pusher, isConnected, user?.admin_id]);
 
   const handleApprovePayment = async (orderId: string) => {
     try {

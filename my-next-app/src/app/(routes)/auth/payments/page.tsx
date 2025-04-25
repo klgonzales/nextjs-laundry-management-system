@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+import { usePusher } from "@/app/context/PusherContext";
+import type { Channel } from "pusher-js";
 
 interface Order {
   _id: string;
@@ -18,6 +20,9 @@ interface Order {
 
 export default function Payments() {
   const { user } = useAuth();
+  const { pusher, isConnected } = usePusher();
+  const channelRef = useRef<Channel | null>(null);
+  const currentUserId = user?.customer_id;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null); // Track the selected order for payment
@@ -100,6 +105,129 @@ export default function Payments() {
       payment_id: Date.now().toString(), // Generate a unique payment ID
     });
   };
+
+  // Add this effect for Pusher subscription
+  useEffect(() => {
+    if (!pusher || !isConnected || !currentUserId) {
+      console.log(
+        `[Client Payments] Skipping Pusher subscription: Missing prerequisites.`
+      );
+      return;
+    }
+
+    const channelName = `private-client-${currentUserId}`;
+    console.log(`[Client Payments] Setting up subscription to ${channelName}`);
+
+    // Clean up old subscription if it exists and is different
+    if (channelRef.current && channelRef.current.name !== channelName) {
+      console.log(
+        `[Client Payments] Unsubscribing from old channel: ${channelRef.current.name}`
+      );
+      channelRef.current.unbind("update-payment-status");
+      channelRef.current.unbind("update-order-status");
+      pusher.unsubscribe(channelRef.current.name);
+      channelRef.current = null;
+    }
+
+    // If we don't have a channel reference or it's not subscribed, create a new subscription
+    if (!channelRef.current || !channelRef.current.subscribed) {
+      console.log(`[Client Payments] Subscribing to ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      channelRef.current = channel;
+
+      // Handle subscription events
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(
+          `[Client Payments] Successfully subscribed to ${channelName}`
+        );
+      });
+
+      channel.bind("pusher:subscription_error", (status: any) => {
+        console.error(
+          `[Client Payments] Failed Pusher subscription to ${channelName}, status:`,
+          status
+        );
+      });
+
+      // Bind to update-order-status event
+      console.log(
+        `[Client Orders] Binding to update-order-status event on ${channelName}`
+      );
+      // In your client code, modify the update-order-status handler:
+      channel.bind(
+        "update-order-status",
+        (data: { orderId: string; status: string; date_updated: string }) => {
+          console.log(`[Client Orders] Received order status update:`, data);
+
+          // Add logging to debug the status format
+          console.log(`[Client Orders] Current orders:`, orders);
+
+          // Update the order in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.orderId) {
+                console.log(
+                  `[Client Orders] Updating order ${order._id} from "${order.order_status}" to "${data.status}"`
+                );
+                return { ...order, order_status: data.status };
+              }
+              return order;
+            });
+
+            // Log the result to confirm update worked
+            console.log(
+              `[Client Orders] Order update result:`,
+              updatedOrders.find((o) => o._id === data.orderId)?.order_status
+            );
+
+            return updatedOrders;
+          });
+        }
+      );
+
+      // Bind to update-payment-status event
+      console.log(
+        `[Client Payments] Binding to update-payment-status event on ${channelName}`
+      );
+      channel.bind(
+        "update-payment-status",
+        (data: {
+          order_id: string;
+          payment_status: string;
+          date_updated?: string;
+        }) => {
+          console.log(
+            `[Client Payments] Received payment status update:`,
+            data
+          );
+
+          // Update the orders in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Client Payments] Updating order ${order._id} payment status from "${order.payment_status}" to "${data.payment_status}"`
+                );
+                return { ...order, payment_status: data.payment_status };
+              }
+              return order;
+            });
+
+            return updatedOrders;
+          });
+        }
+      );
+    }
+
+    // Cleanup function
+    return () => {
+      console.log(`[Client Payments] Cleaning up handlers for ${channelName}`);
+      if (channelRef.current) {
+        channelRef.current.unbind("update-payment-status");
+        channelRef.current.unbind("update-order-status");
+      }
+    };
+  }, [pusher, isConnected, currentUserId]);
 
   const handleSubmitPayment = async () => {
     try {
@@ -240,7 +368,7 @@ export default function Payments() {
                   <strong>Shop Name:</strong> {order.shop_name}
                 </p>
                 <p>
-                  <strong>Total Price:</strong> {order.total_price}
+                  <strong>Total Price:</strong> {order.total_price || "Pending"}
                 </p>
                 <p>
                   <strong>Order Status:</strong> {order.order_status}

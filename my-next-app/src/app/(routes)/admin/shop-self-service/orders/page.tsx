@@ -248,6 +248,7 @@ export default function Orders() {
       );
       channelRef.current.unbind("new-order"); // Unbind ALL handlers for this event
       channelRef.current.unbind("update-order-price"); // Also unbind this event
+      channelRef.current.unbind("update-payment-status"); // Also unbind this event
       pusher.unsubscribe(channelRef.current.name);
       channelRef.current = null;
     }
@@ -321,6 +322,35 @@ export default function Orders() {
           );
         }
       );
+
+      // Add this after your "update-order-price" binding, around line 302
+      // Bind to update-payment-status event
+      console.log(
+        `[Admin Orders] Binding to update-payment-status event on ${channelName}`
+      );
+      channel.bind(
+        "update-payment-status",
+        (data: { order_id: string; payment_status: string }) => {
+          console.log(`[Admin Orders] Received payment status update:`, data);
+
+          // Update order details in state
+          setOrderDetails((prevOrders) =>
+            prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Admin Orders] Updating order ${order._id} payment status from "${order.payment_status}" to "${data.payment_status}"`
+                );
+
+                return {
+                  ...order,
+                  payment_status: data.payment_status,
+                };
+              }
+              return order;
+            })
+          );
+        }
+      );
     } else {
       console.log(`[Admin Orders] Already subscribed to ${channelName}`);
       // Don't bind again if we're already subscribed - this is crucial to avoid duplicates!
@@ -333,8 +363,9 @@ export default function Orders() {
         // Remove all handlers for the new-order event to prevent duplicates
         channelRef.current.unbind("new-order");
         channelRef.current.unbind("update-order-price"); // Add this line
+        channelRef.current.unbind("update-payment-status"); // Add this line
         // Then add our current handler back
-        channelRef.current.bind("new-order", handleNewOrder);
+        //channelRef.current.bind("new-order", handleNewOrder);
       }
     };
   }, [pusher, isConnected, adminId, handleNewOrder]);
