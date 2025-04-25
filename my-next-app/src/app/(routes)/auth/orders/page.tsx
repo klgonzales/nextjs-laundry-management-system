@@ -29,6 +29,9 @@ interface Order {
   feedbacks?: Feedback[];
   payment_status: string;
   order_type: string;
+  machine_id?: string | undefined;
+  type?: string; // machine type?
+  time_range?: { start: string; end: string }[];
 }
 
 export default function Orders() {
@@ -176,6 +179,80 @@ export default function Orders() {
           });
         }
       );
+
+      // Add this right after your update-order-status binding, around line 166
+      // Bind to update-order-price event
+      console.log(
+        `[Client Orders] Binding to update-order-price event on ${channelName}`
+      );
+      channel.bind(
+        "update-order-price",
+        (data: {
+          order_id: string;
+          total_weight?: number;
+          total_price?: number;
+          notes?: string;
+          date_updated?: string;
+        }) => {
+          console.log(`[Client Orders] Received order price update:`, data);
+
+          // Update the order in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Client Orders] Updating order ${order._id} price details from:`,
+                  {
+                    total_weight: order.total_weight,
+                    total_price: order.total_price,
+                    notes: order.notes,
+                  },
+                  "to:",
+                  {
+                    total_weight:
+                      data.total_weight !== undefined
+                        ? data.total_weight
+                        : order.total_weight,
+                    total_price:
+                      data.total_price !== undefined
+                        ? data.total_price
+                        : order.total_price,
+                    notes: data.notes !== undefined ? data.notes : order.notes,
+                  }
+                );
+
+                return {
+                  ...order,
+                  total_weight:
+                    data.total_weight !== undefined
+                      ? data.total_weight
+                      : order.total_weight,
+                  total_price:
+                    data.total_price !== undefined
+                      ? data.total_price
+                      : order.total_price,
+                  notes: data.notes !== undefined ? data.notes : order.notes,
+                };
+              }
+              return order;
+            });
+
+            // Log the result
+            const updatedOrder = updatedOrders.find(
+              (o) => o._id === data.order_id
+            );
+            if (updatedOrder) {
+              console.log(`[Client Orders] Order price update result:`, {
+                total_weight: updatedOrder.total_weight,
+                total_price: updatedOrder.total_price,
+                notes: updatedOrder.notes,
+              });
+            }
+
+            return updatedOrders;
+          });
+        }
+      );
     }
 
     // Cleanup function
@@ -183,6 +260,7 @@ export default function Orders() {
       console.log(`[Client Orders] Cleaning up handlers for ${channelName}`);
       if (channelRef.current) {
         channelRef.current.unbind("update-order-status");
+        channelRef.current.unbind("update-order-price"); // Add this line
       }
     };
   }, [pusher, isConnected, currentUserId]);
@@ -385,14 +463,32 @@ export default function Orders() {
                   <strong>Shop Type:</strong> {order.shop_type}
                 </p>
                 <p>
-                  <strong>Date:</strong> {new Date(order.date).toLocaleString()}
+                  <strong>Schedule: </strong>
+                  {new Date(order.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}{" "}
+                  {order.time_range &&
+                    `(${order.time_range[0]?.start} - ${order.time_range[0]?.end})`}
+                </p>
+                <p>
+                  <strong>Machine: </strong>
+                  {(order.machine_id?.charAt(0).toUpperCase() ?? "") +
+                    order.machine_id?.slice(1)}
+                </p>
+                <p>
+                  <strong>Machine Type: </strong>
+                  {order.type
+                    ? order.type.charAt(0).toUpperCase() + order.type.slice(1)
+                    : "Unknown"}
                 </p>
                 <p>
                   <strong>Total Price:</strong> {order.total_price || "Pending"}
                 </p>
                 <p>
                   <strong>Total Weight:</strong>{" "}
-                  {order.total_weight || "Pending"}
+                  {order.total_weight || "Pending"}kg
                 </p>
                 <p>
                   <strong>Order Status:</strong> {order.order_status}

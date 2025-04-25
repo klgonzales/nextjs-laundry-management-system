@@ -4,6 +4,9 @@ import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
+import { Notification } from "@/app/models/Notification";
+import { pusherServer } from "@/app/lib/pusherServer";
+import mongoose from "mongoose";
 
 export async function PATCH(request: Request, context: { params: any }) {
   const { params } = context;
@@ -122,6 +125,46 @@ export async function PATCH(request: Request, context: { params: any }) {
         await customer.save();
         console.log("Customer updated:", customer._id);
       }
+    }
+
+    // --- Customer notification via Pusher ---
+    const customerChannel = `private-client-${updatedOrder.customer_id}`;
+    const notificationMessage = `Your order details have been updated. Total weight: ${total_weight}kg, Total price: ₱${total_price}.`;
+
+    // Create notification record
+    const customerNotification = await Notification.create({
+      message: notificationMessage,
+      timestamp: new Date(),
+      read: false,
+      recipient_id: updatedOrder.customer_id,
+      recipient_type: "customer",
+      related_order_id: orderId,
+    });
+
+    try {
+      // Trigger price update event
+      await pusherServer.trigger(customerChannel, "update-order-price", {
+        order_id: orderId,
+        total_weight,
+        total_price,
+        notes,
+        date_updated: new Date(),
+      });
+      console.log(
+        `Pusher event 'update-order-price' triggered on channel ${customerChannel}`
+      );
+
+      // Trigger notification
+      await pusherServer.trigger(
+        customerChannel,
+        "new-notification",
+        customerNotification.toObject()
+      );
+      console.log(
+        `Pusher event 'new-notification' triggered for customer on channel ${customerChannel}`
+      );
+    } catch (error) {
+      console.error("Error triggering Pusher events for customer:", error);
     }
 
     return NextResponse.json({ success: true, updatedOrder });

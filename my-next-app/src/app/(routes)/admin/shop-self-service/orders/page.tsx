@@ -247,6 +247,7 @@ export default function Orders() {
         `[Admin Orders] Unsubscribing from old channel: ${channelRef.current.name}`
       );
       channelRef.current.unbind("new-order"); // Unbind ALL handlers for this event
+      channelRef.current.unbind("update-order-price"); // Also unbind this event
       pusher.unsubscribe(channelRef.current.name);
       channelRef.current = null;
     }
@@ -274,6 +275,52 @@ export default function Orders() {
         `[Admin Orders] Binding to new-order event on ${channelName}`
       );
       channel.bind("new-order", handleNewOrder);
+
+      // Bind to update-order-price event
+      console.log(
+        `[Admin Orders] Binding to update-order-price event on ${channelName}`
+      );
+      channel.bind(
+        "update-order-price",
+        (data: {
+          order_id: string;
+          total_weight?: number;
+          total_price?: number;
+          notes?: string;
+        }) => {
+          console.log(`[Admin Orders] Received order price update:`, data);
+
+          // Update order details in state
+          setOrderDetails((prevOrders) =>
+            prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Admin Orders] Updating order ${order._id} price details from:`,
+                  {
+                    total_weight: order.total_weight,
+                    total_price: order.total_price,
+                    notes: order.notes,
+                  },
+                  "to:",
+                  {
+                    total_weight: data.total_weight || order.total_weight,
+                    total_price: data.total_price || order.total_price,
+                    notes: data.notes || order.notes,
+                  }
+                );
+
+                return {
+                  ...order,
+                  total_weight: data.total_weight || order.total_weight,
+                  total_price: data.total_price || order.total_price,
+                  notes: data.notes || order.notes,
+                };
+              }
+              return order;
+            })
+          );
+        }
+      );
     } else {
       console.log(`[Admin Orders] Already subscribed to ${channelName}`);
       // Don't bind again if we're already subscribed - this is crucial to avoid duplicates!
@@ -285,6 +332,7 @@ export default function Orders() {
       if (channelRef.current) {
         // Remove all handlers for the new-order event to prevent duplicates
         channelRef.current.unbind("new-order");
+        channelRef.current.unbind("update-order-price"); // Add this line
         // Then add our current handler back
         channelRef.current.bind("new-order", handleNewOrder);
       }
@@ -310,12 +358,42 @@ export default function Orders() {
       if (!response.ok) {
         throw new Error("Failed to update order details");
       }
+
+      // Find the current order to get the customer_id
+      const currentOrder = orderDetails.find(
+        (order) => order._id === editOrderId
+      );
+      if (currentOrder && currentOrder.customer_id) {
+        // Send notification to customer (optional - this could also be handled by the server)
+        const customerChannel = `private-client-${currentOrder.customer_id}`;
+        try {
+          await fetch("/api/pusher/trigger", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              channel: customerChannel,
+              event: "update-order-price",
+              data: {
+                order_id: editOrderId,
+                ...editDetails,
+              },
+            }),
+          });
+          console.log(`Notification sent to customer about price update`);
+        } catch (notifyError) {
+          console.error(
+            "Failed to notify customer about price update:",
+            notifyError
+          );
+        }
+      }
+
       const updatedOrder = await response.json();
+
+      // Update local state
       setOrderDetails((prev) =>
         prev.map((order) =>
-          order._id === editOrderId
-            ? { ...order, ...editDetails } // Update the order in the state
-            : order
+          order._id === editOrderId ? { ...order, ...editDetails } : order
         )
       );
 
