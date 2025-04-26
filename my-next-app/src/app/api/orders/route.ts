@@ -157,6 +157,57 @@ export async function POST(request: Request) {
     }
     // --- END: Pusher Trigger ---
 
+    // After your existing Pusher triggers (around line 156), add:
+
+    // --- START: Payment Notification Trigger ---
+    // If this order requires payment, notify admin about the pending payment
+    if (newOrder.payment_status === "pending" && updatedAdmin?.admin_id) {
+      const adminId = updatedAdmin.admin_id;
+      const adminChannel = `private-admin-${adminId}`;
+
+      try {
+        // Trigger new-payment event for the admin payments page
+        await pusherServer.trigger(adminChannel, "new-payment", {
+          _id: newOrder._id,
+          order_id: newOrder.order_id,
+          customer_id: newOrder.customer_id,
+          shop_id: body.shop_id,
+          payment_status: newOrder.payment_status,
+          order_status: newOrder.order_status,
+          total_price: newOrder.total_price,
+          payment_method: newOrder.payment_method || "Not specified",
+          date_placed: newOrder.date_placed,
+        });
+        console.log(
+          `Pusher event 'new-payment' triggered on channel ${adminChannel}`
+        );
+
+        // Add an additional payment-specific notification
+        const paymentNotificationMessage = `New payment pending for Order #${newOrder.order_id}.`;
+        const paymentNotification = await Notification.create({
+          message: paymentNotificationMessage,
+          recipient_id: adminId,
+          recipient_type: "admin",
+          related_order_id: newOrder._id,
+          related_to_payment: true, // Add this flag to identify payment-related notifications
+          read: false,
+          timestamp: new Date(),
+        });
+
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          paymentNotification.toObject()
+        );
+        console.log(
+          `Payment notification triggered on channel ${adminChannel}`
+        );
+      } catch (pusherError) {
+        console.error("Error triggering payment notification:", pusherError);
+      }
+    }
+    // --- END: Payment Notification Trigger ---
+
     return NextResponse.json({
       success: true,
       order_id: newOrder._id,

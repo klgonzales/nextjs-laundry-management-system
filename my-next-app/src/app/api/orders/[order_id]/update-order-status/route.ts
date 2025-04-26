@@ -155,99 +155,99 @@ export async function PATCH(request: Request, context: { params: any }) {
     // Find the admin who owns the shop for this order
     // --- START: Admin Notification via Pusher ---
     // Since each admin has only one shop, we can simplify this
-    // let shopOwnerAdmin;
+    let shopOwnerAdmin;
 
-    // // If we already have the shop_id, use it directly
-    // if (shop_id) {
-    //   shopOwnerAdmin = await Admin.findOne({ "shops.shop_id": shop_id });
-    // } else {
-    //   // With this updated version:
-    //   if (updatedOrder && updatedOrder.shop) {
-    //     // First try to find by _id if it's a valid ObjectId
-    //     let orderShop;
-    //     try {
-    //       // Check if the shop value looks like a MongoDB ObjectId
-    //       if (mongoose.Types.ObjectId.isValid(updatedOrder.shop)) {
-    //         orderShop = await Shop.findById(updatedOrder.shop);
-    //       }
-    //     } catch (err) {
-    //       console.log(
-    //         "Error finding shop by _id, will try shop_id instead",
-    //         err
-    //       );
-    //     }
+    // If we already have the shop_id, use it directly
+    if (shop_id) {
+      shopOwnerAdmin = await Admin.findOne({ "shops.shop_id": shop_id });
+    } else {
+      // With this updated version:
+      if (updatedOrder && updatedOrder.shop) {
+        // First try to find by _id if it's a valid ObjectId
+        let orderShop;
+        try {
+          // Check if the shop value looks like a MongoDB ObjectId
+          if (mongoose.Types.ObjectId.isValid(updatedOrder.shop)) {
+            orderShop = await Shop.findById(updatedOrder.shop);
+          }
+        } catch (err) {
+          console.log(
+            "Error finding shop by _id, will try shop_id instead",
+            err
+          );
+        }
 
-    //     // If not found by _id, try shop_id directly
-    //     if (!orderShop) {
-    //       orderShop = await Shop.findOne({ shop_id: updatedOrder.shop });
-    //     }
+        // If not found by _id, try shop_id directly
+        if (!orderShop) {
+          orderShop = await Shop.findOne({ shop_id: updatedOrder.shop });
+        }
 
-    //     if (orderShop && orderShop.shop_id) {
-    //       shopOwnerAdmin = await Admin.findOne({
-    //         "shops.shop_id": orderShop.shop_id,
-    //       });
-    //     }
-    //   } else {
-    //     // Fallback: Just get all admins and look through their shops
-    //     const allAdmins = await Admin.find();
-    //     for (const admin of allAdmins) {
-    //       // Check if this admin has the order in any of their shops
-    //       if (
-    //         admin.shops.some((shop: any) =>
-    //           shop.orders.some((order: any) => order._id.toString() === orderId)
-    //         )
-    //       ) {
-    //         shopOwnerAdmin = admin;
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
+        if (orderShop && orderShop.shop_id) {
+          shopOwnerAdmin = await Admin.findOne({
+            "shops.shop_id": orderShop.shop_id,
+          });
+        }
+      } else {
+        // Fallback: Just get all admins and look through their shops
+        const allAdmins = await Admin.find();
+        for (const admin of allAdmins) {
+          // Check if this admin has the order in any of their shops
+          if (
+            admin.shops.some((shop: any) =>
+              shop.orders.some((order: any) => order._id.toString() === orderId)
+            )
+          ) {
+            shopOwnerAdmin = admin;
+            break;
+          }
+        }
+      }
+    }
 
-    // if (shopOwnerAdmin && shopOwnerAdmin.admin_id) {
-    //   const adminId = shopOwnerAdmin.admin_id;
-    //   const adminChannel = `private-admin-${adminId}`;
-    //   // Rest of the notification code stays the same...
-    //   // Use string for order_id in the message to avoid TypeScript complaints
-    //   const adminStatusMessage = `Order #${String(updatedOrder.order_id || orderId)} status updated to ${newStatus}`;
+    if (shopOwnerAdmin && shopOwnerAdmin.admin_id) {
+      const adminId = shopOwnerAdmin.admin_id;
+      const adminChannel = `private-admin-${adminId}`;
+      // Rest of the notification code stays the same...
+      // Use string for order_id in the message to avoid TypeScript complaints
+      const adminStatusMessage = `Order #${String(updatedOrder.order_id || orderId)} status updated to ${newStatus}`;
 
-    //   // Create notification for admin (for audit/tracking purposes)
-    //   const adminNotification = await Notification.create({
-    //     message: adminStatusMessage,
-    //     recipient_id: adminId,
-    //     recipient_type: "admin",
-    //     related_order_id: orderId,
-    //     read: false,
-    //     timestamp: new Date(),
-    //   });
+      // Create notification for admin (for audit/tracking purposes)
+      const adminNotification = await Notification.create({
+        message: adminStatusMessage,
+        recipient_id: adminId,
+        recipient_type: "admin",
+        related_order_id: orderId,
+        read: false,
+        timestamp: new Date(),
+      });
 
-    //   try {
-    //     // Trigger order update event (if needed for admin dashboard/realtime updates)
-    //     await pusherServer.trigger(adminChannel, "update-order-status", {
-    //       order_id: orderId,
-    //       status: newStatus,
-    //       date_updated: new Date(),
-    //       customer_id: updatedOrder.customer_id,
-    //     });
-    //     console.log(
-    //       `Pusher event 'update-order-status' triggered on admin channel ${adminChannel}`
-    //     );
+      try {
+        // Trigger order update event (if needed for admin dashboard/realtime updates)
+        await pusherServer.trigger(adminChannel, "update-order-status", {
+          order_id: orderId,
+          status: newStatus,
+          date_updated: new Date(),
+          customer_id: updatedOrder.customer_id,
+        });
+        console.log(
+          `Pusher event 'update-order-status' triggered on admin channel ${adminChannel}`
+        );
 
-    //     // Trigger notification event
-    //     await pusherServer.trigger(
-    //       adminChannel,
-    //       "new-notification",
-    //       adminNotification.toObject()
-    //     );
-    //     console.log(
-    //       `Pusher event 'new-notification' triggered for admin on channel ${adminChannel}`
-    //     );
-    //   } catch (pusherError) {
-    //     console.error("Error triggering Pusher event for admin:", pusherError);
-    //   }
-    // } else {
-    //   console.log("Admin not found for shop related to this order");
-    // }
+        // Trigger notification event
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          adminNotification.toObject()
+        );
+        console.log(
+          `Pusher event 'new-notification' triggered for admin on channel ${adminChannel}`
+        );
+      } catch (pusherError) {
+        console.error("Error triggering Pusher event for admin:", pusherError);
+      }
+    } else {
+      console.log("Admin not found for shop related to this order");
+    }
     // --- END: Admin Notification ---
 
     return NextResponse.json({ success: true, updatedOrder });

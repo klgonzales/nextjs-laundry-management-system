@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Header from "./components/common/Header";
 import { AuthProvider } from "./context/AuthContext"; // Import the AuthProvider
 import { PusherProvider } from "./context/PusherContext"; // Import the PusherProvider
+import { RealTimeUpdatesProvider } from "@/app/context/RealTimeUpdatesContext";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -26,12 +27,14 @@ export default function RootLayout({
       <body className={`${poppins.className} min-h-screen bg-gray-50`}>
         <AuthProvider>
           <PusherProvider>
-            {/* <Header userType="admin" /> */}
-            {/* <Header userType="customer" /> */}
-            {/* <Header userType="delivery" /> */}
-            {/* <Header userType="shop" /> */}
-            {/* <Header userType="client" /> */}
-            <main className="container mx-auto px-4">{children}</main>
+            <RealTimeUpdatesProvider>
+              {/* <Header userType="admin" /> */}
+              {/* <Header userType="customer" /> */}
+              {/* <Header userType="delivery" /> */}
+              {/* <Header userType="shop" /> */}
+              {/* <Header userType="client" /> */}
+              <main className="container mx-auto px-4">{children}</main>
+            </RealTimeUpdatesProvider>
           </PusherProvider>
           {/* <Footer /> */}
         </AuthProvider>
