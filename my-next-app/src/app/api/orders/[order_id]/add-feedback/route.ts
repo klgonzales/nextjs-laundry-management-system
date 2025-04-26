@@ -4,6 +4,8 @@ import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
+import { pusherServer } from "@/app/lib/pusherServer";
+import { Notification } from "@/app/models/Notification"; // Add if you want notifications
 
 export async function PATCH(request: NextRequest, context: any) {
   const { order_id } = context.params;
@@ -123,6 +125,66 @@ export async function PATCH(request: NextRequest, context: any) {
         customer.markModified("orders");
         await customer.save();
         console.log("Customer updated:", customer._id);
+      }
+    }
+
+    // Get shop_id from the order
+    let shop_id;
+    if (updatedOrder?.shop) {
+      // If shop is stored directly as shop_id
+      if (typeof updatedOrder.shop === "string") {
+        shop_id = updatedOrder.shop;
+      } else {
+        // If it's an object with shop_id property
+        shop_id = updatedOrder.shop.shop_id;
+      }
+    }
+
+    // Find the admin for this shop
+    let shopOwnerAdmin;
+    if (shop_id) {
+      shopOwnerAdmin = await Admin.findOne({ "shops.shop_id": shop_id });
+    }
+
+    // If we have the admin, send a Pusher notification
+    if (shopOwnerAdmin?.admin_id) {
+      const adminId = shopOwnerAdmin.admin_id;
+      const adminChannel = `private-admin-${adminId}`;
+
+      // Get order details for notification
+      const orderNumber = updatedOrder.order_id || orderId;
+
+      try {
+        // 1. Trigger new-feedback event
+        await pusherServer.trigger(adminChannel, "new-feedback", {
+          ...newFeedback,
+          shop_id: shop_id, // Add shop_id for filtering
+          order_number: orderNumber, // Include order number for display
+        });
+        console.log(
+          `Pusher: 'new-feedback' event triggered on ${adminChannel}`
+        );
+
+        // 2. Create notification record (optional)
+        const notificationMessage = `New feedback received for Order #${orderNumber} with rating: ${rating}/5`;
+        const notification = await Notification.create({
+          message: notificationMessage,
+          recipient_id: adminId,
+          recipient_type: "admin",
+          related_order_id: orderId,
+          read: false,
+          timestamp: new Date(),
+        });
+
+        // 3. Trigger notification event
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          notification.toObject()
+        );
+        console.log(`Pusher: 'new-notification' triggered on ${adminChannel}`);
+      } catch (pusherError) {
+        console.error("Error triggering Pusher notification:", pusherError);
       }
     }
 

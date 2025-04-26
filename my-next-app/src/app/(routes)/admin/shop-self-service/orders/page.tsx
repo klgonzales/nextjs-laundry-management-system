@@ -588,6 +588,10 @@ export default function Orders() {
     }
   }, [filterStatus, orderDetails]);
 
+  if (loading) {
+    return <p className="text-center text-gray-500">Loading Orders...</p>;
+  }
+
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">

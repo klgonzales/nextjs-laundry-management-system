@@ -8,6 +8,7 @@ import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
 
 export default function Payments() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
   const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
   const { pusher, isConnected } = usePusher();
   const channelRef = useRef<Channel | null>(null);
@@ -407,6 +408,10 @@ export default function Payments() {
       console.log("Failed to cancel payment. Please try again.");
     }
   };
+
+  // if (loading) {
+  //   return <p className="text-center text-gray-500">Loading payments...</p>;
+  // }
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">

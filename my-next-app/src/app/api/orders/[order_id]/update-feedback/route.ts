@@ -5,6 +5,8 @@ import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
+import { pusherServer } from "@/app/lib/pusherServer";
+import { Notification } from "@/app/models/Notification"; // Add if you want notifications
 
 export async function PUT(request: Request, context: { params: any }) {
   const { order_id } = context.params;
@@ -50,6 +52,10 @@ export async function PUT(request: Request, context: { params: any }) {
       );
     }
 
+    // Get shop_id before updating
+    const shop_id = order.shop;
+    console.log("Shop ID:", shop_id);
+
     targetFeedback.rating = rating;
     targetFeedback.comments = comments;
     targetFeedback.date_submitted = date_submitted;
@@ -66,9 +72,12 @@ export async function PUT(request: Request, context: { params: any }) {
 
     // Update in Admins
     const admins = await Admin.find();
+    let adminToNotify = null;
+
     for (const admin of admins) {
       for (const shop of admin.shops) {
         if (updateFeedback(shop.orders)) {
+          adminToNotify = admin;
           admin.markModified("shops");
           break;
         }
@@ -82,6 +91,63 @@ export async function PUT(request: Request, context: { params: any }) {
       if (updateFeedback(customer.orders)) {
         customer.markModified("orders");
         await customer.save();
+      }
+    }
+
+    console.log("Feedback updated:", targetFeedback);
+    console.log("sdsafdsdsad");
+    console.log("Feedback updated:", targetFeedback.admin_id);
+    // Send Pusher notification if we found the admin
+    if (adminToNotify && adminToNotify.admin_id) {
+      const adminId = adminToNotify.admin_id;
+      const adminChannel = `private-admin-${adminId}`;
+
+      // Prepare the updated feedback data
+      const updatedFeedbackData = {
+        feedback_id,
+        order_id: order_id,
+        shop_id: shop_id,
+        customer_id: targetFeedback.customer_id,
+        rating,
+        comments,
+        date_submitted,
+        order_number: order.order_id || order_id,
+        updated: true, // Flag to indicate this is an update, not new feedback
+      };
+
+      try {
+        // 1. Trigger update-feedback event
+        await pusherServer.trigger(
+          adminChannel,
+          "update-feedback",
+          updatedFeedbackData
+        );
+        console.log(
+          `[API] Pusher: 'update-feedback' triggered on ${adminChannel}`
+        );
+
+        // 2. Create notification (optional)
+        const notificationMessage = `Feedback updated for Order #${order.order_id || order_id} - New rating: ${rating}/5`;
+        const notification = await Notification.create({
+          message: notificationMessage,
+          recipient_id: adminId,
+          recipient_type: "admin",
+          related_order_id: order_id,
+          read: false,
+          timestamp: new Date(),
+        });
+
+        // 3. Trigger notification
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          notification.toObject()
+        );
+        console.log(
+          `[API] Pusher: 'new-notification' triggered on ${adminChannel}`
+        );
+      } catch (pusherError) {
+        console.error("[API] Error triggering Pusher event:", pusherError);
       }
     }
 
