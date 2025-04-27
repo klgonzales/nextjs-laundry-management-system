@@ -4,7 +4,7 @@ const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || "";
 const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "";
 
 // We'll create a function to get the current user ID that can be updated
-let currentUserId: string | null = null;
+let currentUserId: string | number | null = null;
 
 export const setCurrentUserId = (userId: string): void => {
   currentUserId = userId;
