@@ -21,7 +21,8 @@ interface NotificationItem {
 }
 
 export default function Notification() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth(); // Add isLoading if available in your AuthContext
+
   // --- Use Pusher context ---
   const { pusher, isConnected } = usePusher();
   // --- Remove socket state ---
@@ -42,6 +43,45 @@ export default function Notification() {
 
   // --- Initial Fetch (remains the same) ---
   useEffect(() => {
+    // Early return if user is null and auth is not loading
+    if (!currentUserId && !authLoading) {
+      // Cleanup if needed
+      if (channelRef.current) {
+        try {
+          channelRef.current.unbind_all();
+          if (pusher) {
+            pusher.unsubscribe(channelRef.current.name);
+          }
+          channelRef.current = null;
+        } catch (error) {
+          console.error(
+            "[Notification] Error cleaning up on user logout:",
+            error
+          );
+        }
+      }
+      return;
+    }
+    // Early return with better logging if essential data is missing
+    if (!pusher || !isConnected) {
+      console.log(
+        `[Notifications] Pusher not ready yet. Connected: ${isConnected}`
+      );
+      return;
+    }
+
+    if (!currentUserId || !currentUserType) {
+      // Only log this as an error if we're not in a loading state
+      if (!authLoading) {
+        console.log(
+          `[Notifications] No user ID found and not in loading state.`
+        );
+      } else {
+        console.log(`[Notifications] Auth still loading, will try again soon.`);
+      }
+      return;
+    }
+
     if (!currentUserId || !currentUserType) {
       setNotifications([]);
       setLoading(false);
@@ -71,7 +111,7 @@ export default function Notification() {
       }
     };
     fetchNotifications();
-  }, [currentUserId, currentUserType]);
+  }, [pusher, isConnected, currentUserId, currentUserType, authLoading]);
 
   // --- Pusher Event Handling (Modified + Cleaned Up) ---
   useEffect(() => {
@@ -206,6 +246,11 @@ export default function Notification() {
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Render null during auth loading or when user is not available
+  if (authLoading) {
+    return null; // Or return a loading spinner specifically for notifications
+  }
 
   // --- Render Logic (remains the same) ---
   if (!currentUserId) {

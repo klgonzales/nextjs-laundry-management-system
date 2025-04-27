@@ -35,7 +35,7 @@ interface Order {
 }
 
 export default function Orders() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
@@ -64,9 +64,21 @@ export default function Orders() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user?.customer_id) {
-        console.error("No customer_id found");
+      // First check if auth is still loading
+      if (authLoading) {
+        console.log(
+          "[Client Orders] Auth still loading, deferring data fetch."
+        );
+        return; // Exit early if auth is loading
+      }
+
+      // Then check if user exists and has customer_id
+      if (!user || !user.customer_id) {
+        console.log(
+          "[Client Orders] No authenticated user with customer_id found"
+        );
         setLoading(false);
+        setOrders([]); // Set empty orders array
         return;
       }
 
@@ -100,11 +112,58 @@ export default function Orders() {
       }
     };
 
-    fetchOrders();
-  }, [user?.customer_id]);
+    // Only call fetchOrders if:
+    // 1. We have a user with customer_id, OR
+    // 2. Auth loading is complete (even if no user found)
+    if (user?.customer_id || !authLoading) {
+      fetchOrders();
+    }
+  }, [user?.customer_id, authLoading]);
 
   // Add this effect after your existing useEffect hooks
   useEffect(() => {
+    // Near the top of your component
+    if (!user && !authLoading) {
+      // Cleanup if needed
+      if (channelRef.current) {
+        try {
+          channelRef.current.unbind_all();
+          if (pusher) {
+            pusher.unsubscribe(channelRef.current.name);
+          }
+          channelRef.current = null;
+        } catch (error) {
+          console.error(
+            "[Client Orders] Error cleaning up on user logout:",
+            error
+          );
+        }
+      }
+      return;
+    }
+    // Return early if auth is still loading, with appropriate logging
+    if (authLoading) {
+      console.log(
+        "[Client Orders] Auth is still loading, deferring Pusher setup."
+      );
+      return;
+    }
+
+    if (!pusher || !isConnected) {
+      console.log(
+        "[Client Orders] Pusher not ready yet. Connected:",
+        isConnected
+      );
+      return;
+    }
+
+    if (!currentUserId) {
+      console.log(
+        "[Client Orders] No customer_id found - user might be logged out"
+      );
+      return;
+    }
+
     if (!pusher || !isConnected || !currentUserId) {
       console.log(
         `[Client Orders] Skipping Pusher subscription: Missing prerequisites.`
@@ -307,7 +366,7 @@ export default function Orders() {
         channelRef.current.unbind("update-payment-status"); // Add this line
       }
     };
-  }, [pusher, isConnected, currentUserId]);
+  }, [pusher, isConnected, currentUserId, authLoading]);
 
   const fetchFeedbacks = async (orderId: string) => {
     try {

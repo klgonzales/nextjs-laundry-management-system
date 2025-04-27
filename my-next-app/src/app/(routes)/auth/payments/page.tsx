@@ -19,7 +19,7 @@ interface Order {
 }
 
 export default function Payments() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { pusher, isConnected } = usePusher();
   const channelRef = useRef<Channel | null>(null);
   const currentUserId = user?.customer_id;
@@ -42,6 +42,22 @@ export default function Payments() {
   });
 
   useEffect(() => {
+    // Check if auth is still loading
+    if (authLoading) {
+      console.log(
+        "[Client Payments] Auth still loading, deferring data fetch."
+      );
+      return;
+    }
+
+    if (!user?.customer_id) {
+      console.log(
+        "[Client Payments] No customer_id found for the current user"
+      );
+      setLoading(false);
+      setOrders([]);
+      return;
+    }
     const fetchOrders = async () => {
       if (!user?.customer_id) {
         console.error("No customer_id found for the current user");
@@ -79,6 +95,8 @@ export default function Payments() {
                   error
                 );
                 return { ...order, shop_name: "Unknown", shop_type: "Unknown" };
+              } finally {
+                setLoading(false);
               }
             })
         );
@@ -91,8 +109,11 @@ export default function Payments() {
       }
     };
 
-    fetchOrders();
-  }, [user?.customer_id]);
+    // Key fix: Only call fetchOrders when auth is complete
+    if (!authLoading) {
+      fetchOrders();
+    }
+  }, [user?.customer_id, authLoading]);
 
   const handleSettlePayment = (order: Order) => {
     setSelectedOrderId(order._id);

@@ -49,15 +49,19 @@ interface AuthContextType {
   user: User | null;
   login: (userData: User) => void;
   logout: () => void;
+  isLoading: boolean; // Add this line
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setState] = useState<boolean>(true); // Add loading state
   const router = useRouter(); // Initialize the router
 
   useEffect(() => {
+    // Set loading to true before checking localStorage
+    setState(true);
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -68,6 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem("user"); // Clear invalid data
       }
     }
+    // Set loading to false after checking is complete
+    setState(false);
   }, []);
 
   const login = (userData: User) => {
@@ -82,18 +88,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    console.log("Logging out user with role:", user?.role); // Debugging
-    setUser(null); // Clear user state
-    localStorage.removeItem("user"); // Remove user from localStorage
+    console.log("Logging out user with role:", user?.role);
 
-    // --- ADD REDIRECTION ---
-    // Redirect to the homepage or login page immediately after clearing state
-    router.push("/"); // Or use '/auth/login' or another appropriate route
-    // --- END REDIRECTION ---
+    // Add state to track logout in progress
+    setState(true); // Set loading true during logout
+
+    try {
+      // First, navigate away
+      router.push("/");
+
+      // Then use a small timeout to ensure navigation starts before state changes
+      setTimeout(() => {
+        // Only then clear the state
+        setUser(null);
+        localStorage.removeItem("user");
+        setState(false);
+      }, 100);
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Still clear state if navigation fails
+      setUser(null);
+      localStorage.removeItem("user");
+      setState(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
