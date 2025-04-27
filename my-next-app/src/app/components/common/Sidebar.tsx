@@ -48,12 +48,12 @@ export default function Sidebar({
             >
               Payments
             </button>
-            {/* <Link
+            <Link
               href="/auth/chat"
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Messages
-            </Link> */}
+            </Link>
           </>
         )}
 
@@ -71,12 +71,12 @@ export default function Sidebar({
             >
               Services
             </button>
-            {/* <Link
+            <Link
               href="/admin/chat"
               className="block w-full text-left px-4 py-2 rounded hover:bg-gray-700"
             >
               Messages
-            </Link> */}
+            </Link>
             {shopType === "self-service" && (
               <button
                 onClick={() => handleScroll("machines")}

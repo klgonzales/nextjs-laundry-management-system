@@ -8,16 +8,16 @@ export async function GET(request: Request, context: { params: any }) {
   try {
     await dbConnect();
 
-    // Fetch messages for the specified room
-    const messages = await Message.find({ room_id })
-      .sort({ timestamp: 1 })
+    // Fetch the latest message for the room
+    const latestMessage = await Message.findOne({ room_id })
+      .sort({ timestamp: -1 })
       .lean();
 
-    return NextResponse.json({ messages });
+    return NextResponse.json({ latestMessage });
   } catch (error) {
-    console.error("Error fetching messages for room:", error);
+    console.error("Error fetching latest message for room:", error);
     return NextResponse.json(
-      { error: "Failed to fetch messages" },
+      { error: "Failed to fetch latest message" },
       { status: 500 }
     );
   }
