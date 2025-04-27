@@ -2,20 +2,33 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
-import { useEffect, useState } from "react";
+import { usePusher } from "@/app/context/PusherContext"; // Add this import
+import { useEffect, useState, useRef } from "react"; // Add useRef
 import Home from "@/app/components/common/Home";
 
 export default function ChooseService() {
   const router = useRouter();
   const { shop_id } = useParams() as { shop_id: string }; // Explicitly type shop_id
+  const { user } = useAuth(); // Get current user
+  const { pusher, isConnected } = usePusher(); // Add Pusher hook
+  const channelRef = useRef<any>(null); // For keeping track of subscriptions
+
   interface Shop {
     name: string;
     services: Service[];
     type: string;
   }
 
+  interface Service {
+    name: string;
+    description: string;
+    price_per_kg: number;
+    service_id: string;
+  }
+
   const [shop, setShop] = useState<Shop | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [hasNewServices, setHasNewServices] = useState(false); // State to track new services
 
   useEffect(() => {
     const fetchShopDetails = async () => {
@@ -41,6 +54,69 @@ export default function ChooseService() {
     description: string;
     price_per_kg: number;
   }
+
+  // Set up Pusher subscription for service updates
+  useEffect(() => {
+    if (!pusher || !isConnected || !user?.customer_id) {
+      return;
+    }
+
+    // Subscribe to personal channel for this customer
+    const privateChannelName = `private-customer-${user.customer_id}`;
+    console.log(`[Services] Setting up subscription to ${privateChannelName}`);
+
+    // Clean up existing subscription
+    if (channelRef.current) {
+      channelRef.current.unbind_all();
+      pusher.unsubscribe(channelRef.current.name);
+    }
+
+    try {
+      // Subscribe to private customer channel
+      const privateChannel = pusher.subscribe(privateChannelName);
+      channelRef.current = privateChannel;
+
+      // Listen for new service added events
+      privateChannel.bind("new-service-added", (data: any) => {
+        console.log("[Services] Received new service notification:", data);
+
+        // Only process if it's from the current shop
+        if (data.shop_id === shop_id) {
+          // Add the new service to the shop's services
+          if (shop) {
+            setShop({
+              ...shop,
+              services: [...shop.services, data.service],
+            });
+
+            // Visual indicator that new services were added
+            setHasNewServices(true);
+
+            // Could also highlight the new service with animation
+            setTimeout(() => setHasNewServices(false), 5000);
+          }
+        }
+      });
+
+      // Also subscribe to the global new services channel
+      const publicChannel = pusher.subscribe("new-services");
+
+      publicChannel.bind("service-added", (data: any) => {
+        console.log("[Services] Received global service update:", data);
+      });
+    } catch (error) {
+      console.error("[Services] Error setting up Pusher:", error);
+    }
+
+    return () => {
+      // Clean up subscriptions
+      if (channelRef.current) {
+        channelRef.current.unbind_all();
+        pusher.unsubscribe(privateChannelName);
+      }
+      pusher.unsubscribe("new-services");
+    };
+  }, [pusher, isConnected, user?.customer_id, shop_id]);
 
   const handleServiceSelection = (serviceName: string): void => {
     if (selectedServices.includes(serviceName)) {

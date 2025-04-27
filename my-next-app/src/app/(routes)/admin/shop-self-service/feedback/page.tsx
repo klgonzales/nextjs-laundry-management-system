@@ -104,6 +104,17 @@ export default function Feedback() {
       });
     });
 
+    // Add this to your admin feedback page component
+    channel.bind("delete-feedback", (data: any) => {
+      console.log(`[Admin Feedback] Received feedback deletion:`, data);
+
+      // Remove the deleted feedback from state
+      setFeedbacks((prevFeedbacks) =>
+        prevFeedbacks.filter(
+          (feedback) => feedback.feedback_id !== data.feedback_id
+        )
+      );
+    });
     // Add this to your existing useEffect for Pusher after the "new-feedback" binding
 
     // Bind to update-feedback event

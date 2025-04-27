@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react"; // Add useRef
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { useAuth } from "@/app/context/AuthContext"; // Assuming you have an AuthContext to get user details
+import { usePusher } from "@/app/context/PusherContext"; // Import Pusher context
 
 export default function MachinePage() {
   const params = useParams(); // Use useParams to access the params object
@@ -16,8 +17,11 @@ export default function MachinePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+  const [hasNewMachines, setHasNewMachines] = useState(false); // Add this state for highlighting
   const services = searchParams?.get("services")?.split(",") || []; // Get services from query params
   const { user } = useAuth();
+  const { pusher, isConnected } = usePusher(); // Get Pusher from context
+  const channelRef = useRef<any>(null); // For tracking subscriptions
 
   // Fetch machines for the shop
   useEffect(() => {
@@ -37,7 +41,136 @@ export default function MachinePage() {
     if (shop_id) {
       fetchMachines();
     }
-  }, [shop_id]);
+
+    // Store the fetchMachines function for reuse in Pusher handlers
+    const refreshMachines = async () => {
+      try {
+        console.log("[Machine] Refreshing machines list");
+        const response = await fetch(`/api/shops/${shop_id}/machines`);
+        if (!response.ok) {
+          throw new Error("Failed to refresh machines");
+        }
+
+        const data = await response.json();
+        const newMachines = data.machines;
+
+        // Check if there are new machines compared to current list
+        if (newMachines.length > machines.length) {
+          // Set highlight flag
+          setHasNewMachines(true);
+
+          // Clear highlight after 5 seconds
+          setTimeout(() => {
+            setHasNewMachines(false);
+          }, 5000);
+        }
+
+        // Update machines state
+        setMachines(newMachines);
+      } catch (error) {
+        console.error("[Machine] Error refreshing machines:", error);
+      }
+    };
+
+    // Set up Pusher listeners when component mounts
+    if (pusher && isConnected && user?.customer_id) {
+      console.log("[Machine] Setting up Pusher subscriptions");
+
+      // Clean up any existing subscriptions
+      if (channelRef.current) {
+        channelRef.current.unbind_all();
+        if (pusher.channel(channelRef.current.name)) {
+          pusher.unsubscribe(channelRef.current.name);
+        }
+      }
+
+      // Subscribe to multiple channels for better reliability
+      try {
+        // 1. Private channel for this customer
+        const privateChannelName = `private-customer-${user.customer_id}`;
+        const privateChannel = pusher.subscribe(privateChannelName);
+        channelRef.current = privateChannel;
+
+        // Log subscription status
+        privateChannel.bind("pusher:subscription_succeeded", () => {
+          console.log(
+            `[Machine] Successfully subscribed to ${privateChannelName}`
+          );
+        });
+
+        privateChannel.bind("pusher:subscription_error", (error: any) => {
+          console.error(
+            `[Machine] Failed to subscribe to ${privateChannelName}:`,
+            error
+          );
+
+          // Fall back to public channel on auth error
+          const publicChannelName = `customer-${user.customer_id}`;
+          try {
+            pusher.unsubscribe(privateChannelName);
+            const publicChannel = pusher.subscribe(publicChannelName);
+            channelRef.current = publicChannel;
+            console.log(
+              `[Machine] Fallback: Subscribed to ${publicChannelName}`
+            );
+          } catch (pubErr) {
+            console.error("[Machine] Error in fallback subscription:", pubErr);
+          }
+        });
+
+        // 2. Also subscribe to public test channel
+        const testChannel = pusher.subscribe("test-machine-notifications");
+
+        // Machine notification handlers
+        const handleMachineAdded = (data: any) => {
+          console.log("[Machine] Received machine notification:", data);
+
+          // Only toast and refresh if notification is for current shop
+          if (data.shop_id === shop_id) {
+            // Refresh the machines list
+            refreshMachines();
+          } else {
+            // Still show notification but different style
+          }
+        };
+
+        // Bind same handler to multiple events/channels
+        privateChannel.bind("new-machine-added", handleMachineAdded);
+        testChannel.bind("new-machine-added", handleMachineAdded);
+
+        // 3. Subscribe to global machines channel
+        const globalChannel = pusher.subscribe("new-machines");
+        globalChannel.bind("machine-added", (data: any) => {
+          console.log("[Machine] Global machine update:", data);
+
+          if (data.shop_id === shop_id) {
+            // Refresh machines
+            refreshMachines();
+          }
+        });
+      } catch (error) {
+        console.error("[Machine] Error setting up Pusher:", error);
+      }
+    }
+
+    // Clean up function
+    return () => {
+      console.log("[Machine] Cleaning up Pusher subscriptions");
+
+      // Clean up all subscriptions
+      if (channelRef.current) {
+        channelRef.current.unbind_all();
+        pusher?.unsubscribe(channelRef.current.name);
+      }
+
+      // Also clean up other channels
+      if (pusher) {
+        pusher.unsubscribe("test-machine-notifications");
+        pusher.unsubscribe("new-machines");
+        pusher.unsubscribe(`customer-${user?.customer_id}`);
+      }
+    };
+  }, [pusher, isConnected, user?.customer_id, shop_id]);
 
   // Update available times whenever the selected machine or date changes
   useEffect(() => {
