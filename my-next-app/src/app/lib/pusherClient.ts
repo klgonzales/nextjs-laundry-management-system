@@ -4,10 +4,10 @@ const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || "";
 const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "";
 
 // We'll create a function to get the current user ID that can be updated
-let currentUserId: string | null = null;
+let currentUserId: string | number | null = null;
 
-export const setCurrentUserId = (userId: string): void => {
-  currentUserId = userId;
+export const setCurrentUserId = (userId: string | number): void => {
+  currentUserId = String(userId);
   console.log(`[PusherClient] Updated current user ID to: ${userId}`);
 };
 
@@ -29,12 +29,13 @@ export const pusherClient = new PusherClient(pusherKey, {
             "Content-Type": "application/x-www-form-urlencoded",
             Accept: "application/json",
             // Add the user ID header if available
-            ...(currentUserId && { "X-User-ID": currentUserId }),
-          },
+            ...(currentUserId && { "X-User-ID": String(currentUserId) }),
+          } as HeadersInit,
           body: new URLSearchParams({
             socket_id: socketId,
             channel_name: channel.name,
           }),
+          credentials: "include", // Add this line
         })
           .then((response) => {
             if (!response.ok) {
