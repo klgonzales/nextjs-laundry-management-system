@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+// Add these imports
+import { usePusher } from "@/app/context/PusherContext";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
 import Sidebar from "../../../../components/common/Sidebar";
@@ -14,9 +16,15 @@ import Analytics from "../analytics/page";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { pusher, isConnected } = usePusher();
   const { user } = useAuth(); // Get the logged-in admin's data
   const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
+
+  // Stats state variables for real-time updates
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [completedOrders, setCompletedOrders] = useState(0);
 
   // Create refs for each section
   const ordersRef = useRef<HTMLDivElement>(null);
@@ -25,50 +33,131 @@ export default function AdminDashboard() {
   const paymentsRef = useRef<HTMLDivElement>(null);
   const analyticsRef = useRef<HTMLDivElement>(null);
 
+  // Update the calculateStats function
+  const calculateStats = useCallback((orders: any[]) => {
+    console.log(`[Dashboard] Calculating stats from ${orders.length} orders`);
+
+    // Check if we have valid orders array
+    if (!Array.isArray(orders) || orders.length === 0) {
+      console.log("[Dashboard] No orders to calculate stats from");
+      setTotalCustomers(0);
+      setTotalRevenue(0);
+      setCompletedOrders(0);
+      return;
+    }
+
+    // Calculate unique customers
+    const customerIds = orders
+      .map((order) => order.customer_id)
+      .filter(Boolean);
+    const uniqueCustomers = new Set(customerIds);
+    setTotalCustomers(uniqueCustomers.size);
+    console.log(`[Dashboard] Found ${uniqueCustomers.size} unique customers`);
+
+    // Calculate total revenue from completed and paid orders
+    const paidOrders = orders.filter((order) => {
+      // Check both status fields exist
+      const isCompleted = order.order_status === "completed";
+      const isPaid = order.payment_status === "paid";
+      return isCompleted && isPaid;
+    });
+
+    console.log(`[Dashboard] Found ${paidOrders.length} completed/paid orders`);
+
+    const revenue = paidOrders.reduce((total, order) => {
+      // Ensure total_price is a valid number
+      const orderTotal =
+        typeof order.total_price === "number"
+          ? order.total_price
+          : parseFloat(order.total_price) || 0;
+
+      return total + orderTotal;
+    }, 0);
+
+    setTotalRevenue(revenue);
+
+    // Count completed orders
+    const completed = orders.filter(
+      (order) => order.order_status === "completed"
+    ).length;
+    setCompletedOrders(completed);
+
+    console.log("[Dashboard] Stats calculated:", {
+      totalCustomers: uniqueCustomers.size,
+      totalRevenue: revenue,
+      completedOrders: completed,
+    });
+
+    // Debug: Show the first few orders to check their structure
+    console.log("[Dashboard] Sample order data:", orders.slice(0, 2));
+  }, []);
+
+  // Fix the fetchOrderDetails function
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      const detailedOrders = await Promise.all(
-        orders.map(async (order: any) => {
-          try {
-            // Fetch customer details
-            const customerResponse = await fetch(
-              `/api/customers/${order.customer_id}`
-            );
-            const customerData = await customerResponse.json();
+      if (!user?.shops?.[0]?.shop_id) {
+        console.log("[Dashboard] No shop ID available");
+        return;
+      }
 
-            // Fetch shop details
-            const shopResponse = await fetch(`/api/shops/${order.shop}`);
-            const shopData = await shopResponse.json();
+      try {
+        const shopId = user.shops[0].shop_id;
+        console.log(`[Dashboard] Fetching orders for shop: ${shopId}`);
 
-            return {
-              ...order,
-              customer_name: customerData?.customer?.name || "Unknown Customer",
-              shop_name: shopData?.shop?.name || "Unknown Shop",
-              shop_type: shopData?.shop?.type || "Unknown Type",
-              delivery_fee: shopData?.shop?.delivery_fee || false,
-            };
-          } catch (error) {
-            console.error("Error fetching order details:", error);
-            return {
-              ...order,
-              customer_name: "Error",
-              shop_name: "Error",
-              shop_type: "Error",
-            };
-          }
-        })
-      );
-      setOrderDetails(detailedOrders);
+        // First fetch all orders for this shop
+        const response = await fetch(`/api/shops/${shopId}/orders`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch shop orders");
+        }
 
-      // Calculate unique customers
-      const uniqueCustomers = new Set(
-        detailedOrders.map((order) => order.customer_id)
-      );
-      console.log("Total unique customers:", uniqueCustomers.size);
+        // The response is an array directly, not nested under an 'orders' property
+        const ordersData = await response.json();
+        console.log(
+          `[Dashboard] Fetched ${ordersData.length} orders:`,
+          ordersData
+        );
+
+        // Update local orders state with the array
+        setOrders(ordersData);
+
+        // Process orders to get additional details
+        const detailedOrders = await Promise.all(
+          ordersData.map(async (order: any) => {
+            try {
+              // Fetch customer details
+              const customerResponse = await fetch(
+                `/api/customers/${order.customer_id}`
+              );
+              const customerData = await customerResponse.json();
+
+              return {
+                ...order,
+                customer_name:
+                  customerData?.customer?.name || "Unknown Customer",
+              };
+            } catch (error) {
+              console.error("Error fetching order details:", error);
+              return { ...order, customer_name: "Error" };
+            }
+          })
+        );
+
+        console.log(
+          `[Dashboard] Processed ${detailedOrders.length} detailed orders`
+        );
+        setOrderDetails(detailedOrders);
+
+        // Calculate stats from the detailed orders
+        calculateStats(detailedOrders);
+      } catch (error) {
+        console.error("[Dashboard] Error fetching order data:", error);
+      }
     };
-
-    fetchOrderDetails();
-  }, [orders]);
+    // Actually call the function!
+    if (user?.shops?.[0]?.shop_id) {
+      fetchOrderDetails();
+    }
+  }, [user?.shops, calculateStats]); // Add calculateStats as a dependency
 
   const handleScroll = (section: string) => {
     switch (section) {
@@ -95,6 +184,114 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     router.push("/admin/login");
   };
+
+  // Set up Pusher for real-time updates
+  useEffect(() => {
+    if (
+      !pusher ||
+      !isConnected ||
+      !user?.admin_id ||
+      !user?.shops?.[0]?.shop_id
+    ) {
+      console.log("[Dashboard] Pusher not ready or missing user/shop data");
+      return;
+    }
+
+    const shopId = user.shops[0].shop_id;
+    const channelName = `private-admin-${user.admin_id}`;
+    console.log(`[Dashboard] Subscribing to channel: ${channelName}`);
+
+    try {
+      const channel = pusher.subscribe(channelName);
+
+      // Handle new order
+      channel.bind("new-order", (data: any) => {
+        console.log("[Dashboard] New order received:", data);
+        if (data.shop_id === shopId) {
+          setOrderDetails((prevOrders) => {
+            const updatedOrders = [
+              ...prevOrders,
+              {
+                ...data,
+                customer_name: data.customer_name || "New Customer",
+              },
+            ];
+            calculateStats(updatedOrders);
+            return updatedOrders;
+          });
+        }
+      });
+
+      // Handle order updates
+      channel.bind("order-update", (data: any) => {
+        console.log("[Dashboard] Order update received:", data);
+        if (data.shop_id === shopId) {
+          setOrderDetails((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) =>
+              order._id === data._id ? { ...order, ...data } : order
+            );
+            calculateStats(updatedOrders);
+            return updatedOrders;
+          });
+        }
+      });
+
+      // Handle payment updates
+      channel.bind("payment-update", (data: any) => {
+        console.log("[Dashboard] Payment update received:", data);
+        if (data.shop_id === shopId) {
+          setOrderDetails((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) =>
+              order._id === data.order_id
+                ? {
+                    ...order,
+                    payment_status: data.status,
+                  }
+                : order
+            );
+            calculateStats(updatedOrders);
+            return updatedOrders;
+          });
+        }
+      });
+
+      // Handle customer updates
+      channel.bind("customer-update", (data: any) => {
+        console.log("[Dashboard] Customer update received:", data);
+        setOrderDetails((prevOrders) => {
+          const updatedOrders = prevOrders.map((order) =>
+            order.customer_id === data.customer_id
+              ? {
+                  ...order,
+                  customer_name: data.name || order.customer_name,
+                }
+              : order
+          );
+          calculateStats(updatedOrders);
+          return updatedOrders;
+        });
+      });
+
+      // Handle subscription events for debugging
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(`[Dashboard] Successfully subscribed to ${channelName}`);
+      });
+
+      channel.bind("pusher:subscription_error", (error: any) => {
+        console.error(
+          `[Dashboard] Failed to subscribe to ${channelName}:`,
+          error
+        );
+      });
+
+      return () => {
+        console.log(`[Dashboard] Unsubscribing from ${channelName}`);
+        pusher.unsubscribe(channelName);
+      };
+    } catch (error) {
+      console.error("[Dashboard] Error setting up Pusher:", error);
+    }
+  }, [pusher, isConnected, user?.admin_id, user?.shops, calculateStats]);
 
   return (
     <div className="min-h-screen flex">
@@ -133,11 +330,7 @@ export default function AdminDashboard() {
                           Total Customers
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {
-                            new Set(
-                              orderDetails.map((order) => order.customer_id)
-                            ).size
-                          }
+                          {totalCustomers}
                         </dd>
                       </dl>
                     </div>
@@ -170,18 +363,7 @@ export default function AdminDashboard() {
                           Total Revenue
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {orderDetails
-                            .filter(
-                              (order) =>
-                                order.order_status === "completed" &&
-                                order.payment_status === "paid"
-                            )
-                            .reduce(
-                              (total, order) =>
-                                total + (order.total_price || 0),
-                              0
-                            )
-                            .toFixed(2)}
+                          {totalRevenue.toFixed(2)}
                         </dd>
                       </dl>
                     </div>
@@ -214,11 +396,7 @@ export default function AdminDashboard() {
                           Completed Orders
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {
-                            orderDetails.filter(
-                              (order) => order.order_status === "completed"
-                            ).length
-                          }
+                          {completedOrders}
                         </dd>
                       </dl>
                     </div>

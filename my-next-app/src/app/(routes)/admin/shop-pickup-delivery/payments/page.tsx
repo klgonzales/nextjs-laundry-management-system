@@ -7,7 +7,7 @@ import type { Channel } from "pusher-js";
 import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
 
 export default function Payments() {
-  const { user } = useAuth(); // Get the user from the AuthContext
+  const { user, isLoading: authLoading } = useAuth(); // Get the user from the AuthContext
   const [loading, setLoading] = useState(true);
   const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
   const { pusher, isConnected } = usePusher();
@@ -21,6 +21,18 @@ export default function Payments() {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
+        // Check auth loading state first
+        if (authLoading) {
+          console.log("[Admin Feedback] Auth still loading, deferring fetch");
+          return;
+        }
+
+        // Check if user exists before trying to access properties
+        if (!user) {
+          console.log("[Admin Feedback] No user found, skipping fetch");
+          setLoading(false);
+          return;
+        }
         // Fetch payments for the current shop
         const shopResponse = await fetch(`/api/payments/${shop_id}`);
         if (!shopResponse.ok) {
@@ -33,8 +45,9 @@ export default function Payments() {
         console.error("Error fetching payments:", error);
       }
     };
-
-    fetchPayments();
+    if (user?.admin_id || !authLoading) {
+      fetchPayments();
+    }
   }, [shop_id]);
 
   // Replace your ENTIRE Pusher subscription effect with this:

@@ -4,7 +4,7 @@ const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || "";
 const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || "";
 
 // We'll create a function to get the current user ID that can be updated
-let currentUserId: string | number | null = null;
+let currentUserId: string | null = null;
 
 export const setCurrentUserId = (userId: string): void => {
   currentUserId = userId;
@@ -29,7 +29,7 @@ export const pusherClient = new PusherClient(pusherKey, {
             "Content-Type": "application/x-www-form-urlencoded",
             Accept: "application/json",
             // Add the user ID header if available
-            ...(currentUserId && { "X-User-ID": String(currentUserId) }),
+            ...(currentUserId && { "X-User-ID": currentUserId }),
           },
           body: new URLSearchParams({
             socket_id: socketId,

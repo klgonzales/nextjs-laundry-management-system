@@ -5,7 +5,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { usePusher } from "@/app/context/PusherContext";
 
 export default function Feedback() {
-  const { user } = useAuth(); // Get the user from the AuthContext
+  const { user, isLoading: authLoading } = useAuth(); // Add isLoading from useAuth
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { pusher, isConnected } = usePusher();
@@ -14,6 +14,19 @@ export default function Feedback() {
   useEffect(() => {
     const fetchFeedbacks = async () => {
       try {
+        // Check auth loading state first
+        if (authLoading) {
+          console.log("[Admin Feedback] Auth still loading, deferring fetch");
+          return;
+        }
+
+        // Check if user exists before trying to access properties
+        if (!user) {
+          console.log("[Admin Feedback] No user found, skipping fetch");
+          setLoading(false);
+          return;
+        }
+
         const shopId = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
         if (!shopId) {
           throw new Error("Shop ID not found");
@@ -32,8 +45,9 @@ export default function Feedback() {
         setLoading(false);
       }
     };
-
-    fetchFeedbacks();
+    if (user?.admin_id || !authLoading) {
+      fetchFeedbacks();
+    }
   }, [user?.shops]);
 
   // Set up Pusher for real-time feedback updates

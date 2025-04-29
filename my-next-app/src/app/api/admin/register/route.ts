@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       name,
       email,
       password: hashedPassword,
-      admin_id: Math.floor(Math.random() * 1000000),
+      admin_id: Math.floor(Math.random() * 1000000).toString(), // Ensure admin_id is a string
       shops: [newShop],
       role: "admin", // Default role for admin
     });

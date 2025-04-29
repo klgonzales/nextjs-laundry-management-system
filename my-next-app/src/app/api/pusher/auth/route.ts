@@ -7,17 +7,23 @@ import { pusherServer } from "@/app/lib/pusherServer";
 async function getServerSessionUserId(
   request: NextRequest
 ): Promise<string | number | null> {
-  const userIdFromHeader = request.headers.get("X-User-ID"); // Read the custom header
+  const userIdFromHeader = request.headers.get("X-User-ID")?.toString(); // Read the custom header
   // --- Add Logging ---
   console.log(
     "[Pusher Auth] Received Headers:",
     Object.fromEntries(request.headers)
   );
   console.log("[Pusher Auth] X-User-ID Header Value:", userIdFromHeader);
+
+  console.log("[Pusher Auth] X-User-ID Header Value:", userIdFromHeader);
   if (userIdFromHeader) {
     console.warn(
       `Pusher Auth: [INSECURE] Authenticating using X-User-ID header: ${userIdFromHeader}`
     );
+    // Try to detect if it's numeric and return appropriate type
+    if (!isNaN(Number(userIdFromHeader))) {
+      return Number(userIdFromHeader);
+    }
     return userIdFromHeader; // Return the ID found in the header
   } else {
     console.error(
@@ -36,7 +42,11 @@ export async function POST(request: NextRequest) {
 
     console.log(
       `[Pusher Auth] Received auth request for channel: ${channel}, socketId: ${socketId}`
-    ); // Log incoming request
+    );
+    console.log(
+      `[Pusher Auth] Form data:`,
+      Object.fromEntries(formData.entries())
+    );
 
     if (!socketId || !channel) {
       return NextResponse.json(
@@ -69,6 +79,33 @@ export async function POST(request: NextRequest) {
     const channelUserId = channelParts[2];
     console.log(`[Pusher Auth] User ID from channel name: ${channelUserId}`); // Log channelUserId
 
+    console.log(`[Pusher Auth] Channel details: ID=${channelUserId}`);
+    console.log(
+      `[Pusher Auth] User ID comparison: Header=${userId} (${typeof userId}), Channel=${channelUserId} (${typeof channelUserId})`
+    );
+
+    // Try multiple comparison methods
+    const stringMatch = String(userId) === String(channelUserId);
+    const numericMatch =
+      !isNaN(Number(userId)) &&
+      !isNaN(Number(channelUserId)) &&
+      Number(userId) === Number(channelUserId);
+
+    console.log(`[Pusher Auth] String comparison result: ${stringMatch}`);
+    console.log(`[Pusher Auth] Numeric comparison result: ${numericMatch}`);
+
+    // Accept if either comparison method succeeds
+    if (!stringMatch && !numericMatch) {
+      console.error(
+        `Pusher Auth: Forbidden attempt - User ${userId} (from header) tried to access channel ${channel} for user ${channelUserId}`
+      );
+      return NextResponse.json(
+        {
+          error: `Forbidden: Channel access denied - ID mismatch (${userId} vs ${channelUserId})`,
+        },
+        { status: 403 }
+      );
+    }
     // **Security Check (still useful even with insecure ID retrieval):**
     // Ensure the ID from the header matches the channel being requested.
     // **Security Check (still useful even with insecure ID retrieval):**
