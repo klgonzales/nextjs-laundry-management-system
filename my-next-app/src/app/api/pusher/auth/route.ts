@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pusherServer } from "@/app/lib/pusherServer";
 
+// --- INSECURE IMPLEMENTATION ---
+// Reads user ID directly from a custom header sent by the client.
+// This is NOT secure and relies on trusting the client.
 async function getServerSessionUserId(
   request: NextRequest
-): Promise<string | null> {
-  // Changed return type to string | null
-  const userIdFromHeader = request.headers.get("X-User-ID")?.toString(); // Read the custom header
-
+): Promise<string | number | null> {
+  const userIdFromHeader = request.headers.get("X-User-ID"); // Read the custom header
+  // --- Add Logging ---
   console.log(
     "[Pusher Auth] Received Headers:",
     Object.fromEntries(request.headers)
   );
   console.log("[Pusher Auth] X-User-ID Header Value:", userIdFromHeader);
-
   if (userIdFromHeader) {
     console.warn(
       `Pusher Auth: [INSECURE] Authenticating using X-User-ID header: ${userIdFromHeader}`
     );
-    // Always return the ID as a string
-    return userIdFromHeader;
+    return userIdFromHeader; // Return the ID found in the header
   } else {
     console.error(
       "Pusher Auth: [INSECURE] X-User-ID header not found. Cannot authenticate."
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     console.log(
       `[Pusher Auth] Received auth request for channel: ${channel}, socketId: ${socketId}`
-    );
+    ); // Log incoming request
 
     if (!socketId || !channel) {
       return NextResponse.json(
@@ -45,13 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- 1. Get User ID (now always string | null) ---
+    // --- 1. Get User ID (using the insecure header method) ---
     const userId = await getServerSessionUserId(request);
-    console.log(
-      `[Pusher Auth] User ID from header function: ${userId} (type: ${typeof userId})`
-    );
+    console.log(`[Pusher Auth] User ID from header function: ${userId}`); // Log retrieved userId
 
     if (!userId) {
+      // If header is missing
       return NextResponse.json(
         { error: "Unauthorized: Missing authentication header" },
         { status: 403 }
@@ -60,45 +59,35 @@ export async function POST(request: NextRequest) {
     // --- End Get User ID ---
 
     // --- 2. Authorize based on channel name and user ID ---
-    // Use a pattern that matches admin or customer channels
-    const channelParts = channel.match(/^private-(admin|customer)-(.+)$/);
+    const channelParts = channel.match(/^private-(admin|client)-(.+)$/);
     if (!channelParts) {
-      // If it doesn't match, check if it's a different valid pattern (e.g., presence)
-      // For now, assume only private-admin/customer are valid for this auth
-      console.error(
-        `[Pusher Auth] Invalid or unsupported channel format: ${channel}`
-      );
       return NextResponse.json(
         { error: "Invalid channel name format" },
         { status: 400 }
       );
     }
+    const channelUserId = channelParts[2];
+    console.log(`[Pusher Auth] User ID from channel name: ${channelUserId}`); // Log channelUserId
 
-    const channelUserType = channelParts[1]; // 'admin' or 'customer'
-    const channelUserId = channelParts[2]; // The ID part of the channel name (string)
-
+    // **Security Check (still useful even with insecure ID retrieval):**
+    // Ensure the ID from the header matches the channel being requested.
+    // **Security Check (still useful even with insecure ID retrieval):**
     console.log(
-      `[Pusher Auth] Channel details: Type=${channelUserType}, ID=${channelUserId}`
-    );
-    console.log(
-      `[Pusher Auth] Comparing Header ID: '${userId}' (${typeof userId}) vs Channel ID: '${channelUserId}' (${typeof channelUserId})`
-    );
+      `[Pusher Auth] Comparing Header User ID (${userId}, type: ${typeof userId}) with Channel User ID (${channelUserId}, type: ${typeof channelUserId})`
+    ); // Log comparison values
 
-    // --- Simplified Authorization Check ---
-    // Since both userId and channelUserId should now be strings, a simple comparison works.
-    if (userId !== channelUserId) {
+    if (String(userId) !== channelUserId) {
       console.error(
-        `Pusher Auth: Forbidden attempt - User '${userId}' tried to access channel '${channel}' for user '${channelUserId}'`
+        `Pusher Auth: Forbidden attempt - User ${userId} (from header) tried to access channel ${channel} for user ${channelUserId}`
       );
       return NextResponse.json(
-        { error: "Forbidden: Channel access denied - ID mismatch" },
+        { error: "Forbidden: Channel access denied" },
         { status: 403 }
       );
     }
-    // --- End Simplified Authorization Check ---
+    // --- End Authorization Logic ---
 
-    // If we reach here, authorization is successful
-    const userData = { user_id: userId }; // user_id is already a string
+    const userData = { user_id: String(userId) };
 
     console.log(
       `Pusher Auth: Authorizing user ${userId} (socket: ${socketId}) for channel ${channel}`
@@ -111,7 +100,7 @@ export async function POST(request: NextRequest) {
     console.log(
       "[Pusher Auth] Authorization successful. Response:",
       authResponse
-    );
+    ); // Log success
 
     return NextResponse.json(authResponse);
   } catch (error) {

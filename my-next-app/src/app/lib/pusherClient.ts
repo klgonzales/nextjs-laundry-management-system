@@ -23,6 +23,20 @@ export const pusherClient = new PusherClient(pusherKey, {
   authorizer: (channel) => {
     return {
       authorize: (socketId, callback) => {
+        // Add check to prevent authorization attempts with no userId
+        if (!currentUserId) {
+          console.error(
+            `[PusherClient] Cannot authorize ${channel.name} - no user ID set yet`
+          );
+          // Return error so Pusher doesn't keep retrying immediately
+          callback(new Error("User ID not available yet"), null);
+          return;
+        }
+
+        console.log(
+          `[PusherClient] Attempting to authorize channel: ${channel.name} with ID: ${currentUserId}`
+        );
+
         fetch("/api/pusher/auth", {
           method: "POST",
           headers: {
