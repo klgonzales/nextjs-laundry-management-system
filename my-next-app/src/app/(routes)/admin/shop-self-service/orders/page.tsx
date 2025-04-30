@@ -45,7 +45,8 @@ export default function Orders() {
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
-
+  // First add a new state for search query at the top with your other states
+  const [searchQuery, setSearchQuery] = useState("");
   const [editOrderId, setEditOrderId] = useState<string | null>(null); // Track the order being edited
   const [editDetails, setEditDetails] = useState({
     total_weight: 0,
@@ -577,25 +578,115 @@ export default function Orders() {
     }
   };
 
-  // Filter orders based on the selected status
+  // Add this function to handle search, right before your return statement
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  // Update the effect to filter by both status and search query
   useEffect(() => {
-    if (filterStatus === "all") {
-      setFilteredOrders(orderDetails);
-    } else {
-      setFilteredOrders(
-        orderDetails.filter((order) => order.order_status === filterStatus)
+    // First, filter by search query if there is one
+    let searchFiltered = orderDetails;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      searchFiltered = orderDetails.filter(
+        (order) =>
+          order.customer_name &&
+          order.customer_name.toLowerCase().includes(query)
       );
     }
-  }, [filterStatus, orderDetails]);
 
-  if (loading) {
-    return <p className="text-center text-gray-500">Loading Orders...</p>;
-  }
+    // Then filter by status
+    if (filterStatus === "all") {
+      setFilteredOrders(searchFiltered);
+    } else {
+      setFilteredOrders(
+        searchFiltered.filter((order) => order.order_status === filterStatus)
+      );
+    }
+  }, [filterStatus, searchQuery, orderDetails]);
+
+  // if (loading) {
+  //   return <p className="text-center text-gray-500">Loading Orders...</p>;
+  // }
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Orders</h3>
+        {/* Title and Search Bar */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">
+            Orders
+          </h3>
+
+          <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
+            <input
+              type="text"
+              placeholder="Search by customer name..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            {/* Clear button - only visible when there's text */}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                aria-label="Clear search"
+              >
+                <svg
+                  className="h-4 w-4 text-gray-400 hover:text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        {searchQuery && (
+          <div className="mt-2 text-sm text-gray-500 flex items-center">
+            <svg
+              className="mr-1 h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Found {filteredOrders.length}{" "}
+            {filteredOrders.length === 1 ? "result" : "results"} for "
+            {searchQuery}"
+          </div>
+        )}
         <div className="mt-4 flex space-x-4">
           <button
             onClick={() => setFilterStatus("all")}
@@ -849,9 +940,49 @@ export default function Orders() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500 text-center">
-              No orders found for the selected status
-            </p>
+            <div className="text-gray-500 text-center p-6">
+              {filteredOrders.length === 0 && (
+                <div className="text-gray-500 text-center p-6">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                    />
+                  </svg>
+
+                  {searchQuery ? (
+                    <p className="mt-2">
+                      No orders found matching{" "}
+                      <span className="font-bold">"{searchQuery}"</span>
+                    </p>
+                  ) : (
+                    <p className="mt-2">
+                      No orders found with{" "}
+                      <span className="font-bold">
+                        {filterStatus === "all" ? "any" : filterStatus}
+                      </span>{" "}
+                      status
+                    </p>
+                  )}
+
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="mt-2 text-blue-500 hover:text-blue-700 font-medium"
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
