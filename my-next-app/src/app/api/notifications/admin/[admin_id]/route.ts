@@ -13,30 +13,38 @@ export async function GET(request: NextRequest, context: any) {
     );
   }
 
-  // --- Convert admin_id string to Number ---
-  const admin_id = parseInt(adminIdString, 10);
-
-  // --- Add validation for the conversion ---
-  if (isNaN(admin_id)) {
-    return NextResponse.json(
-      { success: false, error: "Invalid Admin ID format" },
-      { status: 400 }
-    );
-  }
-
   try {
     await dbConnect();
 
-    // Find notifications using the Number type for recipient_id
-    const notifications = await Notification.find({
+    // Create a numeric version if possible
+    const numericId = parseInt(adminIdString, 10);
+    const isValidNumber = !isNaN(numericId);
+
+    // Log what we're looking for
+    console.log(
+      `[API] Searching for admin notifications with ID: ${adminIdString} (numeric: ${isValidNumber ? numericId : "N/A"})`
+    );
+
+    // Use $or to match EITHER string OR number format
+    const query = {
       recipient_type: "admin",
-      recipient_id: admin_id, // Now using the Number version
-    })
+      $or: [
+        { recipient_id: adminIdString }, // Match string format
+        ...(isValidNumber ? [{ recipient_id: numericId }] : []), // Match numeric format if valid
+      ],
+    };
+
+    console.log(`[API] Query: ${JSON.stringify(query)}`);
+
+    // Find notifications using either format
+    const notifications = await Notification.find(query)
       .sort({ timestamp: -1 })
       .limit(50);
 
-    // Log the result AFTER the query
-    // console.log(`Notifications found for admin_id ${admin_id}:`, notifications);
+    console.log(
+      `[API] Found ${notifications.length} notifications for admin ${adminIdString}`
+    );
+
     return NextResponse.json({ success: true, notifications });
   } catch (error: any) {
     console.error("Error fetching admin notifications:", error);

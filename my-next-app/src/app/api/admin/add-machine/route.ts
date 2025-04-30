@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       // For better debugging, we'll use both private and public channels
       const notificationPromises = customers.map(async (customer) => {
         // Private channel (authenticated)
-        const privateChannel = `private-customer-${customer.customer_id}`;
+        const privateChannel = `private-client-${customer.customer_id}`;
 
         // Public channel (for testing, no authentication required)
         const publicChannel = `customer-${customer.customer_id}`;

@@ -87,7 +87,7 @@ export default function MachinePage() {
       // Subscribe to multiple channels for better reliability
       try {
         // 1. Private channel for this customer
-        const privateChannelName = `private-customer-${user.customer_id}`;
+        const privateChannelName = `private-client-${user.customer_id}`;
         const privateChannel = pusher.subscribe(privateChannelName);
         channelRef.current = privateChannel;
 

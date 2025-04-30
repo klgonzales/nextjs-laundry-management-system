@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
       // 3. Send notification to each customer via Pusher
       const notificationPromises = customers.map(async (customer) => {
-        const customerChannel = `private-customer-${customer.customer_id}`;
+        const customerChannel = `private-client-${customer.customer_id}`;
 
         try {
           // Trigger Pusher event

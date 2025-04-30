@@ -62,7 +62,7 @@ export default function ChooseService() {
     }
 
     // Subscribe to personal channel for this customer
-    const privateChannelName = `private-customer-${user.customer_id}`;
+    const privateChannelName = `private-client-${user.customer_id}`;
     console.log(`[Services] Setting up subscription to ${privateChannelName}`);
 
     // Clean up existing subscription

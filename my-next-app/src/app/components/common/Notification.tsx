@@ -22,11 +22,7 @@ interface NotificationItem {
 
 export default function Notification() {
   const { user, isLoading: authLoading } = useAuth(); // Add isLoading if available in your AuthContext
-
-  // --- Use Pusher context ---
   const { pusher, isConnected } = usePusher();
-  // --- Remove socket state ---
-  // const { socket, isConnected } = useSocket();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +34,7 @@ export default function Notification() {
   const currentUserType = user?.admin_id
     ? "admin"
     : user?.customer_id
-      ? "client"
+      ? "customer"
       : null;
 
   // --- Initial Fetch (remains the same) ---
@@ -63,54 +59,56 @@ export default function Notification() {
       return;
     }
     // Early return with better logging if essential data is missing
-    if (!pusher || !isConnected) {
-      console.log(
-        `[Notifications] Pusher not ready yet. Connected: ${isConnected}`
-      );
-      return;
-    }
+    // if (!pusher || !isConnected) {
+    //   console.log(
+    //     `[Notifications] Pusher not ready yet. Connected: ${isConnected}`
+    //   );
+    //   return;
+    // }
 
-    if (!currentUserId || !currentUserType) {
-      // Only log this as an error if we're not in a loading state
-      if (!authLoading) {
-        console.log(
-          `[Notifications] No user ID found and not in loading state.`
-        );
-      } else {
-        console.log(`[Notifications] Auth still loading, will try again soon.`);
-      }
-      return;
-    }
+    // if (!currentUserId || !currentUserType) {
+    //   // Only log this as an error if we're not in a loading state
+    //   if (!authLoading) {
+    //     console.log(
+    //       `[Notifications] No user ID found and not in loading state.`
+    //     );
+    //   } else {
+    //     console.log(`[Notifications] Auth still loading, will try again soon.`);
+    //   }
+    //   return;
+    // }
 
-    if (!currentUserId || !currentUserType) {
-      setNotifications([]);
-      setLoading(false);
-      return;
-    }
-    const fetchNotifications = async () => {
-      setLoading(true);
-      setError(null);
-      const apiUrl =
-        currentUserType === "admin"
-          ? `/api/notifications/admin/${currentUserId}`
-          : `/api/notifications/customer/${currentUserId}`;
-      try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to fetch notifications");
+    // if (!currentUserId || !currentUserType) {
+    //   setNotifications([]);
+    //   setLoading(false);
+    //   return;
+    // }
+    if (currentUserId && currentUserType && !authLoading) {
+      const fetchNotifications = async () => {
+        setLoading(true);
+        setError(null);
+        const apiUrl =
+          currentUserType === "admin"
+            ? `/api/notifications/admin/${currentUserId}`
+            : `/api/notifications/customer/${currentUserId}`;
+        try {
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to fetch notifications");
+          }
+          const data = await response.json();
+          setNotifications(data.notifications || []);
+        } catch (err: any) {
+          console.error("Error fetching notifications:", err);
+          setError(err.message || "An error occurred");
+          setNotifications([]);
+        } finally {
+          setLoading(false);
         }
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-      } catch (err: any) {
-        console.error("Error fetching notifications:", err);
-        setError(err.message || "An error occurred");
-        setNotifications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotifications();
+      };
+      fetchNotifications();
+    }
   }, [pusher, isConnected, currentUserId, currentUserType, authLoading]);
 
   // --- Pusher Event Handling (Modified + Cleaned Up) ---
@@ -131,7 +129,8 @@ export default function Notification() {
       return;
     }
 
-    const channelName = `private-${currentUserType}-${currentUserId}`;
+    // Inside the Pusher Event Handling useEffect, modify this line:
+    const channelName = `private-${currentUserType === "customer" ? "client" : currentUserType}-${currentUserId}`;
 
     // Prevent duplicate subscriptions
     if (
@@ -189,6 +188,14 @@ export default function Notification() {
 
     channel.bind("new-notification", handleNewNotification);
 
+    // Inside the useEffect where you set up channel.bind events:
+    channel.bind("notifications-all-read", () => {
+      console.log("[Notifications] Received all-read event");
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read: true }))
+      );
+    });
+
     // Cleanup on component unmount or dependency change
     return () => {
       if (channelRef.current?.name === channelName) {
@@ -224,6 +231,53 @@ export default function Notification() {
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Add this function inside your component, before the return statement
+  const markAllAsRead = async () => {
+    // if (!currentUserId || !currentUserType || unreadCount === 0) {
+    //   return;
+    // }
+
+    try {
+      // setLoading(true);
+
+      console.log(
+        `[Notifications] Marking all as read for ${currentUserType} ${currentUserId}`
+      );
+
+      const response = await fetch("/api/notifications/mark-all-as-read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: currentUserId,
+          userType: currentUserType,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || "Failed to mark notifications as read"
+        );
+      }
+
+      // Update local state to mark all notifications as read
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read: true }))
+      );
+
+      console.log("[Notifications] All notifications marked as read");
+    } catch (err: any) {
+      console.error("[Notifications] Error marking all as read:", err);
+      setError(err.message || "Failed to mark all as read");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- Notification Click Handler (remains the same) ---
   const handleNotificationClick = async (notificationId: string) => {
     // Mark notification as read locally immediately
@@ -245,17 +299,20 @@ export default function Notification() {
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   // Render null during auth loading or when user is not available
-  if (authLoading) {
-    return null; // Or return a loading spinner specifically for notifications
-  }
-
+  // if (authLoading) {
+  //   return null; // Or return a loading spinner specifically for notifications
+  // }
   // --- Render Logic (remains the same) ---
-  if (!currentUserId) {
-    return null; // Don't render if not logged in
-  }
+  // if (!currentUserId) {
+  //   return null; // Don't render if not logged in
+  // }
+  // Add these logs to debug
+  useEffect(() => {
+    console.log("[Notifications] Auth user:", user);
+    console.log("[Notifications] Determined user type:", currentUserType);
+    console.log("[Notifications] Determined user ID:", currentUserId);
+  }, [user, currentUserType, currentUserId]);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -283,6 +340,22 @@ export default function Notification() {
             <h3 className="text-sm font-semibold text-gray-800">
               Notifications
             </h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent dropdown from closing
+                  markAllAsRead();
+                }}
+                disabled={loading}
+                className={`text-xs px-2 py-1 rounded ${
+                  loading
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                }`}
+              >
+                {loading ? "Processing..." : "Mark all read"}
+              </button>
+            )}
           </div>
           {/* Notification List */}
           <ul className="max-h-80 overflow-y-auto divide-y divide-gray-100">
