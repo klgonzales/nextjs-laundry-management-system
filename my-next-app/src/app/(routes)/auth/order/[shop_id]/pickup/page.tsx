@@ -278,6 +278,7 @@ export default function PickupDetails() {
             onChange={handleAddressChange}
             onFocus={() => setShowSuggestions(true)} // Show suggestions on focus
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Hide suggestions on blur with a delay
+            //onChange={(e) => setAddress(e.target.value)} // Update state on change
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
             placeholder="Enter your address"
           />

@@ -114,6 +114,7 @@ function OrderSummaryContent() {
     order_type,
     pickup_date,
     pickup_time,
+    address,
   } = orderDetails;
 
   const formattedDate = new Intl.DateTimeFormat("en-US", {
@@ -186,11 +187,7 @@ function OrderSummaryContent() {
                   ))}
               </ul>
               <p>
-                <strong>Pickup Address:</strong>{" "}
-                {customerAddress
-                  ? customerAddress.charAt(0).toUpperCase() +
-                    customerAddress.slice(1)
-                  : "Loading..."}
+                <strong>Pickup Address:</strong> {address}
               </p>
               <p>
                 <strong>Pickup Date:</strong>{" "}
