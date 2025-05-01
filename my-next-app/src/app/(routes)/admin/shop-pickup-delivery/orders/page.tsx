@@ -46,6 +46,8 @@ export default function Orders() {
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
   const [searchQuery, setSearchQuery] = useState("");
+  // Add this new state below your other state variables
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
   const [editOrderId, setEditOrderId] = useState<string | null>(null); // Track the order being edited
   const [editDetails, setEditDetails] = useState({
     total_weight: 0,
@@ -65,6 +67,18 @@ export default function Orders() {
   // Get the real-time updates context
   const { registerPaymentHandler, unregisterPaymentHandler } =
     useRealTimeUpdates();
+
+  // Add this sorting function to sort the orders
+  const sortOrdersByDate = useCallback(
+    (orders: any[], direction: "asc" | "desc") => {
+      return [...orders].sort((a, b) => {
+        const dateA = new Date(a.date_placed || 0).getTime();
+        const dateB = new Date(b.date_placed || 0).getTime();
+        return direction === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    },
+    []
+  );
 
   // Define fetchOrderDetails as a useCallback to prevent recreating on every render
   const fetchOrderDetails = useCallback(
@@ -583,7 +597,7 @@ export default function Orders() {
     setSearchQuery(event.target.value);
   };
 
-  // Filter orders based on the selected status and subcategory
+  // Update your filter effect to include sorting
   useEffect(() => {
     // First, filter by search query if there is one
     let searchFiltered = orderDetails;
@@ -597,20 +611,31 @@ export default function Orders() {
       );
     }
 
+    // Then apply status filtering
+    let statusFiltered;
     if (filterStatus === "all") {
-      setFilteredOrders(searchFiltered);
+      statusFiltered = searchFiltered;
     } else if (filterStatus === "ongoing" && ongoingSubcategory) {
-      setFilteredOrders(
-        searchFiltered.filter(
-          (order) => order.order_status === ongoingSubcategory // Match the subcategory
-        )
+      statusFiltered = searchFiltered.filter(
+        (order) => order.order_status === ongoingSubcategory
       );
     } else {
-      setFilteredOrders(
-        searchFiltered.filter((order) => order.order_status === filterStatus)
+      statusFiltered = searchFiltered.filter(
+        (order) => order.order_status === filterStatus
       );
     }
-  }, [filterStatus, ongoingSubcategory, searchQuery, orderDetails]);
+
+    // Finally apply sorting
+    const sortedOrders = sortOrdersByDate(statusFiltered, sortDirection);
+    setFilteredOrders(sortedOrders);
+  }, [
+    filterStatus,
+    ongoingSubcategory,
+    searchQuery,
+    orderDetails,
+    sortDirection,
+    sortOrdersByDate,
+  ]);
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
@@ -621,6 +646,63 @@ export default function Orders() {
             Orders
           </h3>
 
+          <div className="mt-2 sm:mt-0 flex items-center ml-4">
+            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setSortDirection("asc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "asc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                    />
+                  </svg>
+                  Oldest First
+                </div>
+              </button>
+              <button
+                onClick={() => setSortDirection("desc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "desc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                    />
+                  </svg>
+                  Newest First
+                </div>
+              </button>
+            </div>
+          </div>
           <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
             <input
               type="text"
@@ -688,6 +770,7 @@ export default function Orders() {
             {searchQuery}"
           </div>
         )}
+
         <div className="mt-4 flex space-x-4">
           <button
             onClick={() => {

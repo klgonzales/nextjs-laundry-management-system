@@ -17,11 +17,24 @@ export default function Payments() {
   const [filteredPayments, setFilteredPayments] = useState<any[]>([]); // Store filtered payments
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
   // Add these state variables at the top with your other states
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
   const [searchQuery, setSearchQuery] = useState("");
   const [customerData, setCustomerData] = useState<Record<string, any>>({});
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const { registerPaymentHandler, unregisterPaymentHandler } =
     useRealTimeUpdates();
+
+  // Add this sorting function to sort the orders
+  const sortOrdersByDate = useCallback(
+    (orders: any[], direction: "asc" | "desc") => {
+      return [...orders].sort((a, b) => {
+        const dateA = new Date(a.date_placed || 0).getTime();
+        const dateB = new Date(b.date_placed || 0).getTime();
+        return direction === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -495,7 +508,7 @@ export default function Payments() {
     setSearchQuery(event.target.value);
   };
 
-  // Replace your current filtering effect with this one
+  // Replace your current filtering effect with this corrected version
   useEffect(() => {
     // Add a log to track effect runs
     console.log("[Payments] Running filter effect");
@@ -514,21 +527,34 @@ export default function Payments() {
     }
 
     // Then filter by status
+    let statusFiltered;
     if (filterStatus === "all") {
-      setFilteredPayments(searchFiltered);
+      statusFiltered = searchFiltered;
     } else {
-      setFilteredPayments(
-        searchFiltered.filter(
-          (payment) => payment.payment_status === filterStatus
-        )
+      // FIXED: Don't update state in the middle of calculations
+      statusFiltered = searchFiltered.filter(
+        (payment) => payment.payment_status === filterStatus
       );
     }
+
+    // Finally, sort the filtered results
+    const sortedOrders = sortOrdersByDate(statusFiltered, sortDirection);
+
+    // Update state with sorted and filtered orders
+    setFilteredPayments(sortedOrders);
 
     // Log filtered results count
     console.log(
       `[Payments] Filtered from ${payments.length} to ${searchFiltered.length} payments`
     );
-  }, [filterStatus, payments, searchQuery, customerData]); // The dependency array is fine, the issue is elsewhere
+  }, [
+    filterStatus,
+    payments,
+    searchQuery,
+    customerData,
+    sortDirection,
+    sortOrdersByDate,
+  ]);
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
@@ -538,7 +564,63 @@ export default function Payments() {
           <h3 className="text-lg leading-6 font-medium text-gray-900">
             Payments
           </h3>
-
+          <div className="mt-2 sm:mt-0 flex items-center ml-4">
+            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setSortDirection("asc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "asc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                    />
+                  </svg>
+                  Oldest First
+                </div>
+              </button>
+              <button
+                onClick={() => setSortDirection("desc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "desc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                    />
+                  </svg>
+                  Newest First
+                </div>
+              </button>
+            </div>
+          </div>
           <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
             <input
               type="text"
