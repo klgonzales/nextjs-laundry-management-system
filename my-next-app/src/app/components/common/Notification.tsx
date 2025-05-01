@@ -1,14 +1,28 @@
 "use client";
 
+// Update the imports to include additional outline icons
 import { useState, useEffect, useRef } from "react";
 import { FaRegBell } from "react-icons/fa";
 import { useAuth } from "@/app/context/AuthContext";
-// --- Import usePusher ---
 import { usePusher } from "@/app/context/PusherContext";
-// --- Remove direct pusherClient import if only using context ---
-// import { pusherClient } from "@/app/lib/pusherClient";
 import type { Channel } from "pusher-js";
 import { useSession } from "next-auth/react";
+// Add these new icon imports
+// To this:
+import {
+  FiBox,
+  FiTruck,
+  FiCalendar,
+  FiDroplet,
+  FiShoppingCart,
+  FiTag,
+  FiAlertTriangle,
+  FiCheck,
+  FiDollarSign,
+  FiStar,
+  FiFile,
+  FiTrash,
+} from "react-icons/fi";
 
 // Define the structure of a notification item
 interface NotificationItem {
@@ -314,19 +328,20 @@ export default function Notification() {
     console.log("[Notifications] Determined user ID:", currentUserId);
   }, [user, currentUserType, currentUserId]);
 
+  // Update your return JSX to style the notifications
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Icon Button */}
       <button
         onClick={toggleDropdown}
-        className="relative border-0 p-1 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        className="relative border-0 p-2 rounded-full shadow-sm hover:bg-[#EADDFF]"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label={`Notifications (${unreadCount} unread)`}
       >
         <FaRegBell className="h-6 w-6 text-black" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-300 text-xs font-bold text-white">
             {unreadCount}
           </span>
         )}
@@ -334,12 +349,10 @@ export default function Notification() {
 
       {/* Dropdown Box */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-30">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 md:w-96 origin-top-right rounded-lg bg-white shadow-lg z-30 p-4">
           {/* Dropdown Header */}
-          <div className="py-2 px-4 border-b border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-800">
-              Notifications
-            </h3>
+          <div className="py-3 px-4 border-b border-gray-100">
+            <h3 className="text-lg font-medium text-gray-700">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={(e) => {
@@ -347,7 +360,7 @@ export default function Notification() {
                   markAllAsRead();
                 }}
                 disabled={loading}
-                className={`text-xs px-2 py-1 rounded ${
+                className={`text-xs mt-1 px-3 py-1 rounded ${
                   loading
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-blue-50 text-blue-600 hover:bg-blue-100"
@@ -358,48 +371,99 @@ export default function Notification() {
             )}
           </div>
           {/* Notification List */}
-          <ul className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+          <div className="max-h-96 overflow-y-auto">
             {loading && (
-              <li className="px-4 py-3 text-sm text-gray-500 text-center">
-                {" "}
-                Loading...{" "}
-              </li>
+              <div className="px-4 py-6 text-sm text-gray-500 text-center">
+                Loading...
+              </div>
             )}
             {error && (
-              <li className="px-4 py-3 text-sm text-red-600 text-center">
-                {" "}
-                {error}{" "}
-              </li>
+              <div className="px-4 py-6 text-sm text-red-600 text-center">
+                {error}
+              </div>
             )}
             {!loading && !error && notifications.length === 0 && (
-              <li className="px-4 py-3 text-sm text-gray-500 text-center">
-                {" "}
-                No new notifications.{" "}
-              </li>
+              <div className="px-4 py-6 text-sm text-gray-500 text-center">
+                No new notifications.
+              </div>
             )}
             <div>
               {!loading &&
                 !error &&
-                notifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    className={`${!notification.read ? "bg-blue-50" : "bg-white"} hover:bg-gray-50 cursor-pointer`}
-                    onClick={() => handleNotificationClick(notification._id)}
-                  >
-                    <div className="block px-4 py-3">
-                      <p
-                        className={`text-sm ${!notification.read ? "font-semibold text-gray-800" : "text-gray-600"} mb-1`}
-                      >
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(notification.timestamp).toLocaleString()}
-                      </p>
+                notifications.map((notification) => {
+                  // Determine which icon to use based on notification content
+                  let icon = <FiBox className="h-6 w-6" />;
+
+                  if (notification.message.includes("delivery")) {
+                    icon = <FiTruck className="h-6 w-6" />;
+                  } else if (notification.message.includes("appointment")) {
+                    icon = <FiCalendar className="h-6 w-6" />;
+                  } else if (notification.message.includes("washing")) {
+                    icon = <FiDroplet className="h-6 w-6" />;
+                  } else if (notification.message.includes("picked up")) {
+                    icon = <FiShoppingCart className="h-6 w-6" />;
+                  } else if (
+                    notification.message.includes("off") ||
+                    notification.message.includes("discount") ||
+                    notification.message.includes("Service added") ||
+                    notification.message.includes("Machine added")
+                  ) {
+                    icon = <FiTag className="h-6 w-6" />;
+                  } else if (notification.message.includes("unpaid")) {
+                    icon = <FiAlertTriangle className="h-6 w-6" />;
+                  } else if (notification.message.includes("Payment")) {
+                    icon = <FiDollarSign className="h-6 w-6" />;
+                  } else if (
+                    notification.message.includes("Feedback") ||
+                    notification.message.includes("feedback")
+                  ) {
+                    icon = <FiStar className="h-6 w-6" />;
+                  } else if (notification.message.includes("deleted")) {
+                    icon = <FiTrash className="h-6 w-6" />;
+                  } else if (notification.message.includes("status updated")) {
+                    icon = <FiFile className="h-6 w-6" />;
+                  } else if (
+                    notification.message.includes("completed") ||
+                    notification.message.includes("done")
+                  ) {
+                    icon = <FiCheck className="h-6 w-6" />;
+                  }
+
+                  // Modify the notification rendering section by removing the tracking link
+                  // Replace the return inside your map function with this updated version:
+
+                  return (
+                    <div
+                      key={notification._id}
+                      className={`${!notification.read ? "border-l-4 border-blue-400" : ""} hover:bg-[#EADDFF] cursor-pointer rounded-lg`}
+                      onClick={() => handleNotificationClick(notification._id)}
+                    >
+                      <div className="flex items-start p-4">
+                        <div className={`p-2 rounded-lg mr-3`}>{icon}</div>
+                        <div className="flex-1">
+                          <p
+                            className={`text-sm ${!notification.read ? "font-semibold text-gray-800" : "text-gray-700"} mb-1`}
+                          >
+                            {notification.message}
+                          </p>
+                          <div className="flex items-center">
+                            <p className="text-xs text-gray-400">
+                              {new Date(
+                                notification.timestamp
+                              ).toLocaleString()}
+                            </p>
+                            {!notification.read && (
+                              <span className="ml-2 inline-block w-2 h-2 rounded-full bg-blue-400"></span>
+                            )}
+                          </div>
+                          {/* Track/Action link removed */}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
-          </ul>
+          </div>
         </div>
       )}
     </div>

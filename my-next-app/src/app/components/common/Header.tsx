@@ -31,12 +31,15 @@ export default function Header({ userType }: HeaderProps) {
       <div className="flex items-center space-x-2">
         <Notification />
 
-        <a
-          href={userType === "admin" ? "/admin/profile" : "/auth/profile"}
-          className="border-0 hover:bg-transparent focus:outline-none"
+        <button
+          onClick={() =>
+            (window.location.href =
+              userType === "admin" ? "/admin/profile" : "/auth/profile")
+          }
+          className="relative border-0 p-1 rounded-full h-10 w-10 flex items-center justify-center"
         >
-          <FaRegUserCircle className="h-6 w-6 text-black hover:text-[#3D4EB0]" />
-        </a>
+          <FaRegUserCircle className="h-6 w-6 text-black" />
+        </button>
       </div>
     </div>
   );

@@ -6,8 +6,8 @@
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 255, 255, 255;
-  --button-hover-bg: 244, 104, 187;
-  --button-hover-text: 255, 255, 255;
+  --button-hover-bg: 234, 221, 255;
+  --button-hover-text: 61, 78, 176;
 }
 
 body {
@@ -15,11 +15,13 @@ body {
   background: rgb(var(--background-rgb));
 }
 
-button {
+/* button {
   background: rgb(var(--background-rgb));
   color: rgb(var(--foreground-rgb));
   border: 1px solid rgb(var(--foreground-rgb));
-}
+} */
+
+/* Add these styles to the bottom of your globals.css file */
 
 button:hover,
 button:focus {
@@ -41,6 +43,6 @@ h2 {
   /* color: #3d4eb0; */
   font-weight: normal;
 }
-a {
+/* a {
   color: #3d4eb0;
-}
+} */

@@ -300,13 +300,15 @@ export default function AdminDashboard() {
     }
   }, [pusher, isConnected, user?.admin_id, user?.shops, calculateStats]);
   return (
-    <div className="min-h-screen flex">
+    <div className="flex">
       {/* Sidebar */}
-      <Sidebar
-        userType="admin"
-        handleScroll={handleScroll}
-        shopType={user?.shops?.[0]?.type} // Pass the shop type dynamically
-      />
+      <div className="flex">
+        <Sidebar
+          userType="admin"
+          handleScroll={handleScroll}
+          shopType={user?.shops?.[0]?.type}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1">
