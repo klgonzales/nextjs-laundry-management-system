@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { usePusher } from "@/app/context/PusherContext";
 // --- Remove direct pusherClient import if only using context ---
@@ -29,6 +29,7 @@ interface Order {
   feedbacks?: Feedback[];
   payment_status: string;
   order_type: string;
+  date_placed?: string;
   machine_id?: string | undefined;
   type?: string; // machine type?
   time_range?: { start: string; end: string }[];
@@ -47,7 +48,8 @@ export default function Orders() {
   // Add this near the top of your component after other state declarations
   const { pusher, isConnected } = usePusher();
   const channelRef = useRef<Channel | null>(null);
-
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
+  const [searchQuery, setSearchQuery] = useState("");
   const currentUserId = user?.customer_id;
 
   const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
@@ -60,6 +62,19 @@ export default function Orders() {
   >(null);
   const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(
     null
+  );
+
+  // Update the sortOrdersByDate function to use the correct date field
+  const sortOrdersByDate = useCallback(
+    (orders: any[], direction: "asc" | "desc") => {
+      return [...orders].sort((a, b) => {
+        // Try to use date_placed first, then fall back to date
+        const dateA = new Date(a.date_placed || a.date || 0).getTime();
+        const dateB = new Date(b.date_placed || b.date || 0).getTime();
+        return direction === "asc" ? dateA - dateB : dateB - dateA;
+      });
+    },
+    []
   );
 
   useEffect(() => {
@@ -489,16 +504,64 @@ export default function Orders() {
     ],
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const typeMatch =
-      filterType === "all" ||
-      order.order_type?.toLowerCase() === filterType.toLowerCase();
-    const statusMatch =
-      filterStatus === "all" ||
-      order.order_status.toLowerCase() === filterStatus.toLowerCase();
+  // Add this function to handle search, right before your return statement
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
 
-    return typeMatch && statusMatch;
-  });
+  // Update your filter effect to include sorting
+  useEffect(() => {
+    // First, filter by search query if there is one
+    let searchFiltered = orderDetails;
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      searchFiltered = orderDetails.filter(
+        (order) =>
+          order.shop_name && order.shop_name.toLowerCase().includes(query)
+      );
+    }
+    // Ensure no JSX is returned
+  }, [orderDetails, searchQuery]);
+
+  // Replace your existing filteredOrders definition with this useEffect
+  useEffect(() => {
+    // First apply type and status filters
+    let filtered = orders.filter((order) => {
+      const typeMatch =
+        filterType === "all" ||
+        order.order_type?.toLowerCase() === filterType.toLowerCase();
+      const statusMatch =
+        filterStatus === "all" ||
+        order.order_status.toLowerCase() === filterStatus.toLowerCase();
+
+      return typeMatch && statusMatch;
+    });
+
+    // Then apply search query filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((order) =>
+        order.shop_name?.toLowerCase().includes(query)
+      );
+    }
+
+    // Finally sort the results
+    const sorted = sortOrdersByDate(filtered, sortDirection);
+
+    // Update state with filtered and sorted orders
+    setFilteredOrders(sorted);
+  }, [
+    orders,
+    filterType,
+    filterStatus,
+    searchQuery,
+    sortDirection,
+    sortOrdersByDate,
+  ]);
+
+  // Also add this new state at the top with your other state variables
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
 
   if (loading) {
     return <p className="text-center text-gray-500">Loading orders...</p>;
@@ -507,8 +570,137 @@ export default function Orders() {
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Orders</h3>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">
+            Orders
+          </h3>
+
+          <div className="mt-2 sm:mt-0 flex items-center ml-4">
+            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setSortDirection("asc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "asc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                    />
+                  </svg>
+                  Oldest First
+                </div>
+              </button>
+              <button
+                onClick={() => setSortDirection("desc")}
+                className={`px-3 py-1 rounded text-xs font-medium ${
+                  sortDirection === "desc"
+                    ? "bg-indigo-500 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                    />
+                  </svg>
+                  Newest First
+                </div>
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
+            <input
+              type="text"
+              placeholder="Search by customer name..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
+            />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            {/* Clear button - only visible when there's text */}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                aria-label="Clear search"
+              >
+                <svg
+                  className="h-4 w-4 text-gray-400 hover:text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        {searchQuery && (
+          <div className="mt-2 text-sm text-gray-500 flex items-center">
+            <svg
+              className="mr-1 h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Found {filteredOrders.length}{" "}
+            {filteredOrders.length === 1 ? "result" : "results"} for "
+            {searchQuery}"
+          </div>
+        )}
       </div>
+
       <div className="px-4 py-2 flex gap-4">
         {/* Filter by Type */}
         <div>
@@ -560,6 +752,18 @@ export default function Orders() {
                   <strong>Order ID:</strong> {order._id}
                 </p>
                 <p>
+                  <strong>Date Placed:</strong>{" "}
+                  {order.date_placed
+                    ? new Date(order.date_placed).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Unknown"}
+                </p>
+                <p>
                   <strong>Shop Name:</strong> {order.shop_name}
                 </p>
                 <p>
@@ -599,7 +803,6 @@ export default function Orders() {
                 <p>
                   <strong>Payment Status:</strong> {order.payment_status}
                 </p>
-
                 {order.order_status === "completed" &&
                   order.payment_status === "paid" && (
                     <>
@@ -678,7 +881,6 @@ export default function Orders() {
                         )}
                     </>
                   )}
-
                 {feedbackOrderId === order._id && (
                   <div className="mt-4 p-4 bg-gray-100 rounded-lg">
                     <h4 className="text-md font-semibold text-gray-800">
@@ -743,8 +945,48 @@ export default function Orders() {
             ))}
           </ul>
         ) : (
-          <div className="px-4 py-5 sm:p-6">
-            <p className="text-gray-500 text-center">No recent orders</p>
+          <div className="text-gray-500 text-center p-6">
+            {filteredOrders.length === 0 && (
+              <div className="text-gray-500 text-center p-6">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                  />
+                </svg>
+
+                {searchQuery ? (
+                  <p className="mt-2">
+                    No orders found matching{" "}
+                    <span className="font-bold">"{searchQuery}"</span>
+                  </p>
+                ) : (
+                  <p className="mt-2">
+                    No orders found with{" "}
+                    <span className="font-bold">
+                      {filterStatus === "all" ? "any" : filterStatus}
+                    </span>{" "}
+                    status
+                  </p>
+                )}
+
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="mt-2 text-blue-500 hover:text-blue-700 font-medium"
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

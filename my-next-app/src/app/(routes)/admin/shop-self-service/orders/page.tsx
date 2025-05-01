@@ -996,25 +996,138 @@ export default function Orders() {
                         </button>
                       </>
                     )}
+
                     {order.order_status === "scheduled" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "in progress")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Ongoing
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "pending")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Pending
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "in progress")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Forward to Ongoing
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "in progress" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "completed")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Completed
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "scheduled")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Scheduled
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "completed")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Forward to Completed
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                    {order.order_status === "completed" && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "in progress")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Ongoing
+                          </div>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </li>

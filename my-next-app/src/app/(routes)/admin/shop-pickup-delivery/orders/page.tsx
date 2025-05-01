@@ -1044,66 +1044,347 @@ export default function Orders() {
                         </button>
                       </>
                     )}
+
                     {order.order_status === "to be picked up" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "sorting")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Sorting
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "pending")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Pending
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "sorting")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Move to Sorting
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "sorting" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "washing")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Washing
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "to be picked up")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Pick-up
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "washing")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Move to Washing
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "washing" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "drying")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Drying
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "sorting")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Sorting
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "drying")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Move to Drying
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "drying" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "folding")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Folding
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "washing")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Washing
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "folding")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Move to Folding
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "folding" && (
-                      <button
-                        onClick={() =>
-                          handleMoveToNextStage(order._id, "to be delivered")
-                        }
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Delivered
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "drying")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Drying
+                          </div>
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "to be delivered")
+                          }
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Move to Delivery
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
                     )}
                     {order.order_status === "to be delivered" && (
-                      <button
-                        onClick={async () => {
-                          await handleMoveToNextStage(order._id, "completed");
-                          await handleUpdateDateCompleted(order._id);
-                        }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                      >
-                        Move to Completed
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "folding")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Folding
+                          </div>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await handleMoveToNextStage(order._id, "completed");
+                            await handleUpdateDateCompleted(order._id);
+                          }}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                        >
+                          <div className="flex items-center">
+                            Mark as Completed
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 ml-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                              />
+                            </svg>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                    {order.order_status === "completed" && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <button
+                          onClick={() =>
+                            handleMoveToNextStage(order._id, "to be delivered")
+                          }
+                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                        >
+                          <div className="flex items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Delivery
+                          </div>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </li>
