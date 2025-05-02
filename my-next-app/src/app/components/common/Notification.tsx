@@ -2,7 +2,6 @@
 
 // Update the imports to include additional outline icons
 import { useState, useEffect, useRef } from "react";
-import { FaRegBell } from "react-icons/fa";
 import { useAuth } from "@/app/context/AuthContext";
 import { usePusher } from "@/app/context/PusherContext";
 import type { Channel } from "pusher-js";
@@ -11,6 +10,7 @@ import { useSession } from "next-auth/react";
 // To this:
 import {
   FiBox,
+  FiBell,
   FiTruck,
   FiCalendar,
   FiDroplet,
@@ -334,14 +334,14 @@ export default function Notification() {
       {/* Bell Icon Button */}
       <button
         onClick={toggleDropdown}
-        className="relative border-0 p-2 rounded-full shadow-sm hover:bg-[#EADDFF]"
+        className="relative border-0 p-2 rounded-full hover:bg-[#EADDFF]"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label={`Notifications (${unreadCount} unread)`}
       >
-        <FaRegBell className="h-6 w-6 text-black" />
+        <FiBell className="h-6 w-6 text-black" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-300 text-xs font-bold text-white">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white p-2.5">
             {unreadCount}
           </span>
         )}

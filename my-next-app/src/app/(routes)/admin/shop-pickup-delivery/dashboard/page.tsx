@@ -296,7 +296,11 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen flex">
       {/* Sidebar */}
-      <Sidebar userType="admin" handleScroll={handleScroll} />
+      <Sidebar
+        userType="admin"
+        handleScroll={handleScroll}
+        shopType={user?.shops?.[0]?.type}
+      />
 
       {/* Main Content */}
       <div className="flex-1">
@@ -306,10 +310,10 @@ export default function AdminDashboard() {
           <div className="px-4 py-6 sm:px-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Total Customers */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F9F9F9] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -326,7 +330,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
+                        <dt className="text-sm font-medium text-gray-500 truncate ">
                           Total Customers
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
@@ -339,10 +343,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Total Revenue */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F9F9F9] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -372,10 +376,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Completed Orders */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F9F9F9] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"

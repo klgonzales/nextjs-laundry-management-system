@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FaRegBell, FaRegUserCircle } from "react-icons/fa";
+import { FiBell, FiUser } from "react-icons/fi";
 import { useAuth } from "@/app/context/AuthContext";
 //import { checkUserRole } from "@/app/utils/authUtils"; // Adjust the path as needed
 import Notification from "./Notification"; // Assuming Notification.tsx is in the same directory
@@ -17,13 +17,14 @@ export default function Header({ userType }: HeaderProps) {
 
   return (
     <div className="bg-white p-4 flex items-center justify-between">
-      <h2 className="text-2xl font-bold text-black">
+      <h2 className="text-2xl font-semibold text-black">
         Welcome Back,{" "}
         {userType === "admin"
           ? user?.shops?.[0]?.name || ""
           : user?.name
             ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
-            : ""}
+            : ""}{" "}
+        !
       </h2>
 
       <div className="flex items-center space-x-4"></div>
@@ -36,9 +37,9 @@ export default function Header({ userType }: HeaderProps) {
             (window.location.href =
               userType === "admin" ? "/admin/profile" : "/auth/profile")
           }
-          className="relative border-0 p-1 rounded-full h-10 w-10 flex items-center justify-center"
+          className="relative border-0 p-2 rounded-full h-10 w-10 flex items-center justify-center hover:bg-[#EADDFF]"
         >
-          <FaRegUserCircle className="h-6 w-6 text-black" />
+          <FiUser className="h-6 w-6 text-black" />
         </button>
       </div>
     </div>

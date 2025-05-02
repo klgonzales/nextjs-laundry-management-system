@@ -37,6 +37,22 @@ interface DetailedOrder extends Order {
   shop_type?: string;
   delivery_fee?: boolean;
 }
+import {
+  FiUser,
+  FiMapPin,
+  FiCalendar,
+  FiClock,
+  FiDollarSign,
+  FiPackage,
+  FiList,
+  FiTruck,
+  FiCreditCard,
+  FiFileText,
+  FiSmartphone,
+  FiInfo,
+  FiClipboard,
+  FiEdit3,
+} from "react-icons/fi";
 
 export default function Orders() {
   const { user } = useAuth();
@@ -641,69 +657,11 @@ export default function Orders() {
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         {/* Title and Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
             Orders
           </h3>
-
-          <div className="mt-2 sm:mt-0 flex items-center ml-4">
-            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setSortDirection("asc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "asc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                    />
-                  </svg>
-                  Oldest First
-                </div>
-              </button>
-              <button
-                onClick={() => setSortDirection("desc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "desc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                    />
-                  </svg>
-                  Newest First
-                </div>
-              </button>
-            </div>
-          </div>
-          <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
+          <div className="mt-2 sm:mt-0 relative rounded-md ">
             <input
               type="text"
               placeholder="Search by customer name..."
@@ -730,7 +688,7 @@ export default function Orders() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="btn btn-sm btn-primary"
                 aria-label="Clear search"
               >
                 <svg
@@ -749,6 +707,7 @@ export default function Orders() {
               </button>
             )}
           </div>
+          <div className="mt-2 sm:mt-0 flex items-center ml-4 space-x-4"></div>
         </div>
         {searchQuery && (
           <div className="mt-2 text-sm text-gray-500 flex items-center">
@@ -772,15 +731,70 @@ export default function Orders() {
         )}
 
         <div className="mt-4 flex space-x-4">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setSortDirection("asc")}
+              className={`btn ${
+                sortDirection === "asc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
+                </svg>
+                Oldest First
+              </div>
+            </button>
+            <button
+              onClick={() => setSortDirection("desc")}
+              className={`btn ${
+                sortDirection === "asc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                  />
+                </svg>
+                Newest First
+              </div>
+            </button>
+          </div>
+
+          <div className="w-px bg-gray-300"></div>
+
           <button
             onClick={() => {
               setFilterStatus("all");
               setOngoingSubcategory(""); // Reset subcategory
             }}
-            className={`px-4 py-2 rounded ${
-              filterStatus === "all"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+            className={`btn ${
+              filterStatus === "all" ? "btn-tertiary" : "btn-tertiary-neutral"
             }`}
           >
             All
@@ -790,20 +804,20 @@ export default function Orders() {
               setFilterStatus("pending");
               setOngoingSubcategory(""); // Reset subcategory
             }}
-            className={`px-4 py-2 rounded ${
+            className={`btn ${
               filterStatus === "pending"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Pending
           </button>
           <button
             onClick={() => setFilterStatus("ongoing")}
-            className={`px-4 py-2 rounded ${
+            className={`btn ${
               filterStatus === "ongoing"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Ongoing
@@ -813,10 +827,10 @@ export default function Orders() {
               setFilterStatus("completed");
               setOngoingSubcategory(""); // Reset subcategory
             }}
-            className={`px-4 py-2 rounded ${
+            className={`btn ${
               filterStatus === "completed"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Completed
@@ -826,10 +840,10 @@ export default function Orders() {
               setFilterStatus("cancelled");
               setOngoingSubcategory(""); // Reset subcategory
             }}
-            className={`px-4 py-2 rounded ${
-              filterStatus === "cancelled"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+            className={`btn ${
+              filterStatus === "completed"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Cancelled
@@ -850,10 +864,10 @@ export default function Orders() {
               <button
                 key={subcategory}
                 onClick={() => setOngoingSubcategory(subcategory)}
-                className={`px-4 py-2 rounded ${
+                className={`btn ${
                   ongoingSubcategory === subcategory
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200 text-gray-700"
+                    ? "btn-tertiary"
+                    : "btn-tertiary-neutral"
                 }`}
               >
                 {subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}
@@ -862,95 +876,216 @@ export default function Orders() {
           </div>
         )}
       </div>
-      <div className="border-t border-gray-200">
+      <div className="border-t border-gray-200 ">
         <div className="px-4 py-5 sm:p-6">
           {filteredOrders.length > 0 ? (
             <ul className="space-y-4">
               {filteredOrders.map((order, index) => (
+                // Import these at the top of your file
                 <li
                   key={index}
-                  className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200"
+                  className="p-4 bg-[#F9F9F9] rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
                 >
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    Customer:{" "}
-                    {order.customer_name.charAt(0).toUpperCase() +
-                      order.customer_name.slice(1)}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Order Status:{" "}
-                    {order.order_status.charAt(0).toUpperCase() +
-                      order.order_status.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">Services:</p>
-                  <ul className="list-disc pl-5">
-                    {order.services.map((service: any, idx: number) => (
-                      <li key={idx}>{service}</li>
-                    ))}
-                  </ul>
-                  <p className="text-sm text-gray-600">Clothes:</p>
-                  <ul className="list-disc pl-5">
-                    {order.clothes
-                      .filter((clothing: any) => clothing.quantity > 0)
-                      .map((clothing: any, idx: number) => (
-                        <li key={idx}>
-                          {clothing.type} - Quantity: {clothing.quantity}
-                        </li>
-                      ))}
-                  </ul>
-                  <p className="text-sm text-gray-600">
-                    Payment Method:{" "}
-                    {order.payment_method.charAt(0).toUpperCase() +
-                      order.payment_method.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Address:{" "}
-                    {order.address.charAt(0).toUpperCase() +
-                      order.address.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Pickup Date:{" "}
-                    {new Date(order.pickup_date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Total Weight: {order.total_weight} kg
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Total Price: ₱{order.total_price}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Notes: {order.notes || "No notes added"}
-                  </p>
-
-                  <p className="text-sm text-gray-600">
-                    Pickup Time: {order.pickup_time}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Pickup Date: {order.pickup_date}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Delivery Instructions: {order.delivery_instructions}
-                  </p>
-
-                  <p className="text-sm text-gray-600">
-                    Date Completed: {order.date_completed || "Pending"}
-                  </p>
-
-                  {order.order_status !== "cancelled" &&
-                    order.order_status !== "pending" &&
-                    order.order_status !== "completed" && (
-                      <div className="mt-4 flex space-x-4">
-                        <button
-                          onClick={() => handleEditOrder(order)}
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
-                        >
-                          Edit Order Details
-                        </button>
+                  {/* Header with customer name and order details in one row */}
+                  <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      {/* Customer info */}
+                      <div className="w-10 h-10 bg-[#EADDFF] rounded-full flex items-center justify-center">
+                        <FiUser className="h-5 w-5 text-[#3D4EB0]" />
                       </div>
-                    )}
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <h4 className="font-medium text-gray-900">
+                            {order.customer_name.charAt(0).toUpperCase() +
+                              order.customer_name.slice(1)}
+                          </h4>
+
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+            ${
+              order.order_status === "pending"
+                ? "bg-yellow-50 text-yellow-500"
+                : order.order_status === "completed"
+                  ? "badge-success"
+                  : order.order_status === "cancelled"
+                    ? "badge-danger"
+                    : "bg-purple-50 text-purple-500"
+            }`}
+                          >
+                            {order.order_status.charAt(0).toUpperCase() +
+                              order.order_status.slice(1)}
+                            {/* Include completion date for completed orders */}
+                            {order.order_status === "completed" &&
+                              order.date_completed && (
+                                <span className="ml-1">
+                                  •{" "}
+                                  {new Date(
+                                    order.date_completed
+                                  ).toLocaleDateString()}
+                                </span>
+                              )}
+                          </span>
+
+                          {/* Status badge */}
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {/* Pickup date badge */}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800">
+                              <FiCalendar className="mr-1 h-3 w-3 text-gray-500" />
+                              <time dateTime={order.pickup_date}>
+                                {new Date(order.pickup_date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                  }
+                                )}
+                              </time>
+                            </span>
+
+                            {/* Pickup time badge */}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800">
+                              <FiClock className="mr-1 h-3 w-3 text-gray-500" />
+                              {order.pickup_time}
+                            </span>
+
+                            {/* Address badge - with truncation for long addresses */}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800 max-w-[200px]">
+                              <FiMapPin className="mr-1 h-3 w-3 text-gray-500 flex-shrink-0" />
+                              <span className="truncate">{order.address}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Services, items, and order details all in one row */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    {/* Services */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiList className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Services
+                        </h5>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {order.services.map((service: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#EEEEEE] text-[#3D4EB0]"
+                            >
+                              {service}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Clothes/Items */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiPackage className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Items
+                        </h5>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {order.clothes
+                            .filter((clothing: any) => clothing.quantity > 0)
+                            .map((clothing: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className="text-xs bg-[#EEEEEE] px-2 py-0.5 rounded flex items-center"
+                              >
+                                <span className="w-4 h-4 inline-flex items-center justify-center bg-[#3D4EB0] text-white rounded-full mr-1 text-xs">
+                                  {clothing.quantity}
+                                </span>
+                                <span className="text-gray-600">
+                                  {clothing.type}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order details (payment, weight, price) */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiInfo className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <div className="flex items-center justify-between space-x-4">
+                          <h5 className="text-sm font-medium text-[#3D4EB0]">
+                            Order Details
+                          </h5>
+                          {order.order_status !== "cancelled" &&
+                            order.order_status !== "pending" &&
+                            order.order_status !== "completed" && (
+                              <button
+                                onClick={() => handleEditOrder(order)}
+                                className="btn btn-sm btn-primary"
+                              >
+                                <FiEdit3 />
+                              </button>
+                            )}
+                        </div>
+                        <div className="mt-1 space-y-1">
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                            <FiCreditCard className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                            <span>{order.payment_method}</span>
+                          </div>
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                            <FiSmartphone className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                            <span>{order.total_weight} kg</span>
+                          </div>
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                            <FiDollarSign className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                            <span>₱{order.total_price}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Delivery Instructions */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiTruck className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <div className="flex items-center justify-between space-x-4">
+                          <h5 className="text-sm font-medium text-[#3D4EB0]">
+                            Delivery Instructions
+                          </h5>
+                        </div>
+                        <div className="mt-1">
+                          {(order.notes || order.delivery_instructions) && (
+                            <div className="flex flex-col gap-2">
+                              {order.notes && (
+                                <div className="inline-flex items-start bg-[#EEEEEE] px-2 py-1 rounded">
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Notes:</span>{" "}
+                                    {order.notes}
+                                  </div>
+                                </div>
+                              )}
+
+                              {order.delivery_instructions && (
+                                <div className="inline-flex items-start bg-[#EEEEEE] px-2 py-1 rounded">
+                                  <div className="text-xs text-gray-600">
+                                    {order.delivery_instructions}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Edit Form */}
                   {editOrderId === order._id &&
@@ -1013,32 +1148,31 @@ export default function Orders() {
                         <div className="mt-4 flex space-x-4">
                           <button
                             onClick={handleSaveEdit}
-                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                            className="btn btn-success"
                           >
                             Save
                           </button>
                           <button
                             onClick={() => setEditOrderId(null)}
-                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                            className="btn btn-danger"
                           >
                             Cancel
                           </button>
                         </div>
                       </div>
                     )}
-
-                  <div className="mt-4 flex space-x-4">
+                  <div className="mt-4 flex justify-end space-x-4">
                     {order.order_status === "pending" && (
                       <>
                         <button
                           onClick={() => handleAccept(order._id)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                          className="btn btn-success"
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleDecline(order._id)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                          className="btn btn-danger"
                         >
                           Decline
                         </button>
@@ -1051,7 +1185,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "pending")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1075,7 +1209,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "sorting")
                           }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Move to Sorting
@@ -1103,7 +1237,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "to be picked up")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1127,7 +1261,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "washing")
                           }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Move to Washing
@@ -1155,7 +1289,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "sorting")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1179,7 +1313,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "drying")
                           }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Move to Drying
@@ -1207,7 +1341,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "washing")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1231,7 +1365,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "folding")
                           }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Move to Folding
@@ -1254,7 +1388,7 @@ export default function Orders() {
                       </div>
                     )}
                     {order.order_status === "folding" && (
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="btn btn-neutral">
                         <button
                           onClick={() =>
                             handleMoveToNextStage(order._id, "drying")
@@ -1283,7 +1417,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "to be delivered")
                           }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Move to Delivery
@@ -1311,7 +1445,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "folding")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1336,7 +1470,7 @@ export default function Orders() {
                             await handleMoveToNextStage(order._id, "completed");
                             await handleUpdateDateCompleted(order._id);
                           }}
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                          className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
                             Mark as Completed
@@ -1364,7 +1498,7 @@ export default function Orders() {
                           onClick={() =>
                             handleMoveToNextStage(order._id, "to be delivered")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg
@@ -1426,7 +1560,7 @@ export default function Orders() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="mt-2 text-blue-500 hover:text-blue-700 font-medium"
+                      className="btn btn-sm btn-primary"
                     >
                       Clear search
                     </button>

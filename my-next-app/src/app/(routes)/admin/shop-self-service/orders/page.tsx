@@ -640,12 +640,9 @@ export default function Orders() {
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         {/* Title and Search Bar */}
+        <h3 className="text-lg leading-6 font-medium text-gray-900">Orders</h3>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Orders
-          </h3>
           <div className="mt-2 sm:mt-0 flex items-center ml-4">
-            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
             <div className="flex space-x-2">
               <button
                 onClick={() => setSortDirection("asc")}

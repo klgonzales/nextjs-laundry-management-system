@@ -3,6 +3,7 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import BackButton from "@/app/components/common/Home";
 import { useAuth } from "@/app/context/AuthContext";
+import { FiDelete, FiEdit, FiTrash } from "react-icons/fi";
 
 // Interface for Payment Method structure within the form
 interface PaymentMethodFormData {
@@ -160,13 +161,13 @@ export default function AdminProfile() {
   // --- Render Logic ---
   if (!user || user.role !== "admin") {
     console.log(user);
-    return (
-      <div className="mt-8 text-center">
-        <p>Access denied or user not logged in.</p>
-      </div>
-    );
+    // return (
+    //   <div className="mt-8 text-center">
+    //     <p>Access denied or user not logged in.</p>
+    //   </div>
+    // );
   }
-  const currentShop = user.shops?.[0];
+  const currentShop = user?.shops?.[0];
 
   return (
     <div className="mt-8 max-w-4xl mx-auto bg-white shadow rounded-lg mb-10">
@@ -182,9 +183,9 @@ export default function AdminProfile() {
                 : "/admin/shop-pickup-delivery/dashboard"
             }
           />
-          <h3 className="ml-4 text-lg leading-6 font-medium text-gray-900">
+          <h4 className="text-md font-semibold text-gray-700 mb-3">
             Admin Profile & Shop Settings
-          </h3>
+          </h4>
         </div>
         <button
           onClick={() => {
@@ -195,10 +196,10 @@ export default function AdminProfile() {
             if (isEditing) {
               // Resetting on cancel
               setAdminFormData({
-                name: user.name || "",
-                email: user.email || "",
+                name: user?.name || "",
+                email: user?.email || "",
               });
-              const shop = user.shops?.[0];
+              const shop = user?.shops?.[0];
               if (shop) {
                 setShopFormData({
                   phone: shop.phone || "",
@@ -222,20 +223,22 @@ export default function AdminProfile() {
               }
             }
           }}
-          className={`px-3 py-1 rounded text-sm font-medium ${isEditing ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"}`}
+          className={`px-3 py-1 rounded text-sm font-medium ${isEditing ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-[#FFB6E2] text-black hover:bg-[#F38AC9]"}`}
         >
-          {isEditing ? "Cancel" : "Edit Profile & Shop"}
+          {isEditing ? "Cancel" : <FiEdit />}
         </button>
       </div>
 
       {/* Profile Details */}
       <div className="px-4 py-5 sm:p-6">
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        {success && <p className="text-green-500 text-sm mb-4">{success}</p>}
+        <p className="text-sm mb-4" style={{ color: "#D0F3B8" }}>
+          {success}
+        </p>
 
         {/* Admin Section */}
         {/* ... (Admin Name, Admin Email - Display Only) ... */}
-        <section className="mb-8 border-b pb-6">
+        <section className="mb-8 border-b border-gray-200 pb-6 bg">
           <h4 className="text-md font-semibold text-gray-700 mb-3">
             Admin Details
           </h4>
@@ -254,7 +257,7 @@ export default function AdminProfile() {
                 />
               ) : (
                 <dd className="mt-1 text-sm text-gray-900">
-                  {user.name || "-"}
+                  {user?.name || "-"}
                 </dd>
               )}
             </div>
@@ -262,7 +265,7 @@ export default function AdminProfile() {
             <div>
               <dt className="text-sm font-medium text-gray-500">Email</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {user.email || "-"}
+                {user?.email || "-"}
               </dd>
             </div>
           </dl>
@@ -270,7 +273,7 @@ export default function AdminProfile() {
 
         {/* Shop Section */}
         {currentShop && (
-          <section className="mb-8 border-b pb-6">
+          <section className="mb-8 border-b border-gray-200 pb-6">
             {/* ... (Shop Phone, Shop Email - Display Only, Shop Address) ... */}
             <h4 className="text-md font-semibold text-gray-700 mb-3">
               Shop Details ({currentShop.name})
@@ -404,7 +407,7 @@ export default function AdminProfile() {
                       className="mt-1 px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600 disabled:bg-gray-400 self-end mb-1" // Align button nicely
                       aria-label={`Delete ${pm.name || "payment method"}`}
                     >
-                      Delete
+                      <FiTrash />
                     </button>
                   )}
                 </div>
@@ -416,7 +419,7 @@ export default function AdminProfile() {
                 type="button"
                 onClick={addPaymentMethod}
                 disabled={isSaving}
-                className="mt-4 px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 disabled:bg-gray-400"
+                className="mt-4 px-3 py-1 bg-[#D0F3B8] text-black rounded text-sm hover:bg-[#B9DF9F] disabled:bg-gray-400"
               >
                 + Add Payment Method
               </button>
@@ -431,7 +434,7 @@ export default function AdminProfile() {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium hover:bg-green-600 disabled:bg-gray-400"
+              className="px-4 py-2 bg-[#D0F3B8] text-black rounded text-sm font-medium hover:bg-[#B9DF9F] disabled:bg-gray-400"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
@@ -446,7 +449,7 @@ export default function AdminProfile() {
           width: 100%;
           border-radius: 0.375rem; /* rounded-md */
           border: 1px solid #d1d5db; /* border-gray-300 */
-          box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+          box-shadow: 0 1px 2px 0 solid #d1d5db; /* shadow-sm */
           padding: 0.5rem; /* p-2 */
         }
         .input-field:focus {

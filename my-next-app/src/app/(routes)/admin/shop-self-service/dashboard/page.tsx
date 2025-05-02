@@ -318,10 +318,10 @@ export default function AdminDashboard() {
           <div className="px-4 py-6 sm:px-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Total Customers */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -351,10 +351,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Total Revenue */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
@@ -384,10 +384,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Completed Orders */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
                 <div className="p-5">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
                       <svg
                         className="h-6 w-6 text-white"
                         fill="none"
