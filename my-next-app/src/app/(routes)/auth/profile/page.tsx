@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import BackButton from "@/app/components/common/Home";
 import { useAuth } from "@/app/context/AuthContext"; // Correct path
+import { FiDelete, FiEdit, FiTrash } from "react-icons/fi";
 
 export default function Profile() {
   // Get user and login function from context
@@ -113,12 +114,12 @@ export default function Profile() {
 
   // --- Render Profile View ---
   return (
-    <div className="mt-8 max-w-2xl mx-auto bg-white shadow rounded-lg">
+    <div className="mt-8 max-w-4xl mx-auto bg-white shadow rounded-lg mb-10 w-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-5 sm:px-6 border-b border-gray-200">
         <div className="flex items-center">
           <BackButton href="/auth/dashboard" /> {/* Adjust href as needed */}
-          <h3 className="ml-4 text-lg leading-6 font-medium text-gray-900">
+          <h3 className="ml-4 text-lg leading-6 font-medium text-gray-900 w-full">
             Profile
           </h3>
         </div>
@@ -137,13 +138,9 @@ export default function Profile() {
               });
             }
           }}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            isEditing
-              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
+          className={`px-3 py-1 rounded text-sm font-medium ${isEditing ? "bg-gray-200 text-gray-700 hover:bg-gray-300" : "bg-[#FFB6E2] text-black hover:bg-[#F38AC9]"}`}
         >
-          {isEditing ? "Cancel" : "Edit Profile"}
+          {isEditing ? "Cancel" : <FiEdit />}
         </button>
       </div>
 
@@ -224,7 +221,7 @@ export default function Profile() {
             <button
               onClick={handleSave}
               disabled={isSaving} // Use local saving state
-              className="px-4 py-2 bg-green-500 text-white rounded text-sm font-medium hover:bg-green-600 disabled:bg-gray-400"
+              className="btn btn-primary"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
