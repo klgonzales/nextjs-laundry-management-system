@@ -5,11 +5,37 @@ import { useAuth } from "@/app/context/AuthContext";
 import { usePusher } from "@/app/context/PusherContext";
 import type { Channel } from "pusher-js";
 import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
-
+import {
+  FiUser,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+  FiFileText,
+  FiDollarSign,
+  FiInfo,
+  FiCreditCard,
+  FiClipboard,
+} from "react-icons/fi";
+interface Order {
+  _id: string;
+  customer_id: string;
+  date: string;
+  total_price: number;
+  order_status: string;
+  shop_name?: string;
+  shop_type?: string;
+  shop: string;
+  payment_status: string;
+  payment_method: string;
+  date_placed: string;
+  total_weight?: number;
+  notes: string;
+}
 export default function Payments() {
   const { user, isLoading: authLoading } = useAuth(); // Get the user from the AuthContext
   const [loading, setLoading] = useState(true);
   const shop_id = user?.shops?.[0]?.shop_id; // Dynamically get the shop_id from the user's shops
+  const [orders, setOrders] = useState<Order[]>([]);
   const { pusher, isConnected } = usePusher();
   const channelRef = useRef<Channel | null>(null);
   const [payments, setPayments] = useState<any[]>([]); // Store all payments
@@ -19,6 +45,7 @@ export default function Payments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [customerData, setCustomerData] = useState<Record<string, any>>({});
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Manual refresh loading
   const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
   const { registerPaymentHandler, unregisterPaymentHandler } =
     useRealTimeUpdates();
@@ -256,14 +283,6 @@ export default function Payments() {
             return {
               ...payment,
               payment_status: "for review",
-              // Don't add these top-level properties - they won't be accessed in your render code
-              // amount_sent: data.amount_sent,
-              // amount_paid: data.amount_paid,
-              // screenshot: data.screenshot,
-              // reference_number: data.reference_number,
-              // paid_the_driver: data.paid_the_driver,
-              // payment_method: data.payment_method,
-              // payment_date: data.payment_date,
               proof_of_payment: proofOfPayment, // This is the only property you need
               has_proof_of_payment: true,
             };
@@ -317,6 +336,93 @@ export default function Payments() {
         });
       });
     });
+
+    // // Fixed update-order-price handler
+    // console.log(
+    //   `[Admin Payments] Binding to update-order-price event on ${channelName}`
+    // );
+    // console.log("KJDSGFHJSGAFHSDGGAGAGGAGGGGGGG");
+    // channel.bind(
+    //   "update-order-price",
+    //   (data: {
+    //     order_id: string;
+    //     total_weight?: number;
+    //     total_price?: number;
+    //     notes?: string;
+    //     date_updated?: string;
+    //   }) => {
+    //     console.log(
+    //       `%c[PRICE UPDATE EVENT] Received data:`,
+    //       "background: orange; color: white; padding: 4px",
+    //       data
+    //     );
+
+    //     // Extract the order ID and new price with flexible property names
+    //     const orderId = data.order_id;
+    //     console.log(orderId);
+
+    //     if (!orderId) {
+    //       console.error(
+    //         "[Admin Payments] Missing order ID in price update:",
+    //         data
+    //       );
+    //       return;
+    //     }
+
+    //     // Update the payments in state
+    //     setPayments((prevPayments) => {
+    //       console.log(
+    //         `[Admin Payments] Updating payment price, current count: ${prevPayments.length}`
+    //       );
+
+    //       const foundPayment = prevPayments.find(
+    //         (p) => p._id === orderId || p.order_id === orderId
+    //       );
+    //       console.log(
+    //         `%c[PRICE UPDATE] Found payment?`,
+    //         "background: orange; color: white",
+    //         foundPayment ? "YES" : "NO"
+    //       );
+
+    //       const updatedPayments = prevPayments.map((payment) => {
+    //         // Check for both _id and order_id fields
+    //         const paymentId = payment._id || payment.order_id;
+
+    //         if (paymentId === orderId) {
+    //           console.log(
+    //             `%c[PRICE UPDATE] Updating payment ${paymentId}`,
+    //             "background: green; color: white; padding: 4px"
+    //           );
+    //           console.log(
+    //             `Old price: ${payment.total_price}, New price: ${data.total_price}`
+    //           );
+
+    //           return {
+    //             ...payment,
+    //             total_weight: data.total_weight,
+    //             total_price: data.total_price,
+    //             notes: data.notes,
+    //           };
+    //         }
+    //         return payment;
+    //       });
+
+    //       // Don't forget to also update filteredPayments state!
+    //       setFilteredPayments(
+    //         sortOrdersByDate(
+    //           filterStatus === "all"
+    //             ? updatedPayments
+    //             : updatedPayments.filter(
+    //                 (p) => p.payment_status === filterStatus
+    //               ),
+    //           sortDirection
+    //         )
+    //       );
+
+    //       return updatedPayments;
+    //     });
+    //   }
+    // );
 
     // Cleanup function
     return () => {
@@ -553,74 +659,17 @@ export default function Payments() {
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         {/* Title and Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
             Payments
           </h3>
-          <div className="mt-2 sm:mt-0 flex items-center ml-4">
-            <span className="text-sm text-gray-600 mr-2">Sort by date:</span>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setSortDirection("asc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "asc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                    />
-                  </svg>
-                  Oldest First
-                </div>
-              </button>
-              <button
-                onClick={() => setSortDirection("desc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "desc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                    />
-                  </svg>
-                  Newest First
-                </div>
-              </button>
-            </div>
-          </div>
-          <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
+          <div className="mt-2 sm:mt-0 relative rounded-md">
             <input
               type="text"
               placeholder="Search by customer name..."
               value={searchQuery}
               onChange={handleSearch}
-              className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg
@@ -637,6 +686,7 @@ export default function Payments() {
                 />
               </svg>
             </div>
+            {/* Clear button - only visible when there's text */}
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
@@ -663,7 +713,7 @@ export default function Payments() {
 
         {/* Display search results count if searching */}
         {searchQuery && (
-          <div className="mt-2 text-sm text-gray-500 flex items-center mb-3">
+          <div className="mt-2 text-sm text-gray-500 flex items-center">
             <svg
               className="mr-1 h-4 w-4"
               fill="none"
@@ -682,17 +732,74 @@ export default function Payments() {
             {searchQuery}"
           </div>
         )}
+
+        {/* Tabs for filtering payments */}
+
         <div className="mt-4 flex space-x-4">
-          {/* Tabs for filtering payments */}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setSortDirection("asc")}
+              className={`btn ${
+                sortDirection === "asc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
+                </svg>
+                Oldest First
+              </div>
+            </button>
+            <button
+              onClick={() => setSortDirection("desc")}
+              className={`btn ${
+                sortDirection === "desc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                  />
+                </svg>
+                Newest First
+              </div>
+            </button>
+          </div>
+          <div className="w-px bg-gray-300"></div>
           {["all", "pending", "for review", "paid", "failed", "cancelled"].map(
             (status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded ${
+                className={`btn ${
                   filterStatus === status
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
+                    ? "btn-tertiary"
+                    : "btn-tertiary-neutral"
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -701,6 +808,7 @@ export default function Payments() {
           )}
         </div>
       </div>
+
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
           {filteredPayments.length > 0 ? (
@@ -708,133 +816,337 @@ export default function Payments() {
               {filteredPayments.map((payment, index) => (
                 <li
                   key={index}
-                  className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200"
+                  className="p-4 bg-[#F9F9F9] rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
                 >
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    {customerData[payment.customer_id]?.name ||
-                      "Loading customer..."}
-                    <span className="text-xs text-gray-500 ml-2">
-                      (ID: {payment.customer_id})
-                    </span>
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Amount: ₱{payment.total_price}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Mode of Payment:{" "}
-                    {payment.payment_method
-                      ? payment.payment_method.charAt(0).toUpperCase() +
-                        payment.payment_method.slice(1)
-                      : "Unknown"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Order Status: {payment.order_status}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Payment Status:{" "}
-                    <span
-                      className={`${
-                        payment.payment_status === "paid"
-                          ? "text-green-500"
-                          : payment.payment_status === "pending"
-                            ? "text-yellow-500"
-                            : payment.payment_status === "cancelled"
-                              ? "text-red-500"
-                              : "text-gray-500"
-                      }`}
-                    >
-                      {payment.payment_status
-                        ? payment.payment_status.charAt(0).toUpperCase() +
-                          payment.payment_status.slice(1)
-                        : "Unknown"}
-                    </span>
-                  </p>
+                  {/* Header with customer name and payment status */}
+                  <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-[#EADDFF] rounded-full flex items-center justify-center">
+                        <FiUser className="h-5 w-5 text-[#3D4EB0]" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-medium text-gray-900">
+                            {customerData[payment.customer_id]?.name ||
+                              "Loading customer..."}
+                          </h4>
+
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                              ${
+                                payment.payment_status === "paid"
+                                  ? "badge-success"
+                                  : payment.payment_status === "pending"
+                                    ? "bg-yellow-50 text-yellow-500"
+                                    : payment.payment_status === "for review"
+                                      ? "bg-purple-50 text-purple-500"
+                                      : payment.payment_status ===
+                                            "cancelled" ||
+                                          payment.payment_status === "failed"
+                                        ? "badge-danger"
+                                        : "bg-gray-100 text-gray-700"
+                              }`}
+                          >
+                            {payment.payment_status
+                              ? payment.payment_status.charAt(0).toUpperCase() +
+                                payment.payment_status.slice(1)
+                              : "Unknown"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#F0F0F0] text-gray-800">
+                            <FiClock className="mr-1 h-3 w-3 text-gray-500" />
+                            {new Date(
+                              payment.date_placed || payment.date
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#F0F0F0] text-gray-800">
+                            <FiFileText className="mr-1 h-3 w-3 text-gray-500" />
+                            Order Status:{" "}
+                            {payment.order_status
+                              .split(" ")
+                              .map(
+                                (word: string) =>
+                                  word.charAt(0).toUpperCase() +
+                                  word.slice(1).toLowerCase()
+                              )
+                              .join(" ")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment details */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    {/* Payment Method */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiCreditCard className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Payment Method
+                        </h5>
+                        <div className="mt-1 inline-flex items-center px-2 py-1 rounded text-sm bg-[#F0F0F0] text-gray-700">
+                          {payment.payment_method
+                            ? payment.payment_method.charAt(0).toUpperCase() +
+                              payment.payment_method.slice(1)
+                            : "Unknown"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Amount */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiDollarSign className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Amount
+                        </h5>
+                        <div className="mt-1 inline-flex items-center px-2 py-1 rounded text-sm bg-[#F0F0F0] text-gray-700 font-semibold">
+                          ₱{payment.total_price}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* KG */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiDollarSign className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Total KG
+                        </h5>
+                        <div className="mt-1 inline-flex items-center px-2 py-1 rounded text-sm bg-[#F0F0F0] text-gray-700 font-semibold">
+                          {payment.total_weight}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order ID Reference */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <FiClipboard className="h-4 w-4 text-[#3D4EB0]" />
+                      </div>
+                      <div className="ml-2">
+                        <h5 className="text-sm font-medium text-[#3D4EB0]">
+                          Order Reference
+                        </h5>
+                        <div className="mt-1 inline-flex items-center px-2 py-1 rounded text-sm bg-[#F0F0F0] text-gray-700 font-mono">
+                          #{payment._id.substring(payment._id.length - 6)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Show details if payment_status is "for review" */}
                   {payment.payment_status === "for review" && (
-                    <div className="mt-4 space-y-2">
-                      {payment.payment_method === "gcash" && (
-                        <>
-                          <p className="text-sm text-gray-600">
-                            Amount Sent: ₱{payment.proof_of_payment.amount_sent}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Reference Number:{" "}
-                            {payment.proof_of_payment.reference_number}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Payment Date:{" "}
-                            {new Date(
-                              payment.proof_of_payment.payment_date
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </p>
-                          <button
-                            onClick={() => {
-                              const screenshot =
-                                payment.proof_of_payment?.screenshot; // Access the screenshot
-                              if (screenshot) {
-                                // Open the Base64 image in a new tab
-                                const newWindow = window.open();
-                                if (newWindow) {
-                                  newWindow.document.write(`
-          <html>
-            <head><title>Screenshot</title></head>
-            <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background-color:#f4f4f4;">
-              <img src="${screenshot}" alt="Screenshot" style="max-width: 100%; height: auto; border: 1px solid #ccc; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);" />
-            </body>
-          </html>
-        `);
-                                  newWindow.document.close();
+                    <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200">
+                      <h5 className="font-medium text-gray-800 mb-3 flex items-center">
+                        <FiInfo className="mr-2 text-[#3D4EB0]" />
+                        Payment Verification Details
+                      </h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {payment.payment_method === "gcash" && (
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Amount Sent:
+                              </div>
+                              <div className="font-medium text-sm">
+                                ₱
+                                {payment.proof_of_payment?.amount_sent || "N/A"}
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Reference Number:
+                              </div>
+                              <div className="font-medium text-sm">
+                                {payment.proof_of_payment?.reference_number ||
+                                  "N/A"}
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Payment Date:
+                              </div>
+                              <div className="font-medium text-sm">
+                                {payment.proof_of_payment?.payment_date
+                                  ? new Date(
+                                      payment.proof_of_payment.payment_date
+                                    ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })
+                                  : "N/A"}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {payment.payment_method === "cash" && (
+                          <div className="space-y-3">
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Amount Paid:
+                                <div className="font-medium text-sm">
+                                  ₱
+                                  {payment.proof_of_payment?.amount_paid ||
+                                    "N/A"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Paid the Driver:
+                                <div className="font-medium text-sm">
+                                  {payment.proof_of_payment?.paid_the_driver
+                                    ? "Yes"
+                                    : "No"}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Payment Date:
+                              </div>
+                              <div className="font-medium text-sm">
+                                {new Date(
+                                  payment.proof_of_payment.payment_date
+                                ).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {payment.payment_method === "gcash" && (
+                          <div className="flex items-center justify-center border rounded p-2 bg-gray-50">
+                            <button
+                              onClick={() => {
+                                const screenshot =
+                                  payment.proof_of_payment?.screenshot;
+                                if (screenshot) {
+                                  const newWindow = window.open();
+                                  if (newWindow) {
+                                    newWindow.document.write(`
+                                      <html>
+                                        <head>
+                                          <title>Payment Screenshot</title>
+                                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                          <style>
+                                            body {
+                                              margin: 0;
+                                              padding: 20px;
+                                              display: flex;
+                                              justify-content: center;
+                                              align-items: center;
+                                              min-height: 100vh;
+                                              background-color: #f4f4f4;
+                                              font-family: system-ui, -apple-system, sans-serif;
+                                            }
+                                            .container {
+                                              max-width: 100%;
+                                              text-align: center;
+                                            }
+                                            img {
+                                              max-width: 100%;
+                                              height: auto;
+                                              border: 1px solid #ccc;
+                                              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                                              border-radius: 4px;
+                                            }
+                                            h2 {
+                                              color: #333;
+                                              margin-bottom: 20px;
+                                            }
+                                          </style>
+                                        </head>
+                                        <body>
+                                          <div class="container">
+                                            <h2>Payment Screenshot</h2>
+                                            <img src="${screenshot}" alt="Payment Screenshot" />
+                                          </div>
+                                        </body>
+                                      </html>
+                                    `);
+                                    newWindow.document.close();
+                                  }
+                                } else {
+                                  console.log("No screenshot available");
                                 }
-                              } else {
-                                console.log("No screenshot available");
-                              }
-                            }}
-                            className="text-blue-500 hover:underline"
-                          >
-                            View Screenshot
-                          </button>
-                        </>
-                      )}
-                      {payment.payment_method === "cash" && (
-                        <>
-                          <p className="text-sm text-gray-600">
-                            Amount Paid: ₱{payment.proof_of_payment.amount_paid}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Paid the Driver:{" "}
-                            {payment.proof_of_payment.paid_the_driver
-                              ? "Yes"
-                              : "No"}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Payment Date:{" "}
-                            {new Date(
-                              payment.proof_of_payment.payment_date
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </p>
-                        </>
-                      )}
-                      <div className="mt-4 flex space-x-4">
+                              }}
+                              className="flex items-center justify-center py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-[#3D4EB0] hover:bg-[#2D3A8C]"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 mr-2"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              View Screenshot
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           onClick={() => handleApprovePayment(payment._id)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                          className="btn btn-success flex items-center"
                         >
-                          Approve
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Approve Payment
                         </button>
                         <button
                           onClick={() => handleCancelPayment(payment._id)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+                          className="btn btn-danger flex items-center"
                         >
-                          Decline
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Decline Payment
                         </button>
                       </div>
                     </div>

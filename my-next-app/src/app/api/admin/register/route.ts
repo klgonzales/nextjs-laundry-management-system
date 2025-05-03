@@ -79,13 +79,27 @@ export async function POST(request: Request) {
       services: validatedServices,
       machines: machines,
       orders: [],
-      payment_methods: payment_methods.map((method: any, index: number) => ({
-        method_id: index + 1,
-        name: method,
-        account_number: "1", // Default account number
-        status: "active", // Default status
-        payments: [], // Initialize with an empty array
-      })),
+      payment_methods: payment_methods.map((method: any, index: number) => {
+        // Check if the method is already an object
+        if (typeof method === "object" && method !== null) {
+          return {
+            method_id: method.method_id || index + 1,
+            name: method.name,
+            account_number: method.account_number || "1",
+            status: "active",
+            payments: [],
+          };
+        } else {
+          // Handle the case where method is a string (for backward compatibility)
+          return {
+            method_id: index + 1,
+            name: method,
+            account_number: "1",
+            status: "active",
+            payments: [],
+          };
+        }
+      }),
       opening_hours: convertedOpeningHours, // Use the converted format
       delivery_fee,
       role,

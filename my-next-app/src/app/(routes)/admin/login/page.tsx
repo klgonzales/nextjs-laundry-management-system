@@ -12,7 +12,7 @@ export default function AdminLoginPage() {
           Don't have an account?{" "}
           <Link
             href="/admin/register"
-            className="text-purple-600 hover:text-purple-800"
+            className="text-[#3D4EB0] hover:text-[#4653A0]"
           >
             Register here
           </Link>

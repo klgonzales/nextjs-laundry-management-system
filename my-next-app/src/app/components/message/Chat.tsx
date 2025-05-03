@@ -6,11 +6,14 @@ import {
   FiSearch,
   FiSend,
   FiChevronLeft,
+  FiArrowLeft,
   FiShoppingBag,
   FiUser,
 } from "react-icons/fi";
 import { MdStorefront, MdPerson } from "react-icons/md";
 import { useAuth } from "@/app/context/AuthContext";
+import Home from "@/app/components/common/Home";
+import Link from "next/link";
 
 // Define the shape of a message
 interface Message {
@@ -63,6 +66,19 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const { user } = useAuth();
+
+  // Function to determine the back link based on userType and shop type
+  const getBackUrl = () => {
+    if (userType === "client") {
+      return "/auth/dashboard";
+    } else {
+      // For admin, check shop_id to determine if it's self-service
+      // This is a simple implementation - you may need logic to check the shop type
+      const shopType = "pickup-delivery"; // Default to pickup-delivery
+      return `/admin/shop-${shopType}/dashboard`;
+    }
+  };
 
   // State for selected contact
   const [selectedContactId, setSelectedContactId] = useState<string | null>(
@@ -206,9 +222,9 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
   }, [contacts.length, userType, shop_id, customer_id]);
 
   // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
 
   // --- Pusher Subscription and Message Handling ---
   useEffect(() => {
@@ -267,7 +283,7 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
       });
 
       // Update contact's last message
-      const { user } = useAuth();
+
       updateContactLastMessage(
         userType === "client"
           ? message.sender === user?.name
@@ -422,249 +438,302 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
 
   // --- Render UI ---
   return (
-    <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-220px)] bg-white rounded-lg shadow-lg overflow-hidden">
-      {/* Contacts sidebar - hidden in mobile when viewing messages */}
-      <div
-        className={`w-full md:w-1/3 lg:w-1/4 bg-gray-50 border-r ${
-          isMobileViewingMessages ? "hidden md:block" : "block"
-        }`}
-      >
-        <div className="p-4 border-b">
-          <h3 className="text-xl font-semibold text-gray-700">
-            {userType === "client" ? "Shops" : "Customers"}
-          </h3>
+    <div className="flex flex-col h-[calc(110vh-100px)] bg-white rounded-lg  overflow-hidden w-full">
+      {/* Back button and header */}
+      <div className="px-6 py-4 bg-white shadow-sm flex items-center">
+        <Link
+          href={getBackUrl()}
+          className="text-gray-700 hover:text-blue-600 transition-colors"
+        >
+          <FiArrowLeft size={24} />
+        </Link>
+        <h2 className="ml-4 text-xl font-semibold text-gray-800">
+          {userType === "admin" ? "Shop Messages" : "Customer Messages"}
+        </h2>
+      </div>
 
-          {/* Search bar */}
-          <div className="mt-3 relative">
-            <div className="flex items-center">
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Contacts sidebar - hidden in mobile when viewing messages */}
+        <div
+          className={`w-full md:w-1/3 lg:w-1/4 ${
+            isMobileViewingMessages ? "hidden md:block" : "block"
+          }`}
+        >
+          <div className="p-5">
+            <h3 className="text-lg font-medium text-gray-700 mb-3">
+              {userType === "client" ? "Your Shops" : "Your Customers"}
+            </h3>
+
+            {/* Search bar */}
+            <div className="relative">
               <input
                 type="text"
                 placeholder={`Search ${userType === "client" ? "shops" : "customers"}...`}
-                className="w-full p-2 pl-10 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 pl-10 rounded-full bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:shadow"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <div className="absolute left-3 top-2.5 text-gray-500">
+              <div className="absolute left-4 top-3.5 text-gray-400">
                 <FiSearch size={18} />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Contacts list */}
-        <div className="overflow-y-auto h-[calc(100%-80px)]">
-          {filteredContacts.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
-              No {userType === "client" ? "shops" : "customers"} found
-            </div>
-          ) : (
-            <ul>
-              {filteredContacts.map((contact) => (
-                <li
-                  key={contact.id}
-                  className={`p-3 border-b hover:bg-gray-100 cursor-pointer transition-colors ${
-                    selectedContactId === contact.id
-                      ? "bg-blue-50 border-l-4 border-l-blue-500"
-                      : ""
-                  }`}
-                  onClick={() => handleContactSelect(contact.id)}
-                >
-                  <div className="flex items-start">
-                    {/* Contact image */}
-                    <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                      {contact.image ? (
-                        <img
-                          src={contact.image}
-                          alt={contact.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-xl">
-                          {contact.type === "shop" ? (
-                            <MdStorefront size={24} />
-                          ) : (
-                            <MdPerson size={24} />
+          {/* Contacts list */}
+          <div className="overflow-y-auto h-[calc(100%-105px)] px-3">
+            {filteredContacts.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">
+                No {userType === "client" ? "shops" : "customers"} found
+              </div>
+            ) : (
+              <ul className="space-y-2 pb-4">
+                {filteredContacts.map((contact) => (
+                  <li
+                    key={contact.id}
+                    className={`p-3 hover:bg-gray-100 cursor-pointer transition-all rounded-xl ${
+                      selectedContactId === contact.id
+                        ? "bg-blue-50 shadow-md"
+                        : "bg-white shadow-sm"
+                    }`}
+                    onClick={() => handleContactSelect(contact.id)}
+                  >
+                    <div className="flex items-center">
+                      {/* Contact image */}
+                      <div className="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden shadow">
+                        {contact.image ? (
+                          <img
+                            src={contact.image}
+                            alt={contact.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 text-white text-xl">
+                            {contact.type === "shop" ? (
+                              <MdStorefront size={24} />
+                            ) : (
+                              <MdPerson size={24} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Contact details */}
+                      <div className="ml-3 flex-1">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium text-gray-900 truncate">
+                            {contact.name}
+                          </h4>
+                          {contact.lastMessageTime && (
+                            <span className="text-xs text-gray-400">
+                              {new Date(
+                                contact.lastMessageTime
+                              ).toLocaleDateString()}
+                            </span>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Contact details */}
-                    <div className="ml-3 flex-1">
-                      <div className="flex justify-between">
-                        <h4 className="font-medium text-gray-900">
-                          {contact.name}
-                        </h4>
-                        {contact.lastMessageTime && (
-                          <span className="text-xs text-gray-500">
-                            {new Date(
-                              contact.lastMessageTime
-                            ).toLocaleDateString()}
-                          </span>
-                        )}
-                      </div>
+                        {/* Last message preview */}
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-sm text-gray-500 truncate max-w-[180px]">
+                            {contact.lastMessage || "No messages yet"}
+                          </p>
 
-                      {/* Last message preview */}
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-gray-500 truncate w-40">
-                          {contact.lastMessage || "No messages yet"}
-                        </p>
-
-                        {/* Unread badge */}
-                        {contact.unread && contact.unread > 0 && (
-                          <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {contact.unread}
-                          </span>
-                        )}
+                          {/* Unread badge */}
+                          {contact.unread && contact.unread > 0 && (
+                            <span className="bg-blue-500 text-white text-xs rounded-full ml-2 h-5 w-5 flex items-center justify-center">
+                              {contact.unread}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Messages container - shown in mobile when viewing messages */}
-      <div
-        className={`w-full md:w-2/3 lg:w-3/4 flex flex-col ${
-          isMobileViewingMessages || !selectedContactId
-            ? "block"
-            : "hidden md:flex"
-        }`}
-      >
-        {/* Conversation header */}
-        <div className="p-4 border-b flex items-center">
-          {/* Back button for mobile */}
-          <button
-            className="md:hidden mr-2 text-gray-600"
-            onClick={handleBackToContacts}
-          >
-            <FiChevronLeft size={24} />
-          </button>
+        {/* Messages container - shown in mobile when viewing messages */}
+        <div
+          className={`w-full md:w-2/3 lg:w-3/4 flex flex-col ${
+            isMobileViewingMessages || !selectedContactId
+              ? "block"
+              : "hidden md:flex"
+          }`}
+        >
+          {/* Conversation header */}
+          <div className="p-4 bg-white  flex items-center">
+            {/* Back button for mobile */}
+            <button
+              className="md:hidden mr-3 text-gray-600 hover:text-gray-800"
+              onClick={handleBackToContacts}
+            >
+              <FiChevronLeft size={26} />
+            </button>
 
-          {selectedContactId ? (
-            <>
-              {/* Selected contact info */}
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-                {contacts.find((c) => c.id === selectedContactId)?.image ? (
-                  <img
-                    src={
-                      contacts.find((c) => c.id === selectedContactId)?.image ??
-                      undefined
-                    }
-                    alt={selectedContactName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white">
-                    {contacts.find((c) => c.id === selectedContactId)?.type ===
-                    "shop" ? (
-                      <MdStorefront size={20} />
+            {selectedContactId ? (
+              <>
+                {/* Selected contact info */}
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden shadow">
+                    {contacts.find((c) => c.id === selectedContactId)?.image ? (
+                      <img
+                        src={
+                          contacts.find((c) => c.id === selectedContactId)
+                            ?.image ?? undefined
+                        }
+                        alt={selectedContactName}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <MdPerson size={20} />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-blue-600 text-white">
+                        {contacts.find((c) => c.id === selectedContactId)
+                          ?.type === "shop" ? (
+                          <MdStorefront size={18} />
+                        ) : (
+                          <MdPerson size={18} />
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-              <h3 className="ml-3 text-lg font-semibold text-gray-800">
-                {selectedContactName}
-              </h3>
-            </>
-          ) : (
-            <h3 className="text-lg font-semibold text-gray-800">
-              Select a {userType === "client" ? "shop" : "customer"} to start
-              chatting
-            </h3>
-          )}
-        </div>
-
-        {/* Messages area */}
-        <div className="flex-grow overflow-y-auto p-4 bg-gray-50">
-          {!isChatReady ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-gray-500">
-                Please select a {userType === "client" ? "shop" : "customer"} to
-                start chatting
-              </p>
-            </div>
-          ) : isLoadingMessages ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-gray-500">Loading messages...</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-gray-500">
-                No messages yet. Start the conversation!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.sender ===
-                    (userType === "client" ? "Customer" : "Admin")
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[75%] rounded-lg px-4 py-2 shadow-sm ${
-                      msg.sender ===
-                      (userType === "client" ? "Customer" : "Admin")
-                        ? "bg-blue-500 text-white rounded-br-none"
-                        : "bg-white rounded-bl-none"
-                    }`}
-                  >
-                    <p className="text-sm">{msg.text}</p>
-                    <p className="text-xs mt-1 opacity-75 text-right">
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-800">
+                      {selectedContactName}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {contacts.find((c) => c.id === selectedContactId)
+                        ?.type === "shop"
+                        ? "Laundry Shop"
+                        : "Customer"}
                     </p>
                   </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
+              </>
+            ) : (
+              <h3 className="text-lg font-semibold text-gray-800">
+                {/* Select a {userType === "client" ? "shop" : "customer"} to start
+                chatting */}
+              </h3>
+            )}
+          </div>
 
-        {/* Input area */}
-        <div className="p-3 border-t">
-          {isChatReady ? (
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-grow rounded-l-lg border border-r-0 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!inputValue.trim()}
-                className="bg-blue-500 hover:bg-blue-600 text-white rounded-r-lg px-4 py-2 disabled:bg-gray-400"
-              >
-                <FiSend size={20} />
-              </button>
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-2">
-              Select a {userType === "client" ? "shop" : "customer"} to start
-              chatting
-            </div>
-          )}
+          {/* Messages area */}
+          <div className="flex-grow overflow-y-auto p-6 ">
+            {!isChatReady ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center p-8 rounded-2xl bg-white shadow-sm max-w-md">
+                  <div className="text-blue-500 mb-3">
+                    {userType === "client" ? (
+                      <FiShoppingBag size={40} className="mx-auto" />
+                    ) : (
+                      <FiUser size={40} className="mx-auto" />
+                    )}
+                  </div>
+                  <p className="text-gray-600 mb-2">
+                    Please select a{" "}
+                    {userType === "client" ? "shop" : "customer"} to start
+                    chatting
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Your conversations will appear here
+                  </p>
+                </div>
+              </div>
+            ) : isLoadingMessages ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-32"></div>
+                  <div className="h-4 bg-gray-200 rounded w-40"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center p-8 rounded-2xl bg-white shadow-sm max-w-md">
+                  <div className="text-blue-500 mb-3">
+                    <FiSend size={40} className="mx-auto" />
+                  </div>
+                  <p className="text-gray-600 mb-2">
+                    No messages yet with {selectedContactName}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Start the conversation below!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${
+                      msg.sender ===
+                      (userType === "client" ? "Customer" : "Admin")
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-5 py-3 shadow-sm ${
+                        msg.sender ===
+                        (userType === "client" ? "Customer" : "Admin")
+                          ? "bg-blue-500 text-white"
+                          : "bg-white text-gray-800"
+                      }`}
+                    >
+                      <p className="text-sm">{msg.text}</p>
+                      <p className="text-xs mt-1 opacity-75 text-right">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Input area */}
+          <div className="p-4 bg-white shadow-inner">
+            {isChatReady ? (
+              <div className="flex items-center rounded-full overflow-hidden shadow-sm bg-gray-50 px-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-grow py-3 px-4 bg-transparent border-0 focus:outline-none focus:ring-0"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!inputValue.trim()}
+                  className={`mr-1 h-10 w-10 rounded-full flex items-center justify-center ${
+                    inputValue.trim()
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-400"
+                  } transition-colors`}
+                >
+                  <FiSend size={18} />
+                </button>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-2">
+                Select a {userType === "client" ? "shop" : "customer"} to start
+                chatting
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

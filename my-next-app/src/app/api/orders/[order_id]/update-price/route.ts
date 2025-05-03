@@ -167,6 +167,115 @@ export async function PATCH(request: Request, context: { params: any }) {
       console.error("Error triggering Pusher events for customer:", error);
     }
 
+    // --- START: Admin Notification via Pusher ---
+    // Replace the admin trigger section with this more robust version
+
+    // For the admin notification section:
+    try {
+      let adminNotified = false;
+      for (const admin of admins) {
+        let adminHasOrder = false;
+
+        // Check if this admin has the order in any of their shops
+        for (const shop of admin.shops) {
+          if (
+            shop.orders.some((order: any) => order._id.toString() === orderId)
+          ) {
+            adminHasOrder = true;
+            break;
+          }
+        }
+
+        if (adminHasOrder && admin.admin_id) {
+          const adminChannel = `private-admin-${admin.admin_id}`;
+          const adminNotificationMessage = `Order #${updatedOrder.order_id || orderId.substring(0, 6)} price updated: ${total_weight}kg, ₱${total_price}`;
+
+          // Create notification record
+          const adminNotification = await Notification.create({
+            message: adminNotificationMessage,
+            recipient_id: admin.admin_id,
+            recipient_type: "admin",
+            related_order_id: orderId,
+            read: false,
+            timestamp: new Date(),
+          });
+
+          try {
+            // DIRECTLY use pusherServer instead of fetch for more reliable triggering
+            await pusherServer.trigger(adminChannel, "update-order-price", {
+              orderId: orderId, // Include both formats to be safe
+              order_id: orderId,
+              total_weight,
+              total_price,
+              notes,
+              date_updated: new Date(),
+            });
+            console.log(
+              `Direct Pusher event 'update-order-price' triggered on admin channel ${adminChannel}`
+            );
+
+            // Also trigger on the shop-wide channel
+            if (updatedOrder.shop_id) {
+              const shopChannel = `shop-${updatedOrder.shop_id}`;
+              await pusherServer.trigger(shopChannel, "update-order-price", {
+                orderId: orderId,
+                order_id: orderId,
+                total_weight,
+                total_price,
+                notes,
+                date_updated: new Date(),
+              });
+              console.log(
+                `Direct Pusher event 'update-order-price' triggered on shop channel ${shopChannel}`
+              );
+            }
+
+            // Send notification - here we'll still use the proxy approach for consistency
+            const notifyResponse = await fetch(
+              new URL("/api/pusher/trigger", request.url).toString(),
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  channel: adminChannel,
+                  event: "new-notification",
+                  data: adminNotification.toObject(),
+                }),
+              }
+            );
+
+            if (!notifyResponse.ok) {
+              throw new Error(
+                `Failed to trigger admin notification: ${notifyResponse.statusText}`
+              );
+            }
+
+            console.log(
+              `Price update notifications sent to admin on channel ${adminChannel}`
+            );
+            adminNotified = true;
+          } catch (triggerError) {
+            console.error(
+              "Error triggering admin price update notifications:",
+              triggerError
+            );
+          }
+        }
+      }
+
+      if (!adminNotified) {
+        console.log(
+          "No admin found for this order - couldn't send price update notification"
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Error processing admin notifications for price update:",
+        error
+      );
+    }
+    // --- END: Admin Notification ---
+
     return NextResponse.json({ success: true, updatedOrder });
   } catch (error) {
     console.error("Error updating order:", error);

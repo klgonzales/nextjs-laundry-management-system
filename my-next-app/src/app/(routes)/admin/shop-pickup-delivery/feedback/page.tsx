@@ -283,8 +283,9 @@ export default function Feedback() {
         <div className="px-4 py-5 sm:p-6">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-pulse text-[#F468BB]">
-                Loading feedbacks...
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+                <p className="mt-4 text-gray-600">Loading feedbacks...</p>
               </div>
             </div>
           ) : feedbacks.length > 0 ? (

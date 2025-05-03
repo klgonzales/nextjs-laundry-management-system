@@ -876,6 +876,22 @@ export default function Orders() {
           </div>
         )}
       </div>
+      <div className="px-2 py-2 sm:p-2">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading orders...</p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <ul className="space-y-4">
+            {/* Your existing mapping of filteredOrders */}
+          </ul>
+        ) : (
+          <div className="text-gray-500 text-center p-6">
+            {/* Your existing "No orders found" message */}
+          </div>
+        )}
+      </div>
       <div className="border-t border-gray-200 ">
         <div className="px-4 py-5 sm:p-6">
           {filteredOrders.length > 0 ? (
@@ -929,7 +945,7 @@ export default function Orders() {
                           {/* Status badge */}
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             {/* Pickup date badge */}
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#F0F0F0] text-gray-800">
                               <FiCalendar className="mr-1 h-3 w-3 text-gray-500" />
                               <time dateTime={order.pickup_date}>
                                 {new Date(order.pickup_date).toLocaleDateString(
@@ -943,13 +959,13 @@ export default function Orders() {
                             </span>
 
                             {/* Pickup time badge */}
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#F0F0F0] text-gray-800">
                               <FiClock className="mr-1 h-3 w-3 text-gray-500" />
                               {order.pickup_time}
                             </span>
 
                             {/* Address badge - with truncation for long addresses */}
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#EEEEEE] text-gray-800 max-w-[200px]">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs  bg-[#F0F0F0] text-gray-800 max-w-[200px]">
                               <FiMapPin className="mr-1 h-3 w-3 text-gray-500 flex-shrink-0" />
                               <span className="truncate">{order.address}</span>
                             </span>
@@ -974,7 +990,7 @@ export default function Orders() {
                           {order.services.map((service: any, idx: number) => (
                             <span
                               key={idx}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#EEEEEE] text-[#3D4EB0]"
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#F0F0F0] text-[#3D4EB0]"
                             >
                               {service}
                             </span>
@@ -998,7 +1014,7 @@ export default function Orders() {
                             .map((clothing: any, idx: number) => (
                               <div
                                 key={idx}
-                                className="text-xs bg-[#EEEEEE] px-2 py-0.5 rounded flex items-center"
+                                className="text-xs bg-[#F0F0F0] px-2 py-0.5 rounded flex items-center"
                               >
                                 <span className="w-4 h-4 inline-flex items-center justify-center bg-[#3D4EB0] text-white rounded-full mr-1 text-xs">
                                   {clothing.quantity}
@@ -1034,15 +1050,18 @@ export default function Orders() {
                             )}
                         </div>
                         <div className="mt-1 space-y-1">
-                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1">
                             <FiCreditCard className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
-                            <span>{order.payment_method}</span>
+                            <span>
+                              {order.payment_method.charAt(0).toUpperCase() +
+                                order.payment_method.slice(1)}
+                            </span>
                           </div>
-                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1">
                             <FiSmartphone className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
                             <span>{order.total_weight} kg</span>
                           </div>
-                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#EEEEEE] text-gray-600 mr-1 mb-1">
+                          <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1">
                             <FiDollarSign className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
                             <span>₱{order.total_price}</span>
                           </div>
@@ -1065,7 +1084,7 @@ export default function Orders() {
                           {(order.notes || order.delivery_instructions) && (
                             <div className="flex flex-col gap-2">
                               {order.notes && (
-                                <div className="inline-flex items-start bg-[#EEEEEE] px-2 py-1 rounded">
+                                <div className="inline-flex items-start bg-[#F0F0F0] px-2 py-1 rounded">
                                   <div className="text-xs text-gray-600">
                                     <span className="font-medium">Notes:</span>{" "}
                                     {order.notes}
@@ -1074,7 +1093,7 @@ export default function Orders() {
                               )}
 
                               {order.delivery_instructions && (
-                                <div className="inline-flex items-start bg-[#EEEEEE] px-2 py-1 rounded">
+                                <div className="inline-flex items-start bg-[#F0F0F0] px-2 py-1 rounded">
                                   <div className="text-xs text-gray-600">
                                     {order.delivery_instructions}
                                   </div>
@@ -1388,12 +1407,12 @@ export default function Orders() {
                       </div>
                     )}
                     {order.order_status === "folding" && (
-                      <div className="btn btn-neutral">
+                      <div className="flex flex-wrap gap-2 mt-2">
                         <button
                           onClick={() =>
                             handleMoveToNextStage(order._id, "drying")
                           }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
+                          className="btn btn-neutral"
                         >
                           <div className="flex items-center">
                             <svg

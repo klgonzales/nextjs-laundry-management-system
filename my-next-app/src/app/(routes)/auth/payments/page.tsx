@@ -17,6 +17,8 @@ interface Order {
   payment_status: string;
   payment_method: string;
   date_placed: string;
+  total_weight?: number;
+  notes: string;
 }
 
 export default function Payments() {
@@ -41,6 +43,7 @@ export default function Payments() {
     payment_id: "",
     amount_paid: "",
     paid_the_driver: false,
+    total_weight: "",
   });
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
   const [searchQuery, setSearchQuery] = useState("");
@@ -163,6 +166,7 @@ export default function Payments() {
       );
       channelRef.current.unbind("update-payment-status");
       channelRef.current.unbind("update-order-status");
+      channelRef.current.unbind("update-order-price");
       pusher.unsubscribe(channelRef.current.name);
       channelRef.current = null;
     }
@@ -223,6 +227,80 @@ export default function Payments() {
         }
       );
 
+      // Add this after your update-payment-status binding in the Pusher setup effect
+
+      console.log(
+        `[Client Orders] Binding to update-order-price event on ${channelName}`
+      );
+      channel.bind(
+        "update-order-price",
+        (data: {
+          order_id: string;
+          total_weight?: number;
+          total_price?: number;
+          notes?: string;
+          date_updated?: string;
+        }) => {
+          console.log(`[Client Orders] Received order price update:`, data);
+
+          // Update the order in state
+          setOrders((prevOrders) => {
+            const updatedOrders = prevOrders.map((order) => {
+              if (order._id === data.order_id) {
+                console.log(
+                  `[Client Orders] Updating order ${order._id} price details from:`,
+                  {
+                    total_weight: order.total_weight,
+                    total_price: order.total_price,
+                    notes: order.notes,
+                  },
+                  "to:",
+                  {
+                    total_weight:
+                      data.total_weight !== undefined
+                        ? data.total_weight
+                        : order.total_weight,
+                    total_price:
+                      data.total_price !== undefined
+                        ? data.total_price
+                        : order.total_price,
+                    notes: data.notes !== undefined ? data.notes : order.notes,
+                  }
+                );
+
+                return {
+                  ...order,
+                  total_weight:
+                    data.total_weight !== undefined
+                      ? data.total_weight
+                      : order.total_weight,
+                  total_price:
+                    data.total_price !== undefined
+                      ? data.total_price
+                      : order.total_price,
+                  notes: data.notes !== undefined ? data.notes : order.notes,
+                };
+              }
+              return order;
+            });
+
+            // Log the result
+            const updatedOrder = updatedOrders.find(
+              (o) => o._id === data.order_id
+            );
+            if (updatedOrder) {
+              console.log(`[Client Orders] Order price update result:`, {
+                total_weight: updatedOrder.total_weight,
+                total_price: updatedOrder.total_price,
+                notes: updatedOrder.notes,
+              });
+            }
+
+            return updatedOrders;
+          });
+        }
+      );
+
       // Bind to update-payment-status event
       console.log(
         `[Client Payments] Binding to update-payment-status event on ${channelName}`
@@ -263,6 +341,7 @@ export default function Payments() {
       if (channelRef.current) {
         channelRef.current.unbind("update-payment-status");
         channelRef.current.unbind("update-order-status");
+        channelRef.current.unbind("update-order-price");
       }
     };
   }, [pusher, isConnected, currentUserId]);
@@ -411,16 +490,12 @@ export default function Payments() {
   // Also add this new state at the top with your other state variables
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
 
-  if (loading) {
-    return <p className="text-center text-gray-500">Loading payments...</p>;
-  }
-
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
           <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Orders
+            Payments
           </h3>
 
           <div className="mt-2 sm:mt-0 flex items-center ml-4">
@@ -570,7 +645,22 @@ export default function Payments() {
           </select>
         </div>
       </div>
-
+      <div className="px-4 py-5 sm:p-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading payments...</p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <ul className="space-y-4">
+            {/* Your existing mapping of filteredOrders */}
+          </ul>
+        ) : (
+          <div className="text-gray-500 text-center p-6">
+            {/* Your existing "No orders found" message */}
+          </div>
+        )}
+      </div>
       <div className="border-t border-gray-200">
         {orders.length > 0 ? (
           <ul className="divide-y divide-gray-200">
@@ -596,6 +686,10 @@ export default function Payments() {
                 </p>
                 <p>
                   <strong>Total Price:</strong> {order.total_price || "Pending"}
+                </p>
+                <p>
+                  <strong>Total Weight:</strong>{" "}
+                  {order.total_weight || "Pending"}
                 </p>
                 <p>
                   <strong>Order Status:</strong> {order.order_status}

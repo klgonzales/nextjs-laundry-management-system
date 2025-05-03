@@ -5,19 +5,19 @@ import Link from "next/link";
 export default function AdminRegisterPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
-      <BackButton href="/" />
+      {/* <BackButton href="/" /> */}
       <AdminRegisterForm />
-      <div className="text-center mt-4">
+      {/* <div className="text-center mt-4">
         <p className="text-sm text-gray-600">
           Already have an account?{" "}
           <Link
             href="/admin/login"
-            className="text-purple-600 hover:text-purple-800"
+            className="text-[#3D4EB0] hover:text-[#4653A0]"
           >
             Sign in here
           </Link>
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }

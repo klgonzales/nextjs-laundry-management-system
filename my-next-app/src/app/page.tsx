@@ -20,7 +20,7 @@ export default function Home() {
         <div className="w-full">
           <Link
             href="/auth/login"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
             <FiLogIn className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Sign In</span>
@@ -29,7 +29,7 @@ export default function Home() {
         <div className="w-full">
           <Link
             href="/auth/register"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
             <FiUserPlus className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Register</span>
@@ -38,7 +38,7 @@ export default function Home() {
         <div className="mt-2 pt-4 border-t border-gray-300 w-full flex justify-center">
           <Link
             href="/admin/login"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
             <FiTool className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Continue as Admin</span>

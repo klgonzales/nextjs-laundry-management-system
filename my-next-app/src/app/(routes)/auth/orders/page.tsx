@@ -741,7 +741,22 @@ export default function Orders() {
           </select>
         </div>
       </div>
-
+      <div className="px-4 py-5 sm:p-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
+            <p className="mt-4 text-gray-600">Loading orders...</p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <ul className="space-y-4">
+            {/* Your existing mapping of filteredOrders */}
+          </ul>
+        ) : (
+          <div className="text-gray-500 text-center p-6">
+            {/* Your existing "No orders found" message */}
+          </div>
+        )}
+      </div>
       <div className="border-t border-gray-200">
         {orders.length > 0 ? (
           <ul className="divide-y divide-gray-200">
