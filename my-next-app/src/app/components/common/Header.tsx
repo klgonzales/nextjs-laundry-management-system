@@ -16,16 +16,23 @@ export default function Header({ userType }: HeaderProps) {
   console.log(user);
 
   return (
-    <div className="bg-white p-4 flex items-center justify-between">
-      <h2 className="text-2xl font-semibold text-black">
-        Welcome Back,{" "}
-        {userType === "admin"
-          ? user?.shops?.[0]?.name || ""
-          : user?.name
-            ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
-            : ""}{" "}
-        !
-      </h2>
+    <div className="bg-white p-4 mt-5 flex items-center justify-between">
+      <div>
+        <h4 className="text-2xl font-semibold text-black">
+          Welcome Back,{" "}
+          {userType === "admin"
+            ? user?.shops?.[0]?.name || ""
+            : user?.name
+              ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
+              : ""}{" "}
+          ! 👋
+        </h4>
+        <p className="text-sm text-gray-500">
+          {userType === "admin"
+            ? "Manage your laundry business with ease"
+            : "Track your orders and manage your laundry services"}
+        </p>
+      </div>
 
       <div className="flex items-center space-x-4"></div>
       {/* Notifications Icon */}

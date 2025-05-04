@@ -48,6 +48,10 @@ export default function Payments() {
   const [loading, setLoading] = useState(true);
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null); // Track the selected order for payment
+  // Add this new state at the top with your other state variables
+  const [shopPaymentMethods, setShopPaymentMethods] = useState<any[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
+
   const [paymentDetails, setPaymentDetails] = useState<any>({
     amount_sent: "",
     screenshot: "",
@@ -154,7 +158,7 @@ export default function Payments() {
     }
   }, [user?.customer_id, authLoading]);
 
-  const handleSettlePayment = (order: Order) => {
+  const handleSettlePayment = async (order: Order) => {
     setSelectedOrderId(order._id);
     setPaymentDetails({
       ...paymentDetails,
@@ -164,6 +168,25 @@ export default function Payments() {
       shop_id: order.shop,
       payment_id: Date.now().toString(), // Generate a unique payment ID
     });
+    // Fetch shop payment methods
+    try {
+      const response = await fetch(`/api/shops/${order.shop}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.shop && data.shop.payment_methods) {
+          setShopPaymentMethods(data.shop.payment_methods);
+
+          // Pre-select the payment method if it exists in the shop's payment methods
+          const matchedMethod = data.shop.payment_methods.find(
+            (method: any) =>
+              method.name.toLowerCase() === order.payment_method.toLowerCase()
+          );
+          setSelectedPaymentMethod(matchedMethod || null);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching shop payment methods:", error);
+    }
   };
 
   // Add this effect for Pusher subscription
@@ -617,15 +640,109 @@ export default function Payments() {
       {/* Payments Content */}
       <div className="px-4 py-2">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-t-[#F468BB] border-gray-200 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">Loading payments...</p>
+          <div className="py-6">
+            {/* Skeleton Loading for Orders */}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="mb-4 animate-pulse">
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  {/* Order Header Skeleton */}
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 border-b border-gray-100">
+                    <div className="rounded-full p-2 bg-gray-200 h-9 w-9"></div>
+                    <div className="flex-grow">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center">
+                          <div className="h-5 w-32 bg-gray-200 rounded mr-2"></div>
+                          {/* Service badges skeleton */}
+                          <div className="flex flex-wrap gap-1">
+                            {[1, 2, 3].map((s) => (
+                              <div
+                                key={s}
+                                className="h-4 w-12 bg-gray-200 rounded-full"
+                              ></div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="h-5 w-20 bg-gray-200 rounded-full mt-2 sm:mt-0"></div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 text-sm mt-1">
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-20 bg-gray-200 rounded"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Body Skeleton */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-4">
+                      {/* Order ID */}
+                      <div>
+                        <div className="h-3 w-16 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Weight */}
+                      <div>
+                        <div className="h-3 w-14 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Price */}
+                      <div>
+                        <div className="h-3 w-10 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Items */}
+                      <div>
+                        <div className="h-3 w-8 bg-gray-200 rounded mb-1"></div>
+                        <div className="flex flex-wrap gap-1">
+                          {[1, 2].map((item) => (
+                            <div
+                              key={item}
+                              className="h-6 w-16 bg-gray-200 rounded"
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div>
+                        <div className="h-3 w-10 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-full bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Feedback Button Skeleton */}
+                    <div className="mt-2 border-t border-gray-100 pt-3">
+                      <div className="flex justify-end">
+                        <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredOrders.length > 0 ? (
           <ul className="divide-y divide-gray-100">
             {filteredOrders.map((order) => (
               <li key={order._id} className="py-4">
-                <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
+                <div
+                  className={`${
+                    (order.payment_status.toLowerCase() === "pending" ||
+                      order.payment_status.toLowerCase() === "failed") &&
+                    order.order_status === "completed"
+                      ? "bg-red-50"
+                      : "bg-white"
+                  } rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden`}
+                >
                   {/* Payment Header with Shop Icon */}
                   <div className="flex items-center gap-3 p-4 bg-gray-50 border-b border-gray-100">
                     <div
@@ -732,12 +849,11 @@ export default function Payments() {
                     {(order.payment_status.toLowerCase() === "pending" ||
                       order.payment_status.toLowerCase() === "failed") &&
                       order.order_status === "completed" && (
-                        <div className="mt-4 flex justify-end">
+                        <div className="flex justify-end mt-2 border-t border-gray-200 pt-3">
                           <button
                             onClick={() => handleSettlePayment(order)}
                             className="px-4 py-2 bg-[#F468BB] text-white rounded-lg hover:bg-opacity-90 flex items-center"
                           >
-                            <FiDollarSign className="mr-2" />
                             Settle Payment
                           </button>
                         </div>
@@ -750,6 +866,88 @@ export default function Payments() {
                           <FiCreditCard className="mr-2 text-[#F468BB]" />
                           Settle Payment
                         </h4>
+
+                        {/* Payment Method Information */}
+                        {(order.payment_method === "gcash" ||
+                          order.payment_method === "bank transfer" ||
+                          order.payment_method === "credit card" ||
+                          order.payment_method === "maya") && (
+                          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <h5 className="text-sm font-medium text-blue-800 mb-2">
+                              Payment Instructions
+                            </h5>
+
+                            {shopPaymentMethods.length > 0 ? (
+                              <>
+                                <div className="mb-3">
+                                  <label className="block text-sm text-blue-700 mb-1">
+                                    Select Payment Method:
+                                  </label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {shopPaymentMethods.map((method, idx) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() =>
+                                          setSelectedPaymentMethod(method)
+                                        }
+                                        className={`px-3 py-1.5 text-xs font-medium rounded-full border 
+                      ${
+                        selectedPaymentMethod &&
+                        selectedPaymentMethod.method_id === method.method_id
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white text-blue-700 border-blue-200 hover:bg-blue-50"
+                      }`}
+                                      >
+                                        {method.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {selectedPaymentMethod && (
+                                  <div className="border-t border-blue-200 pt-2 mt-2">
+                                    <p className="text-sm text-blue-800 mb-1 font-medium">
+                                      {selectedPaymentMethod.name} Payment
+                                      Details:
+                                    </p>
+                                    <div className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                                      <div>
+                                        <p className="text-xs text-gray-500">
+                                          Account Number
+                                        </p>
+                                        <p className="text-sm font-medium text-blue-700">
+                                          {selectedPaymentMethod.account_number}
+                                        </p>
+                                      </div>
+                                      <button
+                                        onClick={() =>
+                                          navigator.clipboard.writeText(
+                                            selectedPaymentMethod.account_number
+                                          )
+                                        }
+                                        className="p-1.5 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                                        title="Copy to clipboard"
+                                      >
+                                        Copy
+                                      </button>
+                                    </div>
+                                    <p className="text-xs text-blue-600 mt-2">
+                                      Please use this account number to send
+                                      your payment, and then fill in the form
+                                      below.
+                                    </p>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-sm text-blue-700">
+                                Contact the shop directly for payment
+                                instructions.
+                              </p>
+                            )}
+                          </div>
+                        )}
 
                         <div className="mt-4 space-y-4">
                           {(order.payment_method === "gcash" ||

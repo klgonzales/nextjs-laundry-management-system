@@ -29,6 +29,7 @@ import {
   FiArrowDown,
   FiBox,
   FiShoppingBag,
+  FiMapPin,
 } from "react-icons/fi";
 
 interface Feedback {
@@ -59,6 +60,7 @@ interface Order {
   time_range?: { start: string; end: string }[];
   pickup_time?: string[];
   services?: string[];
+  address?: string;
   clothes?: { type: string; quantity: number }[] | undefined;
 }
 
@@ -590,9 +592,9 @@ export default function Orders() {
   // Also add this new state at the top with your other state variables
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
 
-  if (loading) {
-    return <p className="text-center text-gray-500">Loading orders...</p>;
-  }
+  // if (loading) {
+  //   return <p className="text-center text-gray-500">Loading orders...</p>;
+  // }
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg overflow-hidden">
@@ -725,9 +727,95 @@ export default function Orders() {
       {/* Orders Content */}
       <div className="px-4 py-2">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">Loading orders...</p>
+          <div className="py-6">
+            {/* Skeleton Loading for Orders */}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="mb-4 animate-pulse">
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  {/* Order Header Skeleton */}
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 border-b border-gray-100">
+                    <div className="rounded-full p-2 bg-gray-200 h-9 w-9"></div>
+                    <div className="flex-grow">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center">
+                          <div className="h-5 w-32 bg-gray-200 rounded mr-2"></div>
+                          {/* Service badges skeleton */}
+                          <div className="flex flex-wrap gap-1">
+                            {[1, 2, 3].map((s) => (
+                              <div
+                                key={s}
+                                className="h-4 w-12 bg-gray-200 rounded-full"
+                              ></div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="h-5 w-20 bg-gray-200 rounded-full mt-2 sm:mt-0"></div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 text-sm mt-1">
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-20 bg-gray-200 rounded"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-3 bg-gray-200 rounded-full"></div>
+                        <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Body Skeleton */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-4">
+                      {/* Order ID */}
+                      <div>
+                        <div className="h-3 w-16 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Weight */}
+                      <div>
+                        <div className="h-3 w-14 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Price */}
+                      <div>
+                        <div className="h-3 w-10 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                      </div>
+
+                      {/* Items */}
+                      <div>
+                        <div className="h-3 w-8 bg-gray-200 rounded mb-1"></div>
+                        <div className="flex flex-wrap gap-1">
+                          {[1, 2].map((item) => (
+                            <div
+                              key={item}
+                              className="h-6 w-16 bg-gray-200 rounded"
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div>
+                        <div className="h-3 w-10 bg-gray-200 rounded mb-1"></div>
+                        <div className="h-4 w-full bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Feedback Button Skeleton */}
+                    <div className="mt-2 border-t border-gray-100 pt-3">
+                      <div className="flex justify-end">
+                        <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : filteredOrders.length > 0 ? (
           <ul className="divide-y divide-gray-100">
@@ -808,7 +896,10 @@ export default function Orders() {
                               <>
                                 <span>•</span>
                                 <FiClock className="w-3 h-3" />
-                                <span>Pickup: {order.pickup_time}</span>
+                                <span>Pickup Time: {order.pickup_time}</span>
+                                <span>•</span>
+                                <FiMapPin className="w-3 h-3" />
+                                <span>Pickup Address: {order.address}</span>
                               </>
                             )}
                         <span>•</span>

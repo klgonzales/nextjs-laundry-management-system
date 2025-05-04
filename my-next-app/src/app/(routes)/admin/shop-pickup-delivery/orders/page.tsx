@@ -1169,7 +1169,7 @@ export default function Orders() {
                             onClick={handleSaveEdit}
                             className="btn btn-success"
                           >
-                            Save
+                            {loading ? "Saving" : "Save"}
                           </button>
                           <button
                             onClick={() => setEditOrderId(null)}
@@ -1187,7 +1187,7 @@ export default function Orders() {
                           onClick={() => handleAccept(order._id)}
                           className="btn btn-success"
                         >
-                          Accept
+                          {loading ? "Accepting..." : "Accept"}
                         </button>
                         <button
                           onClick={() => handleDecline(order._id)}
@@ -1231,7 +1231,9 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Move to Sorting
+                            {loading
+                              ? "Moving to Sorting..."
+                              : "Move to Sorting"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
@@ -1283,7 +1285,9 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Move to Washing
+                            {loading
+                              ? "Moving to Washing..."
+                              : "Move to Washing"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
@@ -1335,7 +1339,7 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Move to Drying
+                            {loading ? "Moving to Drying..." : "Move to Drying"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
@@ -1387,7 +1391,9 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Move to Folding
+                            {loading
+                              ? "Moving to Folding..."
+                              : "Move to Folding"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
@@ -1439,7 +1445,9 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Move to Delivery
+                            {loading
+                              ? "Moving to Delivery..."
+                              : "Move to Delivery"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
@@ -1492,7 +1500,9 @@ export default function Orders() {
                           className="btn btn-sm btn-primary"
                         >
                           <div className="flex items-center">
-                            Mark as Completed
+                            {loading
+                              ? "Marking as Completed..."
+                              : "Mark as Completed"}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4 ml-1"
