@@ -616,7 +616,7 @@ export default function Analytics() {
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          Feedback
+          Analytics
         </h3>
 
         {/* Realtime Indicator */}
@@ -684,8 +684,109 @@ export default function Analytics() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="px-4 py-5 space-y-8">
+          {/* Payment Chart Skeleton */}
+          <div className="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-6 w-32 bg-gray-200 rounded"></div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                <div className="h-8 w-28 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+            <div className="h-80 bg-gray-100 rounded flex items-center justify-center">
+              <svg
+                className="w-16 h-16 text-gray-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M6 18L18 18"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 21L21 21"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 7L7 3L13 9L17 5L21 9"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 7L21 7"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 7L3 21"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Rating Chart Skeleton */}
+          <div className="bg-white rounded-lg shadow p-6 animate-pulse">
+            <div className="flex justify-between items-center mb-6">
+              <div className="h-6 w-40 bg-gray-200 rounded"></div>
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                <div className="h-8 w-28 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+            <div className="h-80 bg-gray-100 rounded flex items-center justify-center">
+              <svg
+                className="w-16 h-16 text-gray-300"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M6 18L18 18"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 21L21 21"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 7L3 21"
+                />
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M3 7L7 3L12 14L17 7L21 10"
+                />
+              </svg>
+            </div>
+          </div>
         </div>
       ) : error ? (
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8">

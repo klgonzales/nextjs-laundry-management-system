@@ -10,29 +10,70 @@ import {
   FiDollarSign,
   FiBarChart2,
   FiLogOut,
+  FiHome,
 } from "react-icons/fi";
 
 interface SidebarProps {
   userType: "client" | "admin";
   handleScroll: (section: string) => void;
   shopType?: string;
+  activePath?: string;
 }
 
 export default function Sidebar({
   userType,
   handleScroll,
   shopType,
+  activePath,
 }: SidebarProps) {
   const router = useRouter();
   const { logout } = useAuth();
+
+  // Enhanced isPathActive function to check current route
+  const isPathActive = (path: string) => {
+    if (!activePath) return false;
+
+    switch (path) {
+      case "home":
+        return (
+          activePath.endsWith("/dashboard") ||
+          activePath.endsWith("/shop-self-service")
+        );
+      case "orders":
+        return activePath.includes("/orders");
+      case "services":
+        return activePath.includes("/services");
+      case "machines":
+        return activePath.includes("/machines");
+      case "feedback":
+        return activePath.includes("/feedback");
+      case "payments":
+        return activePath.includes("/payments");
+      case "analytics":
+        return activePath.includes("/analytics");
+      default:
+        return false;
+    }
+  };
 
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
+  // Function to determine button class based on active state
+  const getButtonClass = (path: string) => {
+    const baseClass =
+      "flex items-center w-full text-left px-4 py-2 rounded transition-colors";
+    const activeClass = "bg-[#EADDFF] text-[#3D4EB0] font-medium";
+    const inactiveClass =
+      "text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0]";
+
+    return `${baseClass} ${isPathActive(path) ? activeClass : inactiveClass}`;
+  };
+
   return (
-    <div className="w-64 h-screen bg-[#F3F5FB] shadow-md flex flex-col overflow-y-auto sticky top-0 my-4 rounded-lg">
+    <div className="w-64 h-162 bg-[#F3F5FB] shadow-md flex flex-col overflow-y-auto sticky top-0 my-4 rounded-lg">
       <div className="p-4 flex items-center">
         <div className="w-8 h-8 bg-[#3D4EB0] rounded flex items-center justify-center mr-3">
           <img
@@ -53,14 +94,14 @@ export default function Sidebar({
               <div className="mt-2 space-y-1">
                 <button
                   onClick={() => handleScroll("orders")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("orders")}
                 >
                   <FiShoppingBag className="mr-3 h-4 w-4" />
                   Orders
                 </button>
                 <button
                   onClick={() => handleScroll("payments")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("payments")}
                 >
                   <FiDollarSign className="mr-3 h-4 w-4" />
                   Payments
@@ -83,17 +124,25 @@ export default function Sidebar({
               <h3 className="px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 General
               </h3>
+
               <div className="mt-2 space-y-1">
                 <button
+                  onClick={() => handleScroll("home")}
+                  className={getButtonClass("home")}
+                >
+                  <FiHome className="mr-3 h-4 w-4" />
+                  Home
+                </button>
+                <button
                   onClick={() => handleScroll("orders")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("orders")}
                 >
                   <FiShoppingBag className="mr-3 h-4 w-4" />
                   Orders
                 </button>
                 <button
                   onClick={() => handleScroll("services")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("services")}
                 >
                   <FiList className="mr-3 h-4 w-4" />
                   Services
@@ -108,7 +157,7 @@ export default function Sidebar({
               <div className="mt-2 space-y-1">
                 <button
                   onClick={() => handleScroll("feedback")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("feedback")}
                 >
                   <FiStar className="mr-3 h-4 w-4" />
                   Feedbacks
@@ -130,14 +179,14 @@ export default function Sidebar({
               <div className="mt-2 space-y-1">
                 <button
                   onClick={() => handleScroll("payments")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("payments")}
                 >
                   <FiDollarSign className="mr-3 h-4 w-4" />
                   Payments
                 </button>
                 <button
                   onClick={() => handleScroll("analytics")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("analytics")}
                 >
                   <FiBarChart2 className="mr-3 h-4 w-4" />
                   Analytics
@@ -153,24 +202,32 @@ export default function Sidebar({
               <h3 className="px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 General
               </h3>
+
               <div className="mt-2 space-y-1">
                 <button
+                  onClick={() => handleScroll("home")}
+                  className={getButtonClass("home")}
+                >
+                  <FiHome className="mr-3 h-4 w-4" />
+                  Home
+                </button>
+                <button
                   onClick={() => handleScroll("orders")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("orders")}
                 >
                   <FiShoppingBag className="mr-3 h-4 w-4" />
                   Orders
                 </button>
                 <button
                   onClick={() => handleScroll("services")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("services")}
                 >
                   <FiList className="mr-3 h-4 w-4" />
                   Services
                 </button>
                 <button
                   onClick={() => handleScroll("machines")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("machines")}
                 >
                   <FiTool className="mr-3 h-4 w-4" />
                   Machines
@@ -185,7 +242,7 @@ export default function Sidebar({
               <div className="mt-2 space-y-1">
                 <button
                   onClick={() => handleScroll("feedback")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("feedback")}
                 >
                   <FiStar className="mr-3 h-4 w-4" />
                   Feedbacks
@@ -207,14 +264,14 @@ export default function Sidebar({
               <div className="mt-2 space-y-1">
                 <button
                   onClick={() => handleScroll("payments")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("payments")}
                 >
                   <FiDollarSign className="mr-3 h-4 w-4" />
                   Payments
                 </button>
                 <button
                   onClick={() => handleScroll("analytics")}
-                  className="flex items-center w-full text-left px-4 py-2 rounded text-gray-700 hover:bg-[#EADDFF] hover:text-[#3D4EB0] transition-colors"
+                  className={getButtonClass("analytics")}
                 >
                   <FiBarChart2 className="mr-3 h-4 w-4" />
                   Analytics

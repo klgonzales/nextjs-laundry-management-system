@@ -75,7 +75,8 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
     } else {
       // For admin, check shop_id to determine if it's self-service
       // This is a simple implementation - you may need logic to check the shop type
-      const shopType = "pickup-delivery"; // Default to pickup-delivery
+      // Get shop type from auth context
+      const shopType = user?.shops?.[0]?.type; // Assuming the admin has access to a shop
       return `/admin/shop-${shopType}/dashboard`;
     }
   };

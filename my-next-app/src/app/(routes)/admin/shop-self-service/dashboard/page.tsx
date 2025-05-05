@@ -1,126 +1,30 @@
 "use client";
 
-// Add these imports
-import { usePusher } from "@/app/context/PusherContext";
-import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
-import Sidebar from "../../../../components/common/Sidebar";
-import Header from "../../../../components/common/Header";
-
-import Orders from "../orders/page";
-import Services from "../services/page";
-import Machines from "../machines/page";
-import Feedback from "../feedback/page";
-import Payments from "../payments/page";
-import Analytics from "../analytics/page";
+import { useAuth } from "@/app/context/AuthContext";
+import { useState, useEffect } from "react";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { pusher, isConnected } = usePusher();
-  const { user } = useAuth(); // Get the logged-in admin's data
-  const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
-  const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
+  const { user } = useAuth();
+  const [orderDetails, setOrderDetails] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Stats state variables for real-time updates
-  const [totalCustomers, setTotalCustomers] = useState(0);
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [completedOrders, setCompletedOrders] = useState(0);
-
-  // Create refs for each section
-  const ordersRef = useRef<HTMLDivElement>(null);
-  const servicesRef = useRef<HTMLDivElement>(null);
-  const machinesRef = useRef<HTMLDivElement>(null);
-  const feedbackRef = useRef<HTMLDivElement>(null);
-  const paymentsRef = useRef<HTMLDivElement>(null);
-  const analyticsRef = useRef<HTMLDivElement>(null);
-
-  // Update the calculateStats function
-  const calculateStats = useCallback((orders: any[]) => {
-    console.log(`[Dashboard] Calculating stats from ${orders.length} orders`);
-
-    // Check if we have valid orders array
-    if (!Array.isArray(orders) || orders.length === 0) {
-      console.log("[Dashboard] No orders to calculate stats from");
-      setTotalCustomers(0);
-      setTotalRevenue(0);
-      setCompletedOrders(0);
-      return;
-    }
-
-    // Calculate unique customers
-    const customerIds = orders
-      .map((order) => order.customer_id)
-      .filter(Boolean);
-    const uniqueCustomers = new Set(customerIds);
-    setTotalCustomers(uniqueCustomers.size);
-    console.log(`[Dashboard] Found ${uniqueCustomers.size} unique customers`);
-
-    // Calculate total revenue from completed and paid orders
-    const paidOrders = orders.filter((order) => {
-      // Check both status fields exist
-      const isCompleted = order.order_status === "completed";
-      const isPaid = order.payment_status === "paid";
-      return isCompleted && isPaid;
-    });
-
-    console.log(`[Dashboard] Found ${paidOrders.length} completed/paid orders`);
-
-    const revenue = paidOrders.reduce((total, order) => {
-      // Ensure total_price is a valid number
-      const orderTotal =
-        typeof order.total_price === "number"
-          ? order.total_price
-          : parseFloat(order.total_price) || 0;
-
-      return total + orderTotal;
-    }, 0);
-
-    setTotalRevenue(revenue);
-
-    // Count completed orders
-    const completed = orders.filter(
-      (order) => order.order_status === "completed"
-    ).length;
-    setCompletedOrders(completed);
-
-    console.log("[Dashboard] Stats calculated:", {
-      totalCustomers: uniqueCustomers.size,
-      totalRevenue: revenue,
-      completedOrders: completed,
-    });
-
-    // Debug: Show the first few orders to check their structure
-    console.log("[Dashboard] Sample order data:", orders.slice(0, 2));
-  }, []);
-
-  // Fix the fetchOrderDetails function
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (!user?.shops?.[0]?.shop_id) {
-        console.log("[Dashboard] No shop ID available");
+        setIsLoading(false);
         return;
       }
 
       try {
         const shopId = user.shops[0].shop_id;
-        console.log(`[Dashboard] Fetching orders for shop: ${shopId}`);
-
-        // First fetch all orders for this shop
         const response = await fetch(`/api/shops/${shopId}/orders`);
         if (!response.ok) {
           throw new Error("Failed to fetch shop orders");
         }
 
-        // The response is an array directly, not nested under an 'orders' property
         const ordersData = await response.json();
-        console.log(
-          `[Dashboard] Fetched ${ordersData.length} orders:`,
-          ordersData
-        );
-
-        // Update local orders state with the array
-        setOrders(ordersData);
 
         // Process orders to get additional details
         const detailedOrders = await Promise.all(
@@ -138,307 +42,218 @@ export default function AdminDashboard() {
                   customerData?.customer?.name || "Unknown Customer",
               };
             } catch (error) {
-              console.error("Error fetching order details:", error);
               return { ...order, customer_name: "Error" };
             }
           })
         );
 
-        console.log(
-          `[Dashboard] Processed ${detailedOrders.length} detailed orders`
-        );
         setOrderDetails(detailedOrders);
-
-        // Calculate stats from the detailed orders
-        calculateStats(detailedOrders);
+        setIsLoading(false);
       } catch (error) {
-        console.error("[Dashboard] Error fetching order data:", error);
+        console.error("Error fetching order data:", error);
+        setIsLoading(false);
       }
     };
-    // Actually call the function!
-    if (user?.shops?.[0]?.shop_id) {
-      fetchOrderDetails();
-    }
-  }, [user?.shops, calculateStats]); // Add calculateStats as a dependency
 
-  const handleScroll = (section: string) => {
-    switch (section) {
-      case "orders":
-        ordersRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "services":
-        servicesRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "machines":
-        servicesRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "feedback":
-        feedbackRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "payments":
-        paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "analytics":
-        analyticsRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      default:
-        break;
-    }
-  };
+    fetchOrderDetails();
+  }, [user?.shops]);
 
-  const handleLogout = () => {
-    router.push("/admin/login");
-  };
-
-  console.log("Shop Type:", user?.shops?.[0]?.type); // Debugging
-
-  // Set up Pusher for real-time updates
-  useEffect(() => {
-    if (
-      !pusher ||
-      !isConnected ||
-      !user?.admin_id ||
-      !user?.shops?.[0]?.shop_id
-    ) {
-      console.log("[Dashboard] Pusher not ready or missing user/shop data");
-      return;
-    }
-
-    const shopId = user.shops[0].shop_id;
-    const channelName = `private-admin-${user.admin_id}`;
-    console.log(`[Dashboard] Subscribing to channel: ${channelName}`);
-
-    try {
-      const channel = pusher.subscribe(channelName);
-
-      // Handle new order
-      channel.bind("new-order", (data: any) => {
-        console.log("[Dashboard] New order received:", data);
-        if (data.shop_id === shopId) {
-          setOrderDetails((prevOrders) => {
-            const updatedOrders = [
-              ...prevOrders,
-              {
-                ...data,
-                customer_name: data.customer_name || "New Customer",
-              },
-            ];
-            calculateStats(updatedOrders);
-            return updatedOrders;
-          });
-        }
-      });
-
-      // Handle order updates
-      channel.bind("order-update", (data: any) => {
-        console.log("[Dashboard] Order update received:", data);
-        if (data.shop_id === shopId) {
-          setOrderDetails((prevOrders) => {
-            const updatedOrders = prevOrders.map((order) =>
-              order._id === data._id ? { ...order, ...data } : order
-            );
-            calculateStats(updatedOrders);
-            return updatedOrders;
-          });
-        }
-      });
-
-      // Handle payment updates
-      channel.bind("payment-update", (data: any) => {
-        console.log("[Dashboard] Payment update received:", data);
-        if (data.shop_id === shopId) {
-          setOrderDetails((prevOrders) => {
-            const updatedOrders = prevOrders.map((order) =>
-              order._id === data.order_id
-                ? {
-                    ...order,
-                    payment_status: data.status,
-                  }
-                : order
-            );
-            calculateStats(updatedOrders);
-            return updatedOrders;
-          });
-        }
-      });
-
-      // Handle customer updates
-      channel.bind("customer-update", (data: any) => {
-        console.log("[Dashboard] Customer update received:", data);
-        setOrderDetails((prevOrders) => {
-          const updatedOrders = prevOrders.map((order) =>
-            order.customer_id === data.customer_id
-              ? {
-                  ...order,
-                  customer_name: data.name || order.customer_name,
-                }
-              : order
-          );
-          calculateStats(updatedOrders);
-          return updatedOrders;
-        });
-      });
-
-      // Handle subscription events for debugging
-      channel.bind("pusher:subscription_succeeded", () => {
-        console.log(`[Dashboard] Successfully subscribed to ${channelName}`);
-      });
-
-      channel.bind("pusher:subscription_error", (error: any) => {
-        console.error(
-          `[Dashboard] Failed to subscribe to ${channelName}:`,
-          error
-        );
-      });
-
-      return () => {
-        console.log(`[Dashboard] Unsubscribing from ${channelName}`);
-        pusher.unsubscribe(channelName);
-      };
-    } catch (error) {
-      console.error("[Dashboard] Error setting up Pusher:", error);
-    }
-  }, [pusher, isConnected, user?.admin_id, user?.shops, calculateStats]);
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <div className="flex">
-        <Sidebar
-          userType="admin"
-          handleScroll={handleScroll}
-          shopType={user?.shops?.[0]?.type}
-        />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1">
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Header */}
-          <Header userType="admin" />
-          <div className="px-4 py-6 sm:px-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Total Customers */}
-              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Customers
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {totalCustomers}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Total Revenue */}
-              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Revenue
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {totalRevenue.toFixed(2)}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Completed Orders */}
-              <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-[#F386C7] rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m2 0a2 2 0 100-4H7a2 2 0 100 4h10zm-2 0v6m0-6H9m0 0v6m0-6H7m10 0v6m0-6H9"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Completed Orders
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {completedOrders}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sections */}
-            <div ref={ordersRef}>
-              <Orders />
-            </div>
-            <div ref={servicesRef}>
-              <Services />
-            </div>
-            <div ref={machinesRef}>
-              <Machines />
-            </div>
-            <div ref={feedbackRef}>
-              <Feedback />
-            </div>
-            <div ref={paymentsRef}>
-              <Payments />
-            </div>
-            <div ref={analyticsRef}>
-              <Analytics />
-            </div>
+    <>
+      {/* Dashboard Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Recent Orders Card */}
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6 flex justify-between items-center bg-[#E2E5F4]">
+            <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+            <button
+              onClick={() => router.push("/admin/shop-self-service/orders")}
+              className="text-sm font-medium text-[#F386C7] hover:text-[#E75DB1]"
+            >
+              View all
+            </button>
           </div>
-        </main>
+          <div className="px-4 py-4 sm:px-6">
+            {isLoading ? (
+              // Skeleton loading UI for orders
+              <div className="animate-pulse">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="py-3 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex justify-between mb-2">
+                      <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                      <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                      <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : orderDetails.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {orderDetails.slice(0, 3).map((order, index) => (
+                  <li key={index} className="py-3">
+                    <div className="flex justify-between">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {order.customer_name}
+                      </div>
+                      <div
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          order.order_status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : order.order_status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {order.order_status}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>{new Date(order.date).toLocaleDateString()}</span>
+                      <span>₱{order.total_price}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                No orders yet
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Stats Card */}
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6 bg-[#E2E5F4]">
+            <h3 className="text-lg font-medium text-gray-900">Shop Status</h3>
+          </div>
+          <div className="px-4 py-4 sm:px-6">
+            {isLoading ? (
+              <div className="animate-pulse grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="sm:col-span-1">
+                    <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Active Machines
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {user?.shops?.[0]?.machines?.length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Available Services
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {user?.shops?.[0]?.services?.length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Pending Orders
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {orderDetails.filter((o) => o.order_status === "pending")
+                      .length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    In Progress
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {orderDetails.filter(
+                      (o) => o.order_status === "in progress"
+                    ).length || 0}
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <button
+          onClick={() => router.push("/admin/shop-self-service/orders")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Manage Orders</span>
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/shop-self-service/services")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-purple-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Shop Services</span>
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/shop-self-service/machines")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Machines</span>
+        </button>
+      </div>
+    </>
   );
 }

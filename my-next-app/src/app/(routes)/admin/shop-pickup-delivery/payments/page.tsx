@@ -46,7 +46,7 @@ export default function Payments() {
   const [customerData, setCustomerData] = useState<Record<string, any>>({});
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // Manual refresh loading
-  const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
+  const [filterStatus, setFilterStatus] = useState<string>("pending"); // Track the selected filter
   const { registerPaymentHandler, unregisterPaymentHandler } =
     useRealTimeUpdates();
 
@@ -64,10 +64,12 @@ export default function Payments() {
 
   useEffect(() => {
     const fetchPayments = async () => {
+      setLoading(true);
       try {
         // Check auth loading state first
         if (authLoading) {
           console.log("[Admin Feedback] Auth still loading, deferring fetch");
+          setLoading(false);
           return;
         }
 
@@ -85,8 +87,10 @@ export default function Payments() {
         const data = await shopResponse.json();
         setPayments(data.orders || []); // Set all payments
         setFilteredPayments(data.orders || []); // Initially show all payments
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching payments:", error);
+        setLoading(false);
       }
     };
     if (user?.admin_id || !authLoading) {
@@ -811,7 +815,111 @@ export default function Payments() {
 
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
-          {filteredPayments.length > 0 ? (
+          {loading ? (
+            <div className="py-4">
+              {/* Skeleton Loading for Admin Orders */}
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="mb-8 animate-pulse border border-gray-200 rounded-lg p-4"
+                >
+                  {/* Order Header Skeleton */}
+                  <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                      <div>
+                        <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Status Badge */}
+                          <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+
+                          {/* Additional Info Badges */}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                            <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                            <div className="h-5 w-32 bg-gray-200 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Content Skeleton - 4-column grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    {/* Services */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                      </div>
+                      <div className="ml-2 flex-1">
+                        <div className="h-4 w-20 bg-gray-200 rounded mb-2"></div>
+                        <div className="flex flex-wrap gap-1">
+                          {[1, 2, 3].map((service) => (
+                            <div
+                              key={service}
+                              className="h-5 w-16 bg-gray-200 rounded"
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Items */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                      </div>
+                      <div className="ml-2 flex-1">
+                        <div className="h-4 w-16 bg-gray-200 rounded mb-2"></div>
+                        <div className="flex flex-wrap gap-1">
+                          {[1, 2, 3].map((item) => (
+                            <div
+                              key={item}
+                              className="h-6 w-20 bg-gray-200 rounded"
+                            ></div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Details */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                      </div>
+                      <div className="ml-2 flex-1">
+                        <div className="flex justify-between">
+                          <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                          <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-6 w-24 bg-gray-200 rounded"></div>
+                          <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                          <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Delivery Instructions */}
+                    <div className="flex items-start">
+                      <div className="mt-1">
+                        <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                      </div>
+                      <div className="ml-2 flex-1">
+                        <div className="h-4 w-32 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-12 w-full bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Skeleton */}
+                  <div className="mt-4 flex justify-end space-x-4">
+                    <div className="h-9 w-24 bg-gray-200 rounded"></div>
+                    <div className="h-9 w-24 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredPayments.length > 0 ? (
             <ul className="space-y-4">
               {filteredPayments.map((payment, index) => (
                 <li

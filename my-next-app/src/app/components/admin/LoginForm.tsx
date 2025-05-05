@@ -113,7 +113,7 @@ export default function AdminLoginForm() {
               disabled={loading}
               className={`btn w-full ${loading ? "btn-neutral" : "btn-primary"}`}
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>

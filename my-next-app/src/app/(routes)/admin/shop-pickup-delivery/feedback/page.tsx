@@ -9,6 +9,7 @@ import {
   FiMessageSquare,
   FiStar,
   FiHash,
+  FiClipboard,
 } from "react-icons/fi";
 
 export default function Feedback() {
@@ -282,11 +283,50 @@ export default function Feedback() {
       <div className="border-t border-gray-200">
         <div className="px-4 py-5 sm:p-6">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="w-16 h-16 border-4 border-t-blue-500 border-gray-200 rounded-full animate-spin"></div>
-                <p className="mt-4 text-gray-600">Loading feedbacks...</p>
-              </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 animate-pulse"
+                >
+                  {/* Header with customer name, order ID and date */}
+                  <div className="flex flex-wrap justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                      <div className="ml-2">
+                        <div className="flex items-center">
+                          <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                          <div className="ml-2 h-3 w-20 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <div className="h-3 w-24 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+
+                  {/* Rating with stars */}
+                  <div className="mb-2">
+                    <div className="flex items-center">
+                      <div className="flex space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <div
+                            key={star}
+                            className="h-5 w-5 bg-gray-200 rounded"
+                          ></div>
+                        ))}
+                      </div>
+                      <div className="ml-3 h-4 w-3/4 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+
+                  {/* Optional: Service type */}
+                  <div className="mt-3">
+                    <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : feedbacks.length > 0 ? (
             <ul className="space-y-4">
@@ -311,8 +351,8 @@ export default function Feedback() {
                             {getCustomerName(feedback)}
                           </span>
                           <span className="ml-2 flex items-center text-xs text-gray-500">
-                            <FiHash className="mr-1 h-3 w-3" />
-                            Order #{feedback.order_id}
+                            <FiClipboard className="mr-1 h-3 w-3" />
+                            Order {feedback.order_id}
                           </span>
                         </div>
                       </div>

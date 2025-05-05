@@ -9,6 +9,23 @@ import type { Channel } from "pusher-js";
 import { useState, useEffect, useRef, useCallback } from "react";
 // Add this import at the top of your file
 import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
+// Add icons import at the top if not already imported
+import {
+  FiUser,
+  FiMapPin,
+  FiCalendar,
+  FiClock,
+  FiDollarSign,
+  FiPackage,
+  FiList,
+  FiTruck,
+  FiCreditCard,
+  FiFileText,
+  FiSmartphone,
+  FiInfo,
+  FiClipboard,
+  FiEdit3,
+} from "react-icons/fi";
 
 // --- Define Order and DetailedOrder types (Recommended) ---
 interface Order {
@@ -44,8 +61,11 @@ export default function Orders() {
   const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
   const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]); // Store filtered orders
-  const [filterStatus, setFilterStatus] = useState<string>("all"); // Track the selected filter
+  const [filterStatus, setFilterStatus] = useState<string>("pending"); // Track the selected filter
   // First add a new state for search query at the top with your other states
+  // Also add the ongoingSubcategory state for the subcategories
+  const [ongoingSubcategory, setOngoingSubcategory] = useState<string>("");
+
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
   const [searchQuery, setSearchQuery] = useState("");
   const [editOrderId, setEditOrderId] = useState<string | null>(null); // Track the order being edited
@@ -636,69 +656,16 @@ export default function Orders() {
   //   return <p className="text-center text-gray-500">Loading Orders...</p>;
   // }
 
+  // Update your render return JSX with the new UI styling
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
         {/* Title and Search Bar */}
-        <h3 className="text-lg leading-6 font-medium text-gray-900">Orders</h3>
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-          <div className="mt-2 sm:mt-0 flex items-center ml-4">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setSortDirection("asc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "asc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-                    />
-                  </svg>
-                  Oldest First
-                </div>
-              </button>
-              <button
-                onClick={() => setSortDirection("desc")}
-                className={`px-3 py-1 rounded text-xs font-medium ${
-                  sortDirection === "desc"
-                    ? "bg-indigo-500 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                <div className="flex items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
-                    />
-                  </svg>
-                  Newest First
-                </div>
-              </button>
-            </div>
-          </div>
-          <div className="mt-2 sm:mt-0 relative rounded-md shadow-sm">
+        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">
+            Orders
+          </h3>
+          <div className="mt-2 sm:mt-0 relative rounded-md ">
             <input
               type="text"
               placeholder="Search by customer name..."
@@ -725,7 +692,7 @@ export default function Orders() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="btn btn-sm btn-primary"
                 aria-label="Clear search"
               >
                 <svg
@@ -744,6 +711,7 @@ export default function Orders() {
               </button>
             )}
           </div>
+          <div className="mt-2 sm:mt-0 flex items-center ml-4 space-x-4"></div>
         </div>
         {searchQuery && (
           <div className="mt-2 text-sm text-gray-500 flex items-center">
@@ -765,417 +733,744 @@ export default function Orders() {
             {searchQuery}"
           </div>
         )}
+
         <div className="mt-4 flex space-x-4">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setSortDirection("asc")}
+              className={`btn ${
+                sortDirection === "asc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
+                </svg>
+                Oldest First
+              </div>
+            </button>
+            <button
+              onClick={() => setSortDirection("desc")}
+              className={`btn ${
+                sortDirection === "desc"
+                  ? "btn-tertiary"
+                  : "btn-tertiary-neutral"
+              }`}
+            >
+              <div className="flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                  />
+                </svg>
+                Newest First
+              </div>
+            </button>
+          </div>
+
+          <div className="w-px bg-gray-300"></div>
+
           <button
-            onClick={() => setFilterStatus("all")}
-            className={`px-4 py-2 rounded ${
-              filterStatus === "all"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+            onClick={() => {
+              setFilterStatus("all");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
+            className={`btn ${
+              filterStatus === "all" ? "btn-tertiary" : "btn-tertiary-neutral"
             }`}
           >
             All
           </button>
           <button
-            onClick={() => setFilterStatus("pending")}
-            className={`px-4 py-2 rounded ${
-              filterStatus === "pending" || "Pending"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+            onClick={() => {
+              setFilterStatus("pending");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
+            className={`btn ${
+              filterStatus === "pending"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Pending
           </button>
           <button
             onClick={() => setFilterStatus("scheduled")}
-            className={`px-4 py-2 rounded ${
+            className={`btn ${
               filterStatus === "scheduled"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Scheduled
           </button>
           <button
             onClick={() => setFilterStatus("in progress")}
-            className={`px-4 py-2 rounded ${
+            className={`btn ${
               filterStatus === "in progress"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Ongoing
           </button>
           <button
-            onClick={() => setFilterStatus("completed")}
-            className={`px-4 py-2 rounded ${
+            onClick={() => {
+              setFilterStatus("completed");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
+            className={`btn ${
               filterStatus === "completed"
-                ? "bg-indigo-500 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
             }`}
           >
             Completed
           </button>
+          <button
+            onClick={() => {
+              setFilterStatus("cancelled");
+              setOngoingSubcategory(""); // Reset subcategory
+            }}
+            className={`btn ${
+              filterStatus === "cancelled"
+                ? "btn-tertiary"
+                : "btn-tertiary-neutral"
+            }`}
+          >
+            Cancelled
+          </button>
         </div>
       </div>
-      <div className="border-t border-gray-200">
-        <div className="px-4 py-5 sm:p-6">
-          {filteredOrders.length > 0 ? (
-            <ul className="space-y-4">
-              {filteredOrders.map((order, index) => (
-                <li
-                  key={index}
-                  className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200"
-                >
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    Customer:{" "}
-                    {order.customer_name.charAt(0).toUpperCase() +
-                      order.customer_name.slice(1)}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Order Status:{" "}
-                    {order.order_status.charAt(0).toUpperCase() +
-                      order.order_status.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Payment Status:{" "}
-                    {order.payment_status.charAt(0).toUpperCase() +
-                      order.payment_status.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">Services:</p>
-                  <ul className="list-disc pl-5">
-                    {order.services.map((service: any, idx: number) => (
-                      <li key={idx}>{service}</li>
-                    ))}
-                  </ul>
+      <div className="px-2 py-2 sm:p-2">
+        {loading ? (
+          <div className="py-4">
+            {/* Skeleton Loading for Admin Orders */}
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="mb-8 animate-pulse border border-gray-200 rounded-lg p-4"
+              >
+                {/* Order Header Skeleton */}
+                <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-300">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                    <div>
+                      <div className="h-5 w-40 bg-gray-200 rounded mb-2"></div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Status Badge */}
+                        <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
 
-                  <p className="text-sm text-gray-600">
-                    Payment Method:{" "}
-                    {order.payment_method.charAt(0).toUpperCase() +
-                      order.payment_method.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Machine:{" "}
-                    {order.machine_id.charAt(0).toUpperCase() +
-                      order.machine_id.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Machine Type:{" "}
-                    {order.type
-                      ? order.type.charAt(0).toUpperCase() + order.type.slice(1)
-                      : "Unknown"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Schedule:{" "}
-                    {new Date(order.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}{" "}
-                    {order.time_range &&
-                      `(${order.time_range[0]?.start} - ${order.time_range[0]?.end})`}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Date Completed: {order.date_completed || "Pending"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Total Weight: {order.total_weight || "Pending"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Total Price: {order.total_price || "Pending"}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Notes: {order.notes || "No notes added"}
-                  </p>
-
-                  {order.order_status !== "cancelled" &&
-                    order.order_status !== "pending" &&
-                    order.order_status !== "completed" && (
-                      <div className="mt-4 flex space-x-4">
-                        <button
-                          onClick={() => handleEditOrder(order)}
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
-                        >
-                          Edit Order Details
-                        </button>
-                      </div>
-                    )}
-
-                  {/* Edit Form */}
-                  {editOrderId === order._id &&
-                    order.order_status !== "cancelled" &&
-                    order.order_status !== "pending" &&
-                    order.order_status !== "completed" && (
-                      <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                        <h4 className="text-md font-semibold text-gray-800">
-                          Edit Order Details
-                        </h4>
-                        <div className="mt-2 space-y-2">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Total Weight (kg)
-                            </label>
-                            <input
-                              type="number"
-                              value={editDetails.total_weight}
-                              onChange={(e) =>
-                                setEditDetails({
-                                  ...editDetails,
-                                  total_weight: parseFloat(e.target.value),
-                                })
-                              }
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Total Price (₱)
-                            </label>
-                            <input
-                              type="number"
-                              value={editDetails.total_price}
-                              onChange={(e) =>
-                                setEditDetails({
-                                  ...editDetails,
-                                  total_price: parseFloat(e.target.value),
-                                })
-                              }
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Notes
-                            </label>
-                            <textarea
-                              value={editDetails.notes}
-                              onChange={(e) =>
-                                setEditDetails({
-                                  ...editDetails,
-                                  notes: e.target.value,
-                                })
-                              }
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-4 flex space-x-4">
-                          <button
-                            onClick={handleSaveEdit}
-                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setEditOrderId(null)}
-                            className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-                          >
-                            Cancel
-                          </button>
+                        {/* Additional Info Badges */}
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                          <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                          <div className="h-5 w-32 bg-gray-200 rounded-full"></div>
                         </div>
                       </div>
-                    )}
-
-                  <div className="mt-4 flex space-x-4">
-                    {order.order_status === "pending" && (
-                      <>
-                        <button
-                          onClick={() => handleAccept(order._id)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleDecline(order._id)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-                        >
-                          Decline
-                        </button>
-                      </>
-                    )}
-
-                    {order.order_status === "scheduled" && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <button
-                          onClick={() =>
-                            handleMoveToNextStage(order._id, "pending")
-                          }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
-                        >
-                          <div className="flex items-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                              />
-                            </svg>
-                            Back to Pending
-                          </div>
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleMoveToNextStage(order._id, "in progress")
-                          }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                        >
-                          <div className="flex items-center">
-                            Forward to Ongoing
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 ml-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M14 5l7 7m0 0l-7 7m7-7H3"
-                              />
-                            </svg>
-                          </div>
-                        </button>
-                      </div>
-                    )}
-                    {order.order_status === "in progress" && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <button
-                          onClick={() =>
-                            handleMoveToNextStage(order._id, "scheduled")
-                          }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
-                        >
-                          <div className="flex items-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                              />
-                            </svg>
-                            Back to Scheduled
-                          </div>
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleMoveToNextStage(order._id, "completed")
-                          }
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-                        >
-                          <div className="flex items-center">
-                            Forward to Completed
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 ml-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M14 5l7 7m0 0l-7 7m7-7H3"
-                              />
-                            </svg>
-                          </div>
-                        </button>
-                      </div>
-                    )}
-                    {order.order_status === "completed" && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <button
-                          onClick={() =>
-                            handleMoveToNextStage(order._id, "in progress")
-                          }
-                          className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600"
-                        >
-                          <div className="flex items-center">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                              />
-                            </svg>
-                            Back to Ongoing
-                          </div>
-                        </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-gray-500 text-center p-6">
-              {filteredOrders.length === 0 && (
-                <div className="text-gray-500 text-center p-6">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
-                    />
-                  </svg>
-
-                  {searchQuery ? (
-                    <p className="mt-2">
-                      No orders found matching{" "}
-                      <span className="font-bold">"{searchQuery}"</span>
-                    </p>
-                  ) : (
-                    <p className="mt-2">
-                      No orders found with{" "}
-                      <span className="font-bold">
-                        {filterStatus === "all" ? "any" : filterStatus}
-                      </span>{" "}
-                      status
-                    </p>
-                  )}
-
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="mt-2 text-blue-500 hover:text-blue-700 font-medium"
-                    >
-                      Clear search
-                    </button>
-                  )}
                 </div>
-              )}
+
+                {/* Order Content Skeleton - 4-column grid */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  {/* Services */}
+                  <div className="flex items-start">
+                    <div className="mt-1">
+                      <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                    </div>
+                    <div className="ml-2 flex-1">
+                      <div className="h-4 w-20 bg-gray-200 rounded mb-2"></div>
+                      <div className="flex flex-wrap gap-1">
+                        {[1, 2, 3].map((service) => (
+                          <div
+                            key={service}
+                            className="h-5 w-16 bg-gray-200 rounded"
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Items */}
+                  <div className="flex items-start">
+                    <div className="mt-1">
+                      <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                    </div>
+                    <div className="ml-2 flex-1">
+                      <div className="h-4 w-16 bg-gray-200 rounded mb-2"></div>
+                      <div className="flex flex-wrap gap-1">
+                        {[1, 2, 3].map((item) => (
+                          <div
+                            key={item}
+                            className="h-6 w-20 bg-gray-200 rounded"
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Details */}
+                  <div className="flex items-start">
+                    <div className="mt-1">
+                      <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                    </div>
+                    <div className="ml-2 flex-1">
+                      <div className="flex justify-between">
+                        <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-6 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                        <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="flex items-start">
+                    <div className="mt-1">
+                      <div className="h-4 w-4 rounded-full bg-gray-200"></div>
+                    </div>
+                    <div className="ml-2 flex-1">
+                      <div className="h-4 w-32 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-12 w-full bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons Skeleton */}
+                <div className="mt-4 flex justify-end space-x-4">
+                  <div className="h-9 w-24 bg-gray-200 rounded"></div>
+                  <div className="h-9 w-24 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <div className="border-t border-gray-200">
+            <div className="px-4 py-5 sm:p-6">
+              <ul className="space-y-4">
+                {filteredOrders.map((order, index) => (
+                  <li
+                    key={index}
+                    className="p-4 bg-[#F9F9F9] rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                  >
+                    {/* Header with customer name and order details in one row */}
+                    <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-300">
+                      <div className="flex items-center space-x-3">
+                        {/* Customer info */}
+                        <div className="w-10 h-10 bg-[#EADDFF] rounded-full flex items-center justify-center">
+                          <FiUser className="h-5 w-5 text-[#3D4EB0]" />
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <h4 className="font-medium text-gray-900">
+                              {order.customer_name.charAt(0).toUpperCase() +
+                                order.customer_name.slice(1)}
+                            </h4>
+
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                            ${
+                              order.order_status === "pending"
+                                ? "bg-yellow-50 text-yellow-500"
+                                : order.order_status === "completed"
+                                  ? "bg-green-50 text-green-500"
+                                  : order.order_status === "cancelled"
+                                    ? "bg-red-50 text-red-500"
+                                    : "bg-purple-50 text-purple-500"
+                            }`}
+                            >
+                              {order.order_status.charAt(0).toUpperCase() +
+                                order.order_status.slice(1)}
+                              {order.order_status === "completed" &&
+                                order.date_completed && (
+                                  <span className="ml-1">
+                                    •{" "}
+                                    {new Date(
+                                      order.date_completed
+                                    ).toLocaleDateString()}
+                                  </span>
+                                )}
+                            </span>
+
+                            {/* Status badge */}
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              {/* Date/Time badges */}
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#F0F0F0] text-gray-800">
+                                <FiCalendar className="mr-1 h-3 w-3 text-gray-500" />
+                                <time dateTime={order.date}>
+                                  {new Date(order.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                    }
+                                  )}
+                                </time>
+                              </span>
+
+                              {order.time_range &&
+                                order.time_range.length > 0 && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-[#F0F0F0] text-gray-800">
+                                    <FiClock className="mr-1 h-3 w-3 text-gray-500" />
+                                    {order.time_range[0].start} -{" "}
+                                    {order.time_range[0].end}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Services, items, and order details all in one row */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      {/* Services */}
+                      <div className="flex items-start">
+                        <div className="mt-1">
+                          <FiList className="h-4 w-4 text-[#3D4EB0]" />
+                        </div>
+                        <div className="ml-2">
+                          <h5 className="text-sm font-medium text-[#3D4EB0]">
+                            Services
+                          </h5>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {order.services.map((service: any, idx: number) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#F0F0F0] text-[#3D4EB0]"
+                              >
+                                {service}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Machine Details */}
+                      <div className="flex items-start">
+                        <div className="mt-1">
+                          <FiPackage className="h-4 w-4 text-[#3D4EB0]" />
+                        </div>
+                        <div className="ml-2">
+                          <h5 className="text-sm font-medium text-[#3D4EB0]">
+                            Machine
+                          </h5>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <div className="text-xs bg-[#F0F0F0] px-2 py-0.5 rounded flex items-center">
+                              <span className="text-gray-600">
+                                {order.machine_id || "Not assigned yet"}
+                              </span>
+                            </div>
+                            {order.type && (
+                              <div className="text-xs bg-[#F0F0F0] px-2 py-0.5 rounded flex items-center">
+                                <span className="text-gray-600">
+                                  {order.type.charAt(0).toUpperCase() +
+                                    order.type.slice(1)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Order details (payment, weight, price) */}
+                      <div className="flex items-start">
+                        <div className="mt-1">
+                          <FiInfo className="h-4 w-4 text-[#3D4EB0]" />
+                        </div>
+                        <div className="ml-2">
+                          <div className="flex items-center justify-between space-x-4">
+                            <h5 className="text-sm font-medium text-[#3D4EB0]">
+                              Payment Details
+                            </h5>
+                            {order.order_status !== "cancelled" &&
+                              order.order_status !== "pending" &&
+                              order.order_status !== "completed" && (
+                                <button
+                                  onClick={() => handleEditOrder(order)}
+                                  className="btn btn-sm btn-primary"
+                                >
+                                  <FiEdit3 className="h-4 w-4" />
+                                </button>
+                              )}
+                          </div>
+                          <div className="mt-1 space-y-1">
+                            <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1">
+                              <FiCreditCard className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                              <span>
+                                {order.payment_method.charAt(0).toUpperCase() +
+                                  order.payment_method.slice(1)}
+                              </span>
+                            </div>
+                            {order.total_weight ? (
+                              <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1">
+                                <FiSmartphone className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                                <span>{order.total_weight} kg</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-500 mr-1 mb-1">
+                                <FiSmartphone className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                                <span>Pending</span>
+                              </div>
+                            )}
+                            {order.total_price ? (
+                              <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-600 mr-1 mb-1 gap-1">
+                                <FiDollarSign className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                                <span>₱{order.total_price}</span>
+                                <span>
+                                  (
+                                  {order.payment_status
+                                    .charAt(0)
+                                    .toUpperCase() +
+                                    order.payment_status.slice(1)}
+                                  )
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F0F0F0] text-gray-500 mr-1 mb-1">
+                                <FiDollarSign className="mr-1.5 h-3.5 w-3.5 text-[#3D4EB0]" />
+                                <span>Pending</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notes */}
+                      <div className="flex items-start">
+                        <div className="mt-1">
+                          <FiClipboard className="h-4 w-4 text-[#3D4EB0]" />
+                        </div>
+                        <div className="ml-2">
+                          <h5 className="text-sm font-medium text-[#3D4EB0]">
+                            Notes
+                          </h5>
+                          <div className="mt-1">
+                            {order.notes ? (
+                              <div className="inline-flex items-start bg-[#F0F0F0] px-2 py-1 rounded">
+                                <div className="text-xs text-gray-600">
+                                  {order.notes}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500">
+                                No notes
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Edit Form */}
+                    {editOrderId === order._id &&
+                      order.order_status !== "cancelled" &&
+                      order.order_status !== "pending" &&
+                      order.order_status !== "completed" && (
+                        <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                          <h4 className="text-md font-semibold text-gray-800">
+                            Edit Order Details
+                          </h4>
+                          <div className="mt-2 space-y-2">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Total Weight (kg)
+                              </label>
+                              <input
+                                type="number"
+                                value={editDetails.total_weight}
+                                onChange={(e) =>
+                                  setEditDetails({
+                                    ...editDetails,
+                                    total_weight: parseFloat(e.target.value),
+                                  })
+                                }
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Total Price (₱)
+                              </label>
+                              <input
+                                type="number"
+                                value={editDetails.total_price}
+                                onChange={(e) =>
+                                  setEditDetails({
+                                    ...editDetails,
+                                    total_price: parseFloat(e.target.value),
+                                  })
+                                }
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Notes
+                              </label>
+                              <textarea
+                                value={editDetails.notes}
+                                onChange={(e) =>
+                                  setEditDetails({
+                                    ...editDetails,
+                                    notes: e.target.value,
+                                  })
+                                }
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-4 flex space-x-4">
+                            <button
+                              onClick={handleSaveEdit}
+                              className="btn btn-success"
+                            >
+                              {loading ? "Saving" : "Save"}
+                            </button>
+                            <button
+                              onClick={() => setEditOrderId(null)}
+                              className="btn btn-danger"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                    <div className="mt-4 flex justify-end space-x-4">
+                      {order.order_status === "pending" && (
+                        <>
+                          <button
+                            onClick={() => handleAccept(order._id)}
+                            className="btn btn-success"
+                          >
+                            {loading ? "Accepting..." : "Accept"}
+                          </button>
+                          <button
+                            onClick={() => handleDecline(order._id)}
+                            className="btn btn-danger"
+                          >
+                            Decline
+                          </button>
+                        </>
+                      )}
+
+                      {/* Order progression buttons stay the same as your original code */}
+                      {/* Example for "scheduled" status */}
+                      {order.order_status === "scheduled" && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            onClick={() =>
+                              handleMoveToNextStage(order._id, "pending")
+                            }
+                            className="btn btn-neutral"
+                          >
+                            <div className="flex items-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
+                              </svg>
+                              Back to Pending
+                            </div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMoveToNextStage(order._id, "in progress")
+                            }
+                            className="btn btn-sm btn-primary"
+                          >
+                            <div className="flex items-center">
+                              {loading
+                                ? "Moving to Ongoing..."
+                                : "Move to Ongoing"}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 ml-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                />
+                              </svg>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+
+                      {order.order_status === "in progress" && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            onClick={() =>
+                              handleMoveToNextStage(order._id, "pending")
+                            }
+                            className="btn btn-neutral"
+                          >
+                            <div className="flex items-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
+                              </svg>
+                              Back to Scheduled
+                            </div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMoveToNextStage(order._id, "completed")
+                            }
+                            className="btn btn-sm btn-primary"
+                          >
+                            <div className="flex items-center">
+                              {loading
+                                ? "Marking as Completed..."
+                                : "Mark as Completed"}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 ml-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                />
+                              </svg>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                      {order.order_status === "completed" && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <button
+                            onClick={() =>
+                              handleMoveToNextStage(order._id, "in progress")
+                            }
+                            className="btn btn-neutral"
+                          >
+                            <div className="flex items-center">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
+                              </svg>
+                              Back to Ongoing
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-gray-500 text-center p-6">
+            {filteredOrders.length === 0 && (
+              <div className="text-gray-500 text-center p-6">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                  />
+                </svg>
+
+                {searchQuery ? (
+                  <p className="mt-2">
+                    No orders found matching{" "}
+                    <span className="font-bold">"{searchQuery}"</span>
+                  </p>
+                ) : (
+                  <p className="mt-2">
+                    No orders found with{" "}
+                    <span className="font-bold">
+                      {filterStatus === "all" ? "any" : filterStatus}
+                    </span>{" "}
+                    status
+                  </p>
+                )}
+
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="btn btn-sm btn-primary"
+                  >
+                    Clear search
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
