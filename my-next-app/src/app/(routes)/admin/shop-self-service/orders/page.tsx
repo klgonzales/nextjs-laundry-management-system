@@ -652,6 +652,50 @@ export default function Orders() {
     sortDirection,
     sortOrdersByDate,
   ]);
+
+  useEffect(() => {
+    // Identify conflicting orders (same date and time)
+    const identifyConflicts = () => {
+      // Create a map to track orders by date and time
+      const dateTimeMap = new Map();
+      const conflictingOrderIds = new Set();
+
+      // First pass: build the map of date+time -> order IDs
+      orderDetails.forEach((order) => {
+        if (order.date && order.time_range && order.time_range.length > 0) {
+          const dateKey = new Date(order.date).toDateString();
+          const timeKey = order.time_range[0].start;
+          const mapKey = `${dateKey}-${timeKey}`;
+
+          if (!dateTimeMap.has(mapKey)) {
+            dateTimeMap.set(mapKey, [order._id]);
+          } else {
+            const existingOrders = dateTimeMap.get(mapKey);
+            existingOrders.push(order._id);
+
+            // If we have more than one order at this time, mark all as conflicting
+            if (existingOrders.length > 1) {
+              existingOrders.forEach((id: unknown) =>
+                conflictingOrderIds.add(id)
+              );
+            }
+          }
+        }
+      });
+
+      // Update orders with conflict information
+      setOrderDetails((prevOrders) =>
+        prevOrders.map((order) => ({
+          ...order,
+          hasConflict: conflictingOrderIds.has(order._id),
+        }))
+      );
+    };
+    if (orderDetails.length > 0) {
+      identifyConflicts();
+    }
+  }, [orderDetails.length]);
+
   // if (loading) {
   //   return <p className="text-center text-gray-500">Loading Orders...</p>;
   // }
@@ -977,7 +1021,9 @@ export default function Orders() {
                 {filteredOrders.map((order, index) => (
                   <li
                     key={index}
-                    className="p-4 bg-[#F9F9F9] rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                    className={`p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
+                      order.hasConflict ? "bg-[#FFB8A1]" : "bg-[#F9F9F9]"
+                    }`}
                   >
                     {/* Header with customer name and order details in one row */}
                     <div className="flex flex-wrap justify-between items-start mb-4 pb-2 border-b border-gray-300">
@@ -1017,7 +1063,23 @@ export default function Orders() {
                                   </span>
                                 )}
                             </span>
-
+                            {/* Add conflict indicator */}
+                            {order.hasConflict && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <svg
+                                  className="h-3 w-3 mr-1"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                                Time Conflict
+                              </span>
+                            )}
                             {/* Status badge */}
                             <div className="flex flex-wrap items-center gap-2 mt-1">
                               {/* Date/Time badges */}
@@ -1047,6 +1109,32 @@ export default function Orders() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Add conflict warning message if needed */}
+                    {order.hasConflict && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                        <div className="flex">
+                          <svg
+                            className="h-5 w-5 mr-2 text-red-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <div>
+                            <p className="font-medium">Scheduling Conflict</p>
+                            <p>
+                              This order conflicts with another order scheduled
+                              for the same date and time slot.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Services, items, and order details all in one row */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">

@@ -92,6 +92,13 @@ export default function Sidebar({
                 General
               </h3>
               <div className="mt-2 space-y-1">
+                {/* <button
+                  onClick={() => handleScroll("home")}
+                  className={getButtonClass("home")}
+                >
+                  <FiHome className="mr-3 h-4 w-4" />
+                  Home
+                </button> */}
                 <button
                   onClick={() => handleScroll("orders")}
                   className={getButtonClass("orders")}

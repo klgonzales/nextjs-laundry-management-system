@@ -17,6 +17,7 @@ export default function AdminLoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const response = await fetch("/api/admin/login", {
@@ -53,6 +54,8 @@ export default function AdminLoginForm() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
