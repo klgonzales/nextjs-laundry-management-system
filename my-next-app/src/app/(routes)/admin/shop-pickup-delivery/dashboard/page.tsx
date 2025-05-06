@@ -67,7 +67,7 @@ export default function AdminDashboard() {
           <div className="px-4 py-5 sm:px-6 flex justify-between items-center bg-[#E2E5F4]">
             <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
             <button
-              onClick={() => router.push("/admin/shop-self-service/orders")}
+              onClick={() => router.push("/admin/shop-pickup-delivery/orders")}
               className="text-sm font-medium text-[#F386C7] hover:text-[#E75DB1]"
             >
               View all
@@ -187,9 +187,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
         <button
-          onClick={() => router.push("/admin/shop-self-service/orders")}
+          onClick={() => router.push("/admin/shop-pickup-delivery/orders")}
           className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
         >
           <span className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
         </button>
 
         <button
-          onClick={() => router.push("/admin/shop-self-service/services")}
+          onClick={() => router.push("/admin/shop-pickup-delivery/services")}
           className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
         >
           <span className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
@@ -230,28 +230,6 @@ export default function AdminDashboard() {
             </svg>
           </span>
           <span className="text-gray-900 font-medium">Shop Services</span>
-        </button>
-
-        <button
-          onClick={() => router.push("/admin/shop-self-service/machines")}
-          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
-        >
-          <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-            <svg
-              className="h-5 w-5 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
-              />
-            </svg>
-          </span>
-          <span className="text-gray-900 font-medium">Machines</span>
         </button>
       </div>
     </>

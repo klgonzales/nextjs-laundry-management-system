@@ -60,6 +60,7 @@ interface Order {
   type?: string; // machine type?
   time_range?: { start: string; end: string }[];
   pickup_time?: string[];
+  pickup_date?: string;
   services?: string[];
   address?: string;
   clothes?: { type: string; quantity: number }[] | undefined;
@@ -878,9 +879,18 @@ export default function Orders() {
                       <div className="flex items-center space-x-2 text-sm text-gray-500 mt-1">
                         <FiCalendar className="w-3 h-3" />
                         <span>
-                          {order.date_placed
-                            ? new Date(order.date_placed).toLocaleDateString()
-                            : new Date(order.date).toLocaleDateString()}
+                          {order.pickup_date
+                            ? "Pickup Date"
+                            : "Appointment Date"}
+                        </span>
+                        <span>
+                          {order.pickup_date
+                            ? new Date(order.pickup_date).toLocaleDateString()
+                            : new Date(order.date).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                timeZone: "UTC",
+                              })}
                         </span>
                         {order.order_type === "self-service"
                           ? order.time_range && (
@@ -1174,7 +1184,6 @@ export default function Orders() {
                             onClick={() => handleSubmitFeedback(order._id)}
                             className="btn btn-primary"
                           >
-                            <FiCheckCircle className="mr-1" />
                             Submit
                           </button>
                           <button
@@ -1185,7 +1194,6 @@ export default function Orders() {
                             }}
                             className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center"
                           >
-                            <FiXCircle className="mr-1" />
                             Cancel
                           </button>
                         </div>

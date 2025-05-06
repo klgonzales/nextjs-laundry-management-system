@@ -37,6 +37,7 @@ interface Order {
   total_weight?: number;
   notes: string;
   order_type: string;
+  order_id: string;
 }
 
 export default function Payments() {
@@ -812,7 +813,7 @@ export default function Payments() {
                       <div>
                         <p className="text-xs text-gray-500">Order ID</p>
                         <p className="font-medium text-sm">
-                          {order._id.substring(order._id.length - 8)}
+                          {order.order_id.substring(order.order_id.length - 8)}
                         </p>
                       </div>
 
@@ -830,7 +831,10 @@ export default function Payments() {
                       <div>
                         <p className="text-xs text-gray-500">Payment Method</p>
                         <p className="font-medium text-sm capitalize">
-                          {order.payment_method || "Not specified"}
+                          {order.payment_method
+                            ? order.payment_method.charAt(0).toUpperCase() +
+                              order.payment_method.slice(1)
+                            : "Not specified"}
                         </p>
                       </div>
 

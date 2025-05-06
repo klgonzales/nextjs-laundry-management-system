@@ -445,7 +445,7 @@ export default function PickupDetails() {
                 </span>{" "}
                 of clothing items selected
                 {soap && (
-                  <span className="ml-2 text-green-600">• Using own soap</span>
+                  <span className="ml-2 text-green-200">• Using own soap</span>
                 )}
               </div>
             </div>

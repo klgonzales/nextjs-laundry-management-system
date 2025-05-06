@@ -32,11 +32,8 @@ interface Order {
   // Add any other fields present in your actual order objects
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { shop_id: string } }
-) {
-  const { shop_id } = params;
+export async function GET(request: Request, context: { params: any }) {
+  const { shop_id } = context.params;
 
   if (!shop_id) {
     return NextResponse.json({ error: "Shop ID is required" }, { status: 400 });

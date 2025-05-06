@@ -17,7 +17,7 @@ export default function RegisterForm() {
   });
   const [error, setError] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-
+  const [loading, setLoading] = useState(false);
   // Password validation rules
   const validatePassword = (password: string) => {
     const errors: string[] = [];
@@ -50,6 +50,7 @@ export default function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
@@ -81,6 +82,8 @@ export default function RegisterForm() {
       router.push("/auth/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -177,8 +180,12 @@ export default function RegisterForm() {
           </div>
 
           <div>
-            <button type="submit" className="w-full btn btn-primary">
-              Register
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full btn btn-primary"
+            >
+              {loading ? "Registering..." : "Register"}
             </button>
           </div>
         </form>

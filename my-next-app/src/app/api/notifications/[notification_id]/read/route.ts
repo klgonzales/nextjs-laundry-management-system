@@ -3,12 +3,9 @@ import dbConnect from "@/app/lib/mongodb";
 import { Notification } from "@/app/models/Notification";
 import { pusherServer } from "@/app/lib/pusherServer";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { notification_id: string } }
-) {
+export async function PATCH(request: Request, context: { params: any }) {
   try {
-    const notificationId = params.notification_id;
+    const notificationId = context.params;
 
     if (!notificationId) {
       return NextResponse.json(

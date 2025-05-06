@@ -206,25 +206,23 @@ export default function AdminLayout({
   const handleScroll = (section: string) => {
     switch (section) {
       case "home":
-        router.push("/admin/shop-self-service/dashboard");
+        router.push("/admin/shop-pickup-delivery/dashboard");
         break;
       case "orders":
-        router.push("/admin/shop-self-service/orders");
+        router.push("/admin/shop-pickup-delivery/orders");
         break;
       case "services":
-        router.push("/admin/shop-self-service/services");
+        router.push("/admin/shop-pickup-delivery/services");
         break;
-      case "machines":
-        router.push("/admin/shop-self-service/machines");
-        break;
+
       case "feedback":
-        router.push("/admin/shop-self-service/feedback");
+        router.push("/admin/shop-pickup-delivery/feedback");
         break;
       case "payments":
-        router.push("/admin/shop-self-service/payments");
+        router.push("/admin/shop-pickup-delivery/payments");
         break;
       case "analytics":
-        router.push("/admin/shop-self-service/analytics");
+        router.push("/admin/shop-pickup-delivery/analytics");
         break;
       default:
         break;

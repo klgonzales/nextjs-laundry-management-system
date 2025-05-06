@@ -1143,6 +1143,36 @@ export default function Payments() {
                           </div>
                         )}
 
+                        {payment.payment_method === "pay at the counter" && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-4">
+                              <div className="w-32 text-sm text-gray-600">
+                                Amount Paid:
+                                <span className="font-medium text-sm">
+                                  ₱
+                                  {payment.proof_of_payment?.amount_paid ||
+                                    "N/A"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Payment Date:
+                              </div>
+                              <div className="font-medium text-sm">
+                                {new Date(
+                                  payment.proof_of_payment.payment_date
+                                ).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         {payment.payment_method === "gcash" && (
                           <div className="flex items-center justify-center border rounded p-2 bg-gray-50">
                             <button

@@ -37,7 +37,7 @@ export default function Sidebar({
       case "home":
         return (
           activePath.endsWith("/dashboard") ||
-          activePath.endsWith("/shop-self-service")
+          activePath.endsWith(`/shop-${shopType}`)
         );
       case "orders":
         return activePath.includes("/orders");

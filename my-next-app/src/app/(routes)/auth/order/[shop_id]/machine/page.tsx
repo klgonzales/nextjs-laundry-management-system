@@ -232,6 +232,13 @@ export default function MachinePage() {
     setSelectedTimes([]); // Reset selected times
   };
 
+  function formatDateToYYYYMMDD(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0"); // getMonth() is 0-indexed
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   // Handle time slot selection
   const handleTimeClick = (time: string) => {
     const machineMinMinutes = selectedMachine?.minimum_minutes || 0;
@@ -287,7 +294,7 @@ export default function MachinePage() {
         body: JSON.stringify({
           shop_id: shop_id,
           machine_id: selectedMachine.machine_id,
-          date: selectedDate.toISOString().split("T")[0],
+          date: formatDateToYYYYMMDD(selectedDate),
           time_range: timeRange, // Pass the time range
           customer_id: customer_id,
           payment_method: "pay at the counter",

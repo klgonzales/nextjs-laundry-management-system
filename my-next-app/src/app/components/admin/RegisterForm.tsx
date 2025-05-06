@@ -21,7 +21,7 @@ import {
 export default function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-
+  const [loading, setLoading] = useState(false);
   interface Machine {
     machine_id: string;
     minimum_kg: number;
@@ -209,7 +209,7 @@ export default function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+    setLoading(true);
     try {
       const { confirmPassword, ...submitData } = formData; // Remove confirmPassword from submission
       const res = await fetch("/api/admin/register", {
@@ -227,6 +227,8 @@ export default function RegisterForm() {
       router.push("/admin/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1373,7 +1375,7 @@ export default function RegisterForm() {
                   className="btn btn-primary w-full text-sm"
                   disabled={formData.payment_methods.length === 0}
                 >
-                  Complete Registration
+                  {loading ? "Completing Registration..." : "Complete Register"}
                 </button>
               )}
             </div>
