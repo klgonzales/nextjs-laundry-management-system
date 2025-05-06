@@ -453,6 +453,14 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
     setIsMobileViewingMessages(false);
   };
 
+  // Add this effect to explicitly fetch messages when room_id changes
+  // useEffect(() => {
+  //   if (room_id) {
+  //     console.log(`[Chat] Room ID changed to: ${room_id}, fetching messages`);
+  //     fetchMessages();
+  //   }
+  // }, [room_id, fetchMessages]);
+
   // Get name of selected contact
   const selectedContactName =
     contacts.find((c) => c.id === selectedContactId)?.name || "Chat";

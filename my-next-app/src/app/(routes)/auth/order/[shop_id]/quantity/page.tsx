@@ -17,6 +17,13 @@ export default function InputQuantity() {
   const shop_id = params?.shop_id as string | undefined; // Safely extract shop_id
   const searchParams = useSearchParams();
   const services = searchParams?.get("services")?.split(",") || []; // Get selected services from query params
+  const total_weight = searchParams?.get("total_weight")
+    ? parseFloat(searchParams.get("total_weight")!)
+    : 0;
+
+  const total_price = searchParams?.get("total_price")
+    ? parseFloat(searchParams.get("total_price")!)
+    : 0;
   const [isProceedingToSchedule, setIsProceedingToSchedule] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState({
@@ -98,6 +105,8 @@ export default function InputQuantity() {
 
     const queryParams = new URLSearchParams({
       services: services.join(","),
+      total_weight: total_weight.toString(),
+      total_price: total_price.toString(),
       clothing: JSON.stringify(allClothing),
       soap: soapProvided.toString(), // Pass the soap state as a string
     }).toString();

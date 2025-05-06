@@ -153,6 +153,33 @@ export default function ChooseService() {
     }
   };
 
+  // Add these new state variables near the top of your component
+  const [estimatedWeight, setEstimatedWeight] = useState<number>(1); // Default to 1kg
+  const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
+
+  // Add this function to calculate the estimated price
+  const calculateEstimatedPrice = () => {
+    if (!shop || selectedServices.length === 0) {
+      return 0;
+    }
+
+    // Calculate total price based on selected services
+    return selectedServices.reduce((total, serviceName) => {
+      const service = shop.services.find((s) => s.name === serviceName);
+      if (service) {
+        return total + service.price_per_kg * estimatedWeight;
+      }
+      return total;
+    }, 0);
+  };
+
+  // Add this effect to update the estimated price when selections or weight change
+  useEffect(() => {
+    const newEstimatedPrice = calculateEstimatedPrice();
+    setEstimatedPrice(newEstimatedPrice);
+  }, [selectedServices, estimatedWeight, shop]);
+
+  // Update handleProceed to include the weight information
   const handleProceed = () => {
     if (selectedServices.length > 0) {
       if (shop?.type === "self-service") {
@@ -165,7 +192,7 @@ export default function ChooseService() {
         // Navigate to the quantity page for other shop types
         setIsProceedingToServices(true);
         router.push(
-          `/auth/order/${shop_id}/quantity?services=${encodeURIComponent(selectedServices.join(","))}`
+          `/auth/order/${shop_id}/quantity?services=${encodeURIComponent(selectedServices.join(","))}&total_weight=${estimatedWeight}&total_price=${estimatedPrice}`
         );
       }
     } else {
@@ -419,6 +446,97 @@ export default function ChooseService() {
                   </div>
                 ))}
               </div>
+              {/* Estimated Weight Input and Price Calculation */}
+              {shop?.type !== "self-service" && (
+                <div className="mt-8 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">
+                    Estimate Your Order
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Weight Input */}
+                    <div>
+                      <label
+                        htmlFor="estimatedWeight"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Estimated Weight (kg)
+                      </label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <input
+                          type="number"
+                          id="estimatedWeight"
+                          min="0.5"
+                          step="0.5"
+                          value={estimatedWeight}
+                          onChange={(e) =>
+                            setEstimatedWeight(parseFloat(e.target.value) || 0)
+                          }
+                          className="focus:ring-[#F468BB] focus:border-[#F468BB] block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md py-2"
+                          placeholder="Enter estimated weight"
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">kg</span>
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        This helps us provide a price estimate. Actual weight
+                        may vary.
+                      </p>
+                    </div>
+
+                    {/* Price Calculation */}
+                    <div>
+                      <div className="bg-white p-4 rounded-md border border-gray-200">
+                        <h5 className="text-sm font-medium text-gray-700 mb-3">
+                          Price Estimate
+                        </h5>
+
+                        {selectedServices.length > 0 ? (
+                          <>
+                            <div className="space-y-2 mb-3">
+                              {selectedServices.map((serviceName) => {
+                                const service = shop?.services.find(
+                                  (s) => s.name === serviceName
+                                );
+                                if (!service) return null;
+
+                                const serviceTotal =
+                                  service.price_per_kg * estimatedWeight;
+
+                                return (
+                                  <div
+                                    key={serviceName}
+                                    className="flex justify-between text-sm"
+                                  >
+                                    <span>{serviceName}</span>
+                                    <span>₱{serviceTotal.toFixed(2)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-200 flex justify-between font-medium">
+                              <span>Estimated Total:</span>
+                              <span className="text-[#F468BB]">
+                                ₱{estimatedPrice.toFixed(2)}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                              Final price will be based on actual weight and
+                              services provided.
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-gray-500 text-sm italic">
+                            Select services to see price estimate
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Navigation Buttons */}
               <div className="mt-8 flex space-x-4 justify-end">

@@ -300,6 +300,8 @@ export default function MachinePage() {
           payment_method: "pay at the counter",
           order_type: "self-service",
           services: services,
+          total_weight: selectedMachine.minimum_kg,
+          total_price: selectedMachine.price_per_minimum_kg,
         }),
       });
 

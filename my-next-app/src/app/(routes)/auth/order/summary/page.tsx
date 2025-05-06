@@ -42,6 +42,8 @@ function OrderSummaryContent() {
     order_type: string;
     pickup_date?: string; // For pickup-delivery shops
     pickup_time?: string[]; // For pickup-delivery shops
+    total_price?: number;
+    total_weight?: number;
   }
 
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
@@ -115,6 +117,8 @@ function OrderSummaryContent() {
     pickup_date,
     pickup_time,
     address,
+    total_price,
+    total_weight,
   } = orderDetails;
 
   const formattedDate = new Intl.DateTimeFormat("en-US", {
@@ -211,7 +215,12 @@ function OrderSummaryContent() {
           )}
 
           <p>
-            <strong>Total:</strong> {total || "To be calculated"}
+            <strong>Total Price (Tentative):</strong>{" "}
+            {total_price || "To be calculated"}{" "}
+          </p>
+          <p>
+            <strong>Total Weight (Tentative):</strong>{" "}
+            {total_weight || "To be calculated"}{" "}
           </p>
           <p>
             <strong>Order Status:</strong>{" "}

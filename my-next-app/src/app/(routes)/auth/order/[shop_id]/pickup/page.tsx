@@ -28,6 +28,14 @@ export default function PickupDetails() {
   const [loading, setLoading] = useState(true);
 
   const services = searchParams?.get("services")?.split(",") || []; // Get services from query params
+  // Extract weight and price from query parameters (if they exist)
+  const total_weight = searchParams?.get("total_weight")
+    ? parseFloat(searchParams.get("total_weight")!)
+    : 0;
+
+  const total_price = searchParams?.get("total_price")
+    ? parseFloat(searchParams.get("total_price")!)
+    : 0;
   const clothing = searchParams
     ? JSON.parse(searchParams.get("clothing") || "{}")
     : {}; // Safely parse clothing from query params
@@ -207,6 +215,8 @@ export default function PickupDetails() {
           customer_id,
           shop_id,
           services,
+          total_price,
+          total_weight,
           clothing: finalClothingArray,
           pickupDate,
           pickupTime,
@@ -227,6 +237,7 @@ export default function PickupDetails() {
 
       console.log("WAASDFDSHFHDSHFDSH");
       console.log(payment_method);
+      console.log(total_price);
 
       // Navigate to the confirmation page
       router.push(`/auth/order/confirmation?order_id=${data.order_id}`);

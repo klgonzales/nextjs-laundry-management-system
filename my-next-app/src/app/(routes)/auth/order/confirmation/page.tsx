@@ -62,6 +62,8 @@ function OrderConfirmationContent() {
     order_type: string;
     pickup_date?: string; // For pickup-delivery shops
     pickup_time?: string[]; // For pickup-delivery shops
+    total_price?: number;
+    total_weight?: number;
   }
 
   useEffect(() => {
@@ -759,11 +761,24 @@ function OrderConfirmationContent() {
                         <FiTag className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900">
-                            Total
+                            Total Price (Tentative)
                           </p>
                           <p className="text-sm text-gray-600">
-                            {orderDetails.total
-                              ? `₱${orderDetails.total}`
+                            {orderDetails.total_price
+                              ? `₱${orderDetails.total_price}`
+                              : "To be calculated"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <FiSpeaker className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="ml-3">
+                          <p className="text-sm font-medium text-gray-900">
+                            Total Weight (Tentative)
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {orderDetails.total_weight
+                              ? `₱${orderDetails.total_weight}`
                               : "To be calculated"}
                           </p>
                         </div>
