@@ -40,7 +40,12 @@ function OrderContent() {
 
   // Add this loading state
   const [loading, setLoading] = useState(true);
-
+  interface Feedback {
+    customer_name?: string;
+    rating: number;
+    date: string | Date; // Accept both string and Date types
+    comment?: string;
+  }
   interface Shop {
     shop_id: string;
     name: string;
@@ -54,7 +59,13 @@ function OrderContent() {
     opening_hours?: {
       [day: string]: { start: string; end: string };
     };
-    feedbacks?: { rating: number }[];
+    // feedbacks?: {
+    //   customer_name?: string;
+    //   rating: number;
+    //   date: string;
+    //   comment?: string;
+    // }[];
+    feedbacks?: Feedback[]; // Array of feedback objects
     machines?: {
       machine_id: string;
       type: string;
@@ -80,6 +91,18 @@ function OrderContent() {
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   // Add a loading state to track button click status
   const [isProceedingToServices, setIsProceedingToServices] = useState(false);
+  // First add a new state to track which shop's reviews are being viewed
+  const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
+  const [selectedShopForReviews, setSelectedShopForReviews] =
+    useState<Shop | null>(null);
+
+  // Add this function to open the reviews modal
+  const openReviewsModal = (shop: Shop, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedShopForReviews(shop);
+    setReviewsModalOpen(true);
+  };
 
   const navigateBackToDashboard = () => {
     router.push("/auth/dashboard");
@@ -123,22 +146,46 @@ function OrderContent() {
             }
 
             const feedbackData = await feedbackResponse.json();
-            const feedbacks = feedbackData.feedbacks || [];
+            const rawFeedbacks = feedbackData.feedbacks || [];
+
+            // Process feedbacks to ensure all fields are standardized
+            const processedFeedbacks = rawFeedbacks.map((fb: any) => {
+              return {
+                // Use appropriate field names with fallbacks
+                customer_name: fb.customer_name || fb.name || "Anonymous User",
+                rating: Number(fb.rating || 0),
+                // Handle different possible field names for comments
+                comment: fb.comment || fb.comments || fb.feedback_text || "",
+                // Handle date formatting with fallbacks
+                date:
+                  fb.date ||
+                  fb.created_at ||
+                  fb.date_submitted ||
+                  new Date().toISOString(),
+              };
+            });
 
             // Calculate average rating
             let avgRating = 0;
-            if (feedbacks.length > 0) {
-              const sum = feedbacks.reduce(
-                (acc: number, fb: any) => acc + parseFloat(fb.rating || 0),
+            if (processedFeedbacks.length > 0) {
+              const sum = processedFeedbacks.reduce(
+                (acc: number, fb: any) => acc + fb.rating,
                 0
               );
-              avgRating = parseFloat((sum / feedbacks.length).toFixed(1));
+              avgRating = parseFloat(
+                (sum / processedFeedbacks.length).toFixed(1)
+              );
             }
 
-            // Return shop with calculated average rating and all feedbacks
+            console.log(
+              `Shop ${shop.name} processed feedbacks:`,
+              processedFeedbacks
+            );
+
+            // Return shop with calculated average rating and processed feedbacks
             return {
               ...shop,
-              feedbacks: feedbacks,
+              feedbacks: processedFeedbacks,
               avgRating: avgRating,
             };
           } catch (error) {
@@ -653,11 +700,14 @@ function OrderContent() {
                       />
                     </div>
                   </div>
-
-                  <div className="mt-2 flex items-center">
+                  <div
+                    className="mt-2 flex items-center cursor-pointer hover:text-[#F468BB]"
+                    onClick={(e) => openReviewsModal(shop, e)}
+                  >
                     {renderStars(getAverageRating(shop))}
-                    <span className="ml-2 text-xs text-gray-500">
-                      ({shop.feedbacks ? shop.feedbacks.length : 0} reviews)
+                    <span className="ml-2 text-xs text-gray-500 hover:text-[#F468BB]">
+                      ({shop.feedbacks ? shop.feedbacks.length : 0} reviews) -
+                      Click to view
                     </span>
                   </div>
                 </div>
@@ -876,6 +926,143 @@ function OrderContent() {
           </button>
         </div>
       </div>
+
+      {/* Reviews Modal - Moved outside the shop mapping loop */}
+      {reviewsModalOpen && selectedShopForReviews && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div
+              className="fixed inset-0 transition-opacity"
+              onClick={() => setReviewsModalOpen(false)}
+            >
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen"></span>
+            &#8203;
+            <div
+              className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-headline"
+            >
+              <div className="absolute top-0 right-0 pt-4 pr-4">
+                <button
+                  type="button"
+                  className="text-gray-400 hover:text-gray-500"
+                  onClick={() => setReviewsModalOpen(false)}
+                >
+                  <span className="sr-only">Close</span>
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div>
+                <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                  <h3
+                    className="text-lg leading-6 font-medium text-gray-900"
+                    id="modal-headline"
+                  >
+                    Reviews for {selectedShopForReviews.name}
+                  </h3>
+
+                  <div className="mt-4 flex items-center mb-4">
+                    {renderStars(getAverageRating(selectedShopForReviews))}
+                    <span className="ml-2 text-sm text-gray-600">
+                      (
+                      {selectedShopForReviews.feedbacks
+                        ? selectedShopForReviews.feedbacks.length
+                        : 0}{" "}
+                      reviews)
+                    </span>
+                  </div>
+                  <div className="mt-2 max-h-96 overflow-y-auto">
+                    {selectedShopForReviews.feedbacks &&
+                    selectedShopForReviews.feedbacks.length > 0 ? (
+                      <ul className="divide-y divide-gray-200">
+                        {selectedShopForReviews.feedbacks.map(
+                          (feedback: any, index: number) => (
+                            <li key={index} className="py-4">
+                              <div className="flex items-start">
+                                <div className="mr-3 flex-shrink-0">
+                                  <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                    <span className="text-purple-800 font-medium">
+                                      {feedback.customer_name
+                                        ? feedback.customer_name
+                                            .charAt(0)
+                                            .toUpperCase()
+                                        : "U"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {feedback.customer_name || "User"}
+                                  </p>
+                                  <div className="flex items-center mt-1">
+                                    <div className="flex">
+                                      {Array.from({ length: 5 }, (_, i) => (
+                                        <FiStar
+                                          key={i}
+                                          className={`w-4 h-4 ${
+                                            i < Number(feedback.rating)
+                                              ? "text-yellow-400 fill-current"
+                                              : "text-gray-300"
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="ml-1 text-xs text-gray-500">
+                                      {new Date(
+                                        feedback.date
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 text-sm text-gray-600">
+                                    {feedback.comment || "No comment provided."}
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-gray-500">
+                          No reviews yet for this shop.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Add a close button at the bottom */}
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#F468BB] text-base font-medium text-white hover:bg-opacity-90 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setReviewsModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

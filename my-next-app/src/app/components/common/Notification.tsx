@@ -202,6 +202,22 @@ export default function Notification() {
 
     channel.bind("new-notification", handleNewNotification);
 
+    // Add this binding for upcoming reminders
+    channel.bind(
+      "upcoming-reminder",
+      (reminderNotification: NotificationItem) => {
+        console.log(
+          "[Notifications] Received upcoming reminder:",
+          reminderNotification
+        );
+        // Handle the reminder the same way as regular notifications
+        handleNewNotification(reminderNotification);
+
+        // Optional: You could also trigger a special alert or toast for reminders
+        // if you want them to be more visible to users
+      }
+    );
+
     // Inside the useEffect where you set up channel.bind events:
     channel.bind("notifications-all-read", () => {
       console.log("[Notifications] Received all-read event");
@@ -217,6 +233,7 @@ export default function Notification() {
           `[Notifications] Cleanup: Unsubscribing from ${channelName}`
         );
         channelRef.current.unbind("new-notification", handleNewNotification);
+        channelRef.current.unbind("upcoming-reminder"); // Add this to unbind
         pusher.unsubscribe(channelName);
         channelRef.current = null;
       }
@@ -411,6 +428,8 @@ export default function Notification() {
                     icon = <FiTag className="h-6 w-6" />;
                   } else if (notification.message.includes("unpaid")) {
                     icon = <FiAlertTriangle className="h-6 w-6" />;
+                  } else if (notification.message.includes("Reminder")) {
+                    icon = <FiCalendar className="h-6 w-6" />;
                   } else if (notification.message.includes("Payment")) {
                     icon = <FiDollarSign className="h-6 w-6" />;
                   } else if (

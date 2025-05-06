@@ -541,11 +541,11 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
                           </p>
 
                           {/* Unread badge */}
-                          {contact.unread && contact.unread > 0 && (
+                          {/* {contact.unread && contact.unread > 0 && (
                             <span className="bg-blue-500 text-white text-xs rounded-full ml-2 h-5 w-5 flex items-center justify-center">
                               {contact.unread}
                             </span>
-                          )}
+                          )} */}
                         </div>
                       </div>
                     </div>

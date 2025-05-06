@@ -1052,6 +1052,7 @@ export default function Orders() {
                                   {
                                     month: "short",
                                     day: "numeric",
+                                    timeZone: "UTC",
                                   }
                                 )}
                               </time>

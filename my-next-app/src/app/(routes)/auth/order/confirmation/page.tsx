@@ -128,6 +128,7 @@ function OrderConfirmationContent() {
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "UTC", // Important: use UTC to avoid timezone shifting
     });
   };
 

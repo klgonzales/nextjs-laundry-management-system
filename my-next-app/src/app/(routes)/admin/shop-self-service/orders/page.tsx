@@ -65,7 +65,7 @@ export default function Orders() {
   // First add a new state for search query at the top with your other states
   // Also add the ongoingSubcategory state for the subcategories
   const [ongoingSubcategory, setOngoingSubcategory] = useState<string>("");
-
+  const [conflictMap, setConflictMap] = useState(new Map());
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Default to newest first (descending)
   const [searchQuery, setSearchQuery] = useState("");
   const [editOrderId, setEditOrderId] = useState<string | null>(null); // Track the order being edited
@@ -615,6 +615,125 @@ export default function Orders() {
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
+  useEffect(() => {
+    const identifyConflicts = () => {
+      if (!orderDetails || orderDetails.length === 0) return;
+
+      const machineConflicts = new Map(); // Store machine conflicts by machine-date-time
+      const timeConflicts = new Map(); // Store time conflicts by date-time
+      const conflictingOrderIds = new Set();
+
+      // First pass: Find all conflicts
+      orderDetails.forEach((order) => {
+        // Skip cancelled orders from conflict detection
+        if (order.order_status === "cancelled") return;
+
+        // Check if order has necessary data for conflict detection
+        if (order.date && order.time_range?.length > 0) {
+          const dateKey = new Date(order.date).toDateString();
+          const timeKey = order.time_range[0].start;
+
+          // Create combined keys for lookups
+          const dateTimeKey = `${dateKey}-${timeKey}`;
+          const machineKey = order.machine_id
+            ? `${order.machine_id}-${dateKey}-${timeKey}`
+            : null;
+
+          // Check for machine conflicts first (highest priority)
+          if (machineKey) {
+            if (!machineConflicts.has(machineKey)) {
+              machineConflicts.set(machineKey, [order._id]);
+            } else {
+              // Found a machine conflict
+              const existingOrders = machineConflicts.get(machineKey);
+              existingOrders.push(order._id);
+
+              // Mark all orders using this machine-time-date as conflicting
+              existingOrders.forEach((id: unknown) =>
+                conflictingOrderIds.add(id)
+              );
+            }
+          }
+
+          // Also track general time slot conflicts
+          if (!timeConflicts.has(dateTimeKey)) {
+            timeConflicts.set(dateTimeKey, [order._id]);
+          } else {
+            const existingOrders = timeConflicts.get(dateTimeKey);
+            existingOrders.push(order._id);
+
+            // Only mark as time conflicts if there's no machine conflict
+            if (existingOrders.length > 1) {
+              existingOrders.forEach((id: unknown) => {
+                // Only add as time conflict if not already a machine conflict
+                const order = orderDetails.find((o) => o._id === id);
+                if (order && !order.machine_id) {
+                  conflictingOrderIds.add(id);
+                }
+              });
+            }
+          }
+        }
+      });
+
+      // Second pass: Update each order with conflict information
+      const updatedOrders = orderDetails.map((order) => {
+        if (order.order_status === "cancelled") {
+          // Cancelled orders never have conflicts
+          return { ...order, hasConflict: false, conflictType: null };
+        }
+
+        const hasConflict = conflictingOrderIds.has(order._id);
+
+        // Determine conflict type
+        let conflictType = null;
+        if (hasConflict) {
+          // Check if this is a machine conflict
+          if (order.machine_id && order.date && order.time_range?.length > 0) {
+            const dateKey = (date: string | number | Date) => {
+              const d = new Date(date);
+              return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
+            };
+            const timeKey = order.time_range[0].start;
+            const machineKey = `${order.machine_id}-${dateKey}-${timeKey}`;
+
+            if (
+              machineConflicts.has(machineKey) &&
+              machineConflicts.get(machineKey).length > 1
+            ) {
+              conflictType = "machine";
+            } else {
+              conflictType = "time";
+            }
+          } else {
+            conflictType = "time";
+          }
+        }
+
+        return {
+          ...order,
+          hasConflict,
+          conflictType,
+        };
+      });
+
+      // Only update state if something changed
+      const hasChanges = updatedOrders.some((updated, i) => {
+        const original = orderDetails[i];
+        return (
+          updated.hasConflict !== original.hasConflict ||
+          updated.conflictType !== original.conflictType
+        );
+      });
+
+      if (hasChanges) {
+        console.log("Updating orders with conflict information");
+        setOrderDetails(updatedOrders);
+      }
+    };
+
+    identifyConflicts();
+  }, [orderDetails]); // Consider using a more efficient dependency if possible
 
   // Fix the filter effect to properly handle sorting
   useEffect(() => {
@@ -652,49 +771,6 @@ export default function Orders() {
     sortDirection,
     sortOrdersByDate,
   ]);
-
-  useEffect(() => {
-    // Identify conflicting orders (same date and time)
-    const identifyConflicts = () => {
-      // Create a map to track orders by date and time
-      const dateTimeMap = new Map();
-      const conflictingOrderIds = new Set();
-
-      // First pass: build the map of date+time -> order IDs
-      orderDetails.forEach((order) => {
-        if (order.date && order.time_range && order.time_range.length > 0) {
-          const dateKey = new Date(order.date).toDateString();
-          const timeKey = order.time_range[0].start;
-          const mapKey = `${dateKey}-${timeKey}`;
-
-          if (!dateTimeMap.has(mapKey)) {
-            dateTimeMap.set(mapKey, [order._id]);
-          } else {
-            const existingOrders = dateTimeMap.get(mapKey);
-            existingOrders.push(order._id);
-
-            // If we have more than one order at this time, mark all as conflicting
-            if (existingOrders.length > 1) {
-              existingOrders.forEach((id: unknown) =>
-                conflictingOrderIds.add(id)
-              );
-            }
-          }
-        }
-      });
-
-      // Update orders with conflict information
-      setOrderDetails((prevOrders) =>
-        prevOrders.map((order) => ({
-          ...order,
-          hasConflict: conflictingOrderIds.has(order._id),
-        }))
-      );
-    };
-    if (orderDetails.length > 0) {
-      identifyConflicts();
-    }
-  }, [orderDetails.length]);
 
   // if (loading) {
   //   return <p className="text-center text-gray-500">Loading Orders...</p>;
@@ -1021,8 +1097,8 @@ export default function Orders() {
                 {filteredOrders.map((order, index) => (
                   <li
                     key={index}
-                    className={`p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow ${
-                      order.hasConflict ? "bg-[#FFB8A1]" : "bg-[#F9F9F9]"
+                    className={`p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow  ${
+                      order.hasConflict ? "bg-[#FFF0F0]" : "bg-[#F9F9F9]"
                     }`}
                   >
                     {/* Header with customer name and order details in one row */}
@@ -1077,7 +1153,9 @@ export default function Orders() {
                                     clipRule="evenodd"
                                   />
                                 </svg>
-                                Time Conflict
+                                {order.conflictType === "machine"
+                                  ? "Machine Conflict"
+                                  : "Time Conflict"}
                               </span>
                             )}
                             {/* Status badge */}
@@ -1091,6 +1169,7 @@ export default function Orders() {
                                     {
                                       month: "short",
                                       day: "numeric",
+                                      timeZone: "UTC",
                                     }
                                   )}
                                 </time>

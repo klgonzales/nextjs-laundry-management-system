@@ -43,6 +43,37 @@ export async function POST(request: Request) {
     // Debugging: Log the incoming request body
     console.log("Request Body:", body);
 
+    // Fix the date timezone issue by ensuring the date is stored correctly
+    let appointmentDate = null;
+    if (body.date) {
+      // Parse the date properly to preserve the exact day selected
+      // This creates a date at 12:00 noon on the selected day to avoid timezone issues
+      const dateParts = body.date.split("-");
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1; // JS months are 0-indexed
+        const day = parseInt(dateParts[2], 10);
+        appointmentDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+      } else {
+        // Fallback if date format is unexpected
+        appointmentDate = new Date(body.date);
+      }
+    }
+
+    // Similarly fix the pickup date if present
+    let pickupDate = null;
+    if (body.pickupDate) {
+      const dateParts = body.pickupDate.split("-");
+      if (dateParts.length === 3) {
+        const year = parseInt(dateParts[0], 10);
+        const month = parseInt(dateParts[1], 10) - 1;
+        const day = parseInt(dateParts[2], 10);
+        pickupDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+      } else {
+        pickupDate = new Date(body.pickupDate);
+      }
+    }
+
     // Create the new order
     const newOrder = await Order.create({
       customer_id: body.customer_id,
@@ -62,10 +93,10 @@ export async function POST(request: Request) {
       time_range: body.time_range || [], // Add time_range
       soap: body.soap || null,
       machine_id: body.machine_id || null,
-      date: body.date || new Date(), // Default to current date if not provided
+      date: appointmentDate || null, // Use the fixed date
       address: body.address || "",
       pickup_time: body.pickupTime || null,
-      pickup_date: body.pickupDate || null,
+      pickup_date: pickupDate || null,
     });
 
     console.log(newOrder.time_range);
@@ -111,6 +142,67 @@ export async function POST(request: Request) {
     console.log("Customer found for Pusher trigger:", updatedCustomer); // Log the whole customer object
     console.log("Customer ID for Pusher:", updatedCustomer?.customer_id); // Log just the ID
 
+    // ...existing code...
+    console.log(newOrder.time_range);
+    console.log("New order created:", newOrder);
+    console.log(newOrder.pickup_time);
+
+    // --- START: Reminder Notification Logic ---
+    // Check for upcoming pickup or appointment dates
+    if (body.customer_id) {
+      // Check if there's a pickup date or appointment date
+      const reminderDate = body.pickupDate || body.date;
+
+      if (reminderDate) {
+        const upcomingDate = new Date(reminderDate);
+        const today = new Date();
+
+        // Calculate the difference in days
+        const diffTime = upcomingDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Send reminder if the date is today or tomorrow
+        if (diffDays <= 1 && diffDays >= 0) {
+          const isToday = diffDays === 0;
+          const dateType = body.pickupDate ? "pickup" : "appointment";
+
+          // Create reminder message based on whether it's today or tomorrow
+          const reminderMessage = isToday
+            ? `Reminder: Your ${dateType} for order #${newOrder.order_id} is scheduled for TODAY!`
+            : `Reminder: Your ${dateType} for order #${newOrder.order_id} is scheduled for TOMORROW!`;
+
+          // Create notification in the database
+          const reminderNotification = await Notification.create({
+            message: reminderMessage,
+            recipient_id: body.customer_id,
+            recipient_type: "customer",
+            related_order_id: newOrder._id,
+            read: false,
+            is_reminder: true,
+            timestamp: new Date(),
+          });
+
+          // Send to customer via Pusher
+          const customerChannel = `private-customer-${body.customer_id}`;
+          try {
+            await pusherServer.trigger(
+              customerChannel,
+              "upcoming-reminder",
+              reminderNotification.toObject()
+            );
+            console.log(
+              `Reminder notification sent to ${customerChannel} for ${dateType} ${isToday ? "today" : "tomorrow"}`
+            );
+          } catch (pusherError) {
+            console.error("Error sending reminder notification:", pusherError);
+          }
+        }
+      }
+    }
+    // --- END: Reminder Notification Logic ---
+
+    // Add the new order to the Shop's orders array
+    // ...existing code...
     // --- START: Pusher Trigger ---
     if (updatedAdmin?.admin_id) {
       const adminId = updatedAdmin.admin_id;

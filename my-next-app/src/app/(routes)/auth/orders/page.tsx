@@ -42,6 +42,7 @@ interface Feedback {
 interface Order {
   _id: string;
   customer_id: string;
+  order_id: string;
   date: string;
   total_price: number;
   total_weight: number;
@@ -925,9 +926,7 @@ export default function Orders() {
                       {/* Order ID */}
                       <div>
                         <p className="text-xs text-gray-500">Order ID</p>
-                        <p className="font-medium text-sm">
-                          {order._id.substring(order._id.length - 8)}
-                        </p>
+                        <p className="font-medium text-sm">{order.order_id}</p>
                       </div>
 
                       <div>
