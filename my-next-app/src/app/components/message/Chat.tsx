@@ -223,9 +223,9 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
   }, [contacts.length, userType, shop_id, customer_id]);
 
   // Auto-scroll to bottom when messages change
-  // useEffect(() => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  // }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // --- Pusher Subscription and Message Handling ---
   useEffect(() => {
@@ -308,17 +308,27 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
     };
   }, [pusher, isConnected, room_id]);
 
-  // Fetch messages function
+  // 2. Add debug logging to the fetchMessages function
   const fetchMessages = useCallback(async () => {
-    if (!room_id) return;
+    if (!room_id) {
+      console.log("[Chat] No room_id available for fetching messages");
+      return;
+    }
 
+    console.log(`[Chat] Fetching messages for room_id: ${room_id}`);
     setIsLoadingMessages(true);
     try {
       const response = await fetch(`/api/messages/room/${room_id}`);
-      if (!response.ok) throw new Error("Failed to fetch messages");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Chat] API error (${response.status}): ${errorText}`);
+        throw new Error("Failed to fetch messages");
+      }
 
       const data = await response.json();
-      console.log("[Chat] Fetched messages:", data.messages?.length || 0);
+      console.log(
+        `[Chat] Successfully fetched ${data.messages?.length || 0} messages`
+      );
       setMessages(data.messages || []);
     } catch (error) {
       console.error("[Chat] Error fetching messages:", error);
@@ -408,8 +418,9 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
     });
   };
 
-  // Handle contact selection
+  // 3. Modify the contact selection logic to force a message fetch
   const handleContactSelect = (contactId: string) => {
+    console.log(`[Chat] Selected contact: ${contactId}`);
     setSelectedContactId(contactId);
 
     // Reset unread count
@@ -421,8 +432,17 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
 
     // For mobile view, show conversation
     setIsMobileViewingMessages(true);
-  };
 
+    // Add a small delay to ensure state updates have propagated
+    setTimeout(() => {
+      const newRoomId =
+        userType === "client" && customer_id
+          ? `${customer_id}_${contactId}`
+          : `${contactId}_${shop_id}`;
+      console.log(`[Chat] Forcing message fetch for room: ${newRoomId}`);
+      fetchMessages();
+    }, 100);
+  };
   // Filter contacts based on search term
   const filteredContacts = contacts.filter((contact) =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -644,10 +664,9 @@ export default function Chat({ userType, shop_id, customer_id }: ChatProps) {
               </div>
             ) : isLoadingMessages ? (
               <div className="h-full flex items-center justify-center">
-                <div className="animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-32"></div>
-                  <div className="h-4 bg-gray-200 rounded w-40"></div>
-                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading messages...</p>
                 </div>
               </div>
             ) : messages.length === 0 ? (
