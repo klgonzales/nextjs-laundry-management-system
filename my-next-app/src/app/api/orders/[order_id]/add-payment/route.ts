@@ -4,6 +4,11 @@ import { Order } from "@/app/models/Orders";
 import { Shop } from "@/app/models/Shop";
 import { Admin } from "@/app/models/Admin";
 import { Customer } from "@/app/models/Customer";
+// --- Import Pusher Server ---
+import { pusherServer } from "@/app/lib/pusherServer";
+// --- Import Notification Model (if creating notification here) ---
+import { Notification } from "@/app/models/Notification";
+import mongoose from "mongoose";
 
 export async function PATCH(request: Request, context: { params: any }) {
   const { params } = context;
@@ -113,6 +118,116 @@ export async function PATCH(request: Request, context: { params: any }) {
         console.log("Customer updated:", customer._id);
       }
     }
+
+    let shopOwnerAdmin;
+
+    // If we already have the shop_id, use it directly
+    if (shop_id) {
+      console.log("Using provided shop_id:", shop_id);
+      shopOwnerAdmin = await Admin.findOne({ "shops.shop_id": shop_id });
+    } else {
+      // With this updated version:
+      if (updatedOrder && updatedOrder.shop) {
+        // First try to find by _id if it's a valid ObjectId
+        let orderShop;
+        try {
+          // Check if the shop value looks like a MongoDB ObjectId
+          if (mongoose.Types.ObjectId.isValid(updatedOrder.shop)) {
+            orderShop = await Shop.findById(updatedOrder.shop);
+          }
+        } catch (err) {
+          console.log(
+            "Error finding shop by _id, will try shop_id instead",
+            err
+          );
+        }
+
+        // If not found by _id, try shop_id directly
+        if (!orderShop) {
+          orderShop = await Shop.findOne({ shop_id: updatedOrder.shop });
+        }
+
+        if (orderShop && orderShop.shop_id) {
+          shopOwnerAdmin = await Admin.findOne({
+            "shops.shop_id": orderShop.shop_id,
+          });
+        }
+      } else {
+        // Fallback: Just get all admins and look through their shops
+        const allAdmins = await Admin.find();
+        for (const admin of allAdmins) {
+          // Check if this admin has the order in any of their shops
+          if (
+            admin.shops.some((shop: any) =>
+              shop.orders.some((order: any) => order._id.toString() === orderId)
+            )
+          ) {
+            shopOwnerAdmin = admin;
+            break;
+          }
+        }
+      }
+    }
+    console.log("Shop Owner Admin:", shopOwnerAdmin);
+    console.log("Shop Owner Admin ID:", shopOwnerAdmin?.admin_id);
+    // --- START: Admin Notification via Pusher ---
+    if (shopOwnerAdmin?.admin_id) {
+      const adminId = shopOwnerAdmin?.admin_id;
+
+      const adminChannel = `private-admin-${adminId}`;
+
+      // Get order details for notification
+      const orderNumber = updatedOrder.order_id || "Unknown";
+
+      // Add these debug logs right before your Pusher trigger
+      console.log("[DEBUG API] updatedOrder:", updatedOrder);
+      console.log(
+        "[DEBUG API] proof_of_payment:",
+        updatedOrder.proof_of_payment
+      );
+      console.log("[DEBUG API] newProofOfPayment:", newProofOfPayment);
+
+      try {
+        // 1. Trigger update-payment-status event
+        await pusherServer.trigger(
+          adminChannel,
+          "update-payment-status-proof",
+          {
+            // Send the newProofOfPayment object directly instead of trying to access updatedOrder.proof_of_payment
+            ...newProofOfPayment,
+            // Add these for extra safety
+            payment_status: "for review",
+          }
+        );
+        console.log(
+          `Pusher: 'update-payment-status-proof' triggered on ${adminChannel}`
+        );
+
+        // 2. Create notification record
+        const notificationMessage = `Payment proof added for Order #${orderNumber}`;
+        const notification = await Notification.create({
+          message: notificationMessage,
+          recipient_id: adminId,
+          recipient_type: "admin",
+          related_order_id: orderId,
+          read: false,
+          timestamp: new Date(),
+        });
+
+        // 3. Trigger new-notification event
+        await pusherServer.trigger(
+          adminChannel,
+          "new-notification",
+          notification.toObject()
+        );
+        console.log(`Pusher: 'new-notification' triggered on ${adminChannel}`);
+      } catch (pusherError) {
+        console.error("Error triggering Pusher notification:", pusherError);
+      }
+    } else {
+      console.log("Admin ID not found for this shop, skipping notification");
+    }
+    // --- END: Admin Notification ---
 
     return NextResponse.json({ success: true, newProofOfPayment });
   } catch (error) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FaSignInAlt, FaUserPlus, FaUserShield } from "react-icons/fa";
+import { FiLogIn, FiUserPlus, FiTool } from "react-icons/fi";
 import "./globals.css";
 import Header from "./components/common/Footer";
 import Footer from "./components/common/Footer";
@@ -20,27 +20,27 @@ export default function Home() {
         <div className="w-full">
           <Link
             href="/auth/login"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
-            <FaSignInAlt className="w-5 h-5 mr-2 inline stroke-current" />
+            <FiLogIn className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Sign In</span>
           </Link>
         </div>
         <div className="w-full">
           <Link
             href="/auth/register"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
-            <FaUserPlus className="w-5 h-5 mr-2 inline stroke-current" />
+            <FiUserPlus className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Register</span>
           </Link>
         </div>
         <div className="mt-2 pt-4 border-t border-gray-300 w-full flex justify-center">
           <Link
             href="/admin/login"
-            className="inline-block w-full bg-white text-black border border-black px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
+            className="inline-block w-full bg-white text-black border border-gray-400 px-6 py-3 rounded-md hover:bg-[#F468BB] hover:text-white transition-colors flex items-center justify-center"
           >
-            <FaUserShield className="w-5 h-5 mr-2 inline stroke-current" />
+            <FiTool className="w-5 h-5 mr-2 inline stroke-current" />
             <span className="inline">Continue as Admin</span>
           </Link>
         </div>

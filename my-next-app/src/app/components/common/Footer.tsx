@@ -1,4 +1,4 @@
-import { MdLocationOn, MdEmail, MdPhone } from "react-icons/md";
+import { FiCompass, FiInbox, FiPhone } from "react-icons/fi";
 
 export default function Footer() {
   return (
@@ -7,11 +7,11 @@ export default function Footer() {
         <p>&copy; {new Date().getFullYear()} Elbi Wash. All rights reserved.</p>
 
         <div className="flex items-center space-x-2">
-          <MdEmail />
+          <FiInbox />
           <p>contact@ics.uplb.edu.ph</p>
         </div>
         <div className="flex items-center space-x-2">
-          <MdPhone />
+          <FiPhone />
           <p>(02) 123 4567 890</p>
         </div>
       </div>

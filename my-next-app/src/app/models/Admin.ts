@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 interface AdminDocument extends Document {
-  admin_id: number;
+  admin_id: string;
   name: string;
   email: string;
   password: string;
@@ -11,7 +11,7 @@ interface AdminDocument extends Document {
 }
 
 const AdminSchema = new Schema<AdminDocument>({
-  admin_id: { type: Number, required: true, unique: true },
+  admin_id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },

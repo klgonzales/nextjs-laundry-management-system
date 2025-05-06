@@ -39,8 +39,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: "Login successful",
       admin: {
+        id: admin._id.toString(), // Convert ObjectId to string
+        name: admin.name, // Add name
+        email: admin.email, // Add email
         admin_id: admin.admin_id,
-        shops: admin.shops, // Include shops in the response
+        shops: admin.shops,
         role: admin.role,
       },
     });

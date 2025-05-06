@@ -1,264 +1,259 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/context/AuthContext"; // Import useAuth
-import Sidebar from "../../../../components/common/Sidebar";
-import Header from "../../../../components/common/Header";
-
-import Orders from "../orders/page";
-import Services from "../services/page";
-import Machines from "../machines/page";
-import Feedback from "../feedback/page";
-import Payments from "../payments/page";
-import Analytics from "../analytics/page";
+import { useAuth } from "@/app/context/AuthContext";
+import { useState, useEffect } from "react";
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user } = useAuth(); // Get the logged-in admin's data
-  const [orders, setOrders] = useState(user?.shops?.[0]?.orders || []); // Get orders from the first shop
-  const [orderDetails, setOrderDetails] = useState<any[]>([]); // Store detailed order data
-
-  // Create refs for each section
-  const ordersRef = useRef<HTMLDivElement>(null);
-  const servicesRef = useRef<HTMLDivElement>(null);
-  const machinesRef = useRef<HTMLDivElement>(null);
-  const feedbackRef = useRef<HTMLDivElement>(null);
-  const paymentsRef = useRef<HTMLDivElement>(null);
-  const analyticsRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const [orderDetails, setOrderDetails] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
-      const detailedOrders = await Promise.all(
-        orders.map(async (order: any) => {
-          try {
-            // Fetch customer details
-            const customerResponse = await fetch(
-              `/api/customers/${order.customer_id}`
-            );
-            const customerData = await customerResponse.json();
+      if (!user?.shops?.[0]?.shop_id) {
+        setIsLoading(false);
+        return;
+      }
 
-            // Fetch shop details
-            const shopResponse = await fetch(`/api/shops/${order.shop}`);
-            const shopData = await shopResponse.json();
+      try {
+        const shopId = user.shops[0].shop_id;
+        const response = await fetch(`/api/shops/${shopId}/orders`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch shop orders");
+        }
 
-            return {
-              ...order,
-              customer_name: customerData?.customer?.name || "Unknown Customer",
-              shop_name: shopData?.shop?.name || "Unknown Shop",
-              shop_type: shopData?.shop?.type || "Unknown Type",
-              delivery_fee: shopData?.shop?.delivery_fee || false,
-            };
-          } catch (error) {
-            console.error("Error fetching order details:", error);
-            return {
-              ...order,
-              customer_name: "Error",
-              shop_name: "Error",
-              shop_type: "Error",
-            };
-          }
-        })
-      );
-      setOrderDetails(detailedOrders);
+        const ordersData = await response.json();
 
-      // Calculate unique customers
-      const uniqueCustomers = new Set(
-        detailedOrders.map((order) => order.customer_id)
-      );
-      console.log("Total unique customers:", uniqueCustomers.size);
+        // Process orders to get additional details
+        const detailedOrders = await Promise.all(
+          ordersData.map(async (order: any) => {
+            try {
+              // Fetch customer details
+              const customerResponse = await fetch(
+                `/api/customers/${order.customer_id}`
+              );
+              const customerData = await customerResponse.json();
+
+              return {
+                ...order,
+                customer_name:
+                  customerData?.customer?.name || "Unknown Customer",
+              };
+            } catch (error) {
+              return { ...order, customer_name: "Error" };
+            }
+          })
+        );
+
+        setOrderDetails(detailedOrders);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching order data:", error);
+        setIsLoading(false);
+      }
     };
 
     fetchOrderDetails();
-  }, [orders]);
+  }, [user?.shops]);
 
-  const handleScroll = (section: string) => {
-    switch (section) {
-      case "orders":
-        ordersRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "services":
-        servicesRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "machines":
-        servicesRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "feedback":
-        feedbackRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "payments":
-        paymentsRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      case "analytics":
-        analyticsRef.current?.scrollIntoView({ behavior: "smooth" });
-        break;
-      default:
-        break;
-    }
-  };
-
-  const handleLogout = () => {
-    router.push("/admin/login");
-  };
-
-  console.log("Shop Type:", user?.shops?.[0]?.type); // Debugging
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <Sidebar
-        userType="admin"
-        handleScroll={handleScroll}
-        shopType={user?.shops?.[0]?.type} // Pass the shop type dynamically
-      />
-
-      {/* Main Content */}
-      <div className="flex-1">
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {/* Header */}
-          <Header userType="admin" />
-          <div className="px-4 py-6 sm:px-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Total Customers */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Customers
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {
-                            new Set(
-                              orderDetails.map((order) => order.customer_id)
-                            ).size
-                          }
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Total Revenue */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Revenue
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {orderDetails
-                            .filter(
-                              (order) =>
-                                order.order_status === "completed" &&
-                                order.payment_status === "paid"
-                            )
-                            .reduce(
-                              (total, order) =>
-                                total + (order.total_price || 0),
-                              0
-                            )
-                            .toFixed(2)}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Completed Orders */}
-              <div className="bg-white overflow-hidden shadow rounded-lg">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
-                      <svg
-                        className="h-6 w-6 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m2 0a2 2 0 100-4H7a2 2 0 100 4h10zm-2 0v6m0-6H9m0 0v6m0-6H7m10 0v6m0-6H9"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Completed Orders
-                        </dt>
-                        <dd className="text-lg font-medium text-gray-900">
-                          {
-                            orderDetails.filter(
-                              (order) => order.order_status === "completed"
-                            ).length
-                          }
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Sections */}
-            <div ref={ordersRef}>
-              <Orders />
-            </div>
-            <div ref={servicesRef}>
-              <Services />
-            </div>
-            <div ref={machinesRef}>
-              <Machines />
-            </div>
-            <div ref={feedbackRef}>
-              <Feedback />
-            </div>
-            <div ref={paymentsRef}>
-              <Payments />
-            </div>
-            <div ref={analyticsRef}>
-              <Analytics />
-            </div>
+    <>
+      {/* Dashboard Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Recent Orders Card */}
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6 flex justify-between items-center bg-[#E2E5F4]">
+            <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
+            <button
+              onClick={() => router.push("/admin/shop-self-service/orders")}
+              className="text-sm font-medium text-[#F386C7] hover:text-[#E75DB1]"
+            >
+              View all
+            </button>
           </div>
-        </main>
+          <div className="px-4 py-4 sm:px-6">
+            {isLoading ? (
+              // Skeleton loading UI for orders
+              <div className="animate-pulse">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="py-3 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex justify-between mb-2">
+                      <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                      <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                      <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : orderDetails.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {orderDetails.slice(0, 3).map((order, index) => (
+                  <li key={index} className="py-3">
+                    <div className="flex justify-between">
+                      <div className="text-sm text-gray-900 font-medium">
+                        {order.customer_name}
+                      </div>
+                      <div
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          order.order_status === "completed"
+                            ? "bg-green-100 text-green-800"
+                            : order.order_status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {order.order_status}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>{new Date(order.date).toLocaleDateString()}</span>
+                      <span>₱{order.total_price}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-4 text-gray-500">
+                No orders yet
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Stats Card */}
+        <div className="bg-white shadow overflow-hidden rounded-lg">
+          <div className="px-4 py-5 sm:px-6 bg-[#E2E5F4]">
+            <h3 className="text-lg font-medium text-gray-900">Shop Status</h3>
+          </div>
+          <div className="px-4 py-4 sm:px-6">
+            {isLoading ? (
+              <div className="animate-pulse grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="sm:col-span-1">
+                    <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Active Machines
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {user?.shops?.[0]?.machines?.length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Available Services
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {user?.shops?.[0]?.services?.length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    Pending Orders
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {orderDetails.filter((o) => o.order_status === "pending")
+                      .length || 0}
+                  </dd>
+                </div>
+                <div className="sm:col-span-1">
+                  <dt className="text-sm font-medium text-gray-500">
+                    In Progress
+                  </dt>
+                  <dd className="mt-1 text-lg font-semibold text-gray-900">
+                    {orderDetails.filter(
+                      (o) => o.order_status === "in progress"
+                    ).length || 0}
+                  </dd>
+                </div>
+              </dl>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <button
+          onClick={() => router.push("/admin/shop-self-service/orders")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Manage Orders</span>
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/shop-self-service/services")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-purple-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Shop Services</span>
+        </button>
+
+        <button
+          onClick={() => router.push("/admin/shop-self-service/machines")}
+          className="bg-white hover:bg-[#EADDFF] shadow rounded-lg p-4 border border-gray-200 flex items-center justify-center space-x-2 p-5"
+        >
+          <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+            <svg
+              className="h-5 w-5 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"
+              />
+            </svg>
+          </span>
+          <span className="text-gray-900 font-medium">Machines</span>
+        </button>
+      </div>
+    </>
   );
 }

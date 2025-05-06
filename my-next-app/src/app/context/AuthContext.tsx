@@ -7,8 +7,10 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { Order, Service } from "../models/types";
+import { useRouter } from "next/navigation"; // Import useRouter from next/navigation for App Router
+import { Order, Service } from "../models/types"; // Assuming types are correctly defined
 
+// ... (User interface, AuthContextType interface, createContext) ...
 interface User {
   id: string; // User ID
   name: string;
@@ -17,89 +19,108 @@ interface User {
   phone?: number; // Optional for customers
   address?: string; // Optional for customers
   admin_id?: string; // Optional for admins
-  //shops?: string[]; // Optional for admins
   orders?: string[]; // Optional for admins
   role: "customer" | "admin";
   shops?: {
+    payment_methods: any;
+    address: string;
+    email: string;
+    phone: string;
     name: string;
-    services?: Service[]; // Define services as an optional array of Service objects
+    services?: Service[];
     shop_id: string;
-    orders?: Order[]; // Optional for admins
+    orders?: Order[];
     type: string;
-    opening_hours?: {
-      date: string; // Date when the shop is open
-      open: string; // Time when the shop opens
-      close: string; // Time when the shop closes
-    }[]; // Array of opening hours
+    opening_hours?: { date: string; open: string; close: string }[];
     machines?: {
-      machine_id: string; // Unique identifier for the machine
-      minimum_kg: number | null; // Minimum weight the machine can handle
+      machine_id: string;
+      minimum_kg: number | null;
       type: string;
-      minimum_minutes: number | null; // Optional: Minimum minutes for the machine
-      availability: {
-        date: string; // Date when the machine is available
-        open: string; // Time when the machine is available
-        close: string; // Time when the machine is available
-      }[]; // Array of availability slots
-      price_per_minimum_kg: number | null; // Price for the minimum weight
-      customer_id: string | null; // Customer ID if the machine is booked
-      appointments: {
-        date: string;
-        time: string;
-        customer_id: string;
-      }[]; // Array of appointments
-    }[]; // Define machines as an array of objects with machine_id and other properties
-  }[]; // Define shops as an array of objects with a name property and optional services
-  // other properties
+      minimum_minutes: number | null;
+      availability: { date: string; open: string; close: string }[];
+      price_per_minimum_kg: number | null;
+      customer_id: string | null;
+      appointments: { date: string; time: string; customer_id: string }[];
+    }[];
+  }[];
 }
 
 interface AuthContextType {
   user: User | null;
   login: (userData: User) => void;
   logout: () => void;
+  isLoading: boolean; // Add this line
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setState] = useState<boolean>(true); // Add loading state
+  const router = useRouter(); // Initialize the router
 
-  // Simulate fetching user data (e.g., from localStorage or an API)
   useEffect(() => {
+    // Set loading to true before checking localStorage
+    setState(true);
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
-        setUser(storedUser ? JSON.parse(storedUser) : null);
+        setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error("Failed to parse user data from localStorage:", error);
         setUser(null);
+        localStorage.removeItem("user"); // Clear invalid data
       }
     }
+    // Set loading to false after checking is complete
+    setState(false);
   }, []);
 
   const login = (userData: User) => {
+    // ... (existing login logic) ...
     if (userData.role === "customer" || userData.role === "admin") {
-      console.log("Logging in customer:", userData); // Debugging
+      console.log("Logging in user:", userData);
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
     } else {
-      console.error("Invalid user role:", userData.role); // Debugging
+      console.error("Invalid user role:", userData.role);
     }
   };
 
   const logout = () => {
-    console.log("Logging out user with role:", user?.role); // Debugging
-    setUser(null);
-    localStorage.removeItem("user"); // Remove user from localStorage
+    console.log("Logging out user with role:", user?.role);
+
+    // Add state to track logout in progress
+    setState(true); // Set loading true during logout
+
+    try {
+      // First, navigate away
+      router.push("/");
+
+      // Then use a small timeout to ensure navigation starts before state changes
+      setTimeout(() => {
+        // Only then clear the state
+        setUser(null);
+        localStorage.removeItem("user");
+        setState(false);
+      }, 100);
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Still clear state if navigation fails
+      setUser(null);
+      localStorage.removeItem("user");
+      setState(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// ... (useAuth hook remains the same) ...
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

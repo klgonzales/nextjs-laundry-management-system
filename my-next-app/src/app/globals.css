@@ -6,30 +6,45 @@
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-rgb: 255, 255, 255;
-  --button-hover-bg: 244, 104, 187;
-  --button-hover-text: 255, 255, 255;
+  --button-hover-bg: 234, 221, 255;
+  --button-hover-text: 61, 78, 176;
+
+  /* Custom button colors */
+  --btn-success-bg: 205, 247, 178; /* CDF7B2 */
+  --btn-success-text: 46, 125, 50; /* 2E7D32 - dark green */
+  --btn-success-hover: 189, 237, 156; /* bded9c - slightly darker */
+
+  --btn-danger-bg: 255, 158, 158; /* FF9E9E */
+  --btn-danger-text: 198, 40, 40; /* C62828 - dark red */
+  --btn-danger-hover: 255, 138, 138; /* ff8a8a - slightly darker */
+
+  --btn-primary-bg: 244, 104, 187; /* F468BB */
+  --btn-primary-text: 255, 255, 255; /* white */
+  --btn-primary-hover: 228, 75, 168; /* e44ba8 - slightly darker */
+
+  /* New button colors */
+  --btn-neutral-bg: 249, 249, 249; /* F9F9F9 */
+  --btn-neutral-text: 244, 104, 187; /* F468BB */
+  --btn-neutral-hover: 240, 240, 240; /* F0F0F0 - slightly darker */
+
+  --btn-secondary-bg: 61, 78, 176; /* 3D4EB0 */
+  --btn-secondary-text: 255, 255, 255; /* white */
+  --btn-secondary-hover: 50, 66, 150; /* 324296 - slightly darker */
+
+  /* Tertiary button colors */
+  --btn-tertiary-bg: 234, 221, 255; /* EADDFF */
+  --btn-tertiary-text: 61, 78, 176; /* 3D4EB0 */
+  --btn-tertiary-hover: 220, 200, 255; /* DCC8FF - slightly darker */
+
+  /* Tertiary neutral button colors */
+  --btn-tertiary-neutral-bg: 249, 249, 249; /* F9F9F9 */
+  --btn-tertiary-neutral-text: 61, 78, 176; /* 3D4EB0 */
+  --btn-tertiary-neutral-hover: 240, 240, 240; /* F0F0F0 - slightly darker */
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
-}
-
-button {
-  background: rgb(var(--background-rgb));
-  color: rgb(var(--foreground-rgb));
-  border: 1px solid rgb(var(--foreground-rgb));
-}
-
-button:hover,
-button:focus {
-  background: rgb(var(--button-hover-bg));
-  color: rgb(var(--button-hover-text));
-}
-
-button:active {
-  background: rgb(var(--button-hover-bg));
-  color: rgb(var(--button-hover-text));
 }
 
 h1 {
@@ -41,6 +56,116 @@ h2 {
   /* color: #3d4eb0; */
   font-weight: normal;
 }
-a {
-  color: #3d4eb0;
+
+/* Button Styles */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md transition-colors duration-200 font-medium;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1 text-sm rounded-md;
+  }
+
+  .btn-success {
+    background-color: rgb(var(--btn-success-bg));
+    color: rgb(var(--btn-success-text));
+  }
+
+  .btn-success:hover {
+    background-color: rgb(var(--btn-success-hover));
+  }
+
+  .btn-danger {
+    background-color: rgb(var(--btn-danger-bg));
+    color: rgb(var(--btn-danger-text));
+  }
+
+  .btn-danger:hover {
+    background-color: rgb(var(--btn-danger-hover));
+  }
+
+  .btn-primary {
+    background-color: rgb(var(--btn-primary-bg));
+    color: rgb(var(--btn-primary-text));
+  }
+
+  .btn-primary:hover {
+    background-color: rgb(var(--btn-primary-hover));
+  }
+
+  /* New button styles */
+  .btn-neutral {
+    background-color: rgb(var(--btn-neutral-bg));
+    color: rgb(var(--btn-neutral-text));
+  }
+
+  .btn-neutral:hover {
+    background-color: rgb(var(--btn-neutral-hover));
+  }
+
+  .btn-secondary {
+    background-color: rgb(var(--btn-secondary-bg));
+    color: rgb(var(--btn-secondary-text));
+  }
+
+  .btn-secondary:hover {
+    background-color: rgb(var(--btn-secondary-hover));
+  }
+
+  /* Add this to your @layer components section */
+  .btn-secondary.active {
+    background-color: rgb(var(--btn-secondary-bg));
+    color: rgb(var(--btn-secondary-text));
+  }
+
+  /* If you want a lighter active version */
+  .btn-secondary:not(.active) {
+    background-color: rgba(var(--btn-secondary-bg), 0.1);
+    color: rgb(var(--btn-secondary-bg));
+  }
+
+  /* Tertiary button styles */
+  .btn-tertiary {
+    background-color: rgb(var(--btn-tertiary-bg));
+    color: rgb(var(--btn-tertiary-text));
+  }
+
+  .btn-tertiary:hover {
+    background-color: rgb(var(--btn-tertiary-hover));
+  }
+
+  /* Tertiary neutral button styles */
+  .btn-tertiary-neutral {
+    background-color: rgb(var(--btn-tertiary-neutral-bg));
+    color: rgb(var(--btn-tertiary-neutral-text));
+  }
+
+  .btn-tertiary-neutral:hover {
+    background-color: rgb(var(--btn-tertiary-neutral-hover));
+  }
+
+  /* Status badge styles */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    background-color: rgb(var(--btn-success-bg));
+    color: rgb(var(--btn-success-text));
+  }
+
+  .badge-danger {
+    background-color: rgb(var(--btn-danger-bg));
+    color: rgb(var(--btn-danger-text));
+  }
+
+  .badge-primary {
+    background-color: rgb(var(--btn-primary-bg));
+    color: rgb(var(--btn-primary-text));
+  }
+
+  .badge-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
 }

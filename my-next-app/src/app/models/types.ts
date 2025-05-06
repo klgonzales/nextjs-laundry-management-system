@@ -18,7 +18,7 @@ export interface Customer extends User {
 }
 
 export interface Admin extends User {
-  admin_id: number;
+  admin_id: string;
   shop_id: string;
   shop_type: ShopType;
   role: "admin";
