@@ -612,6 +612,25 @@ export default function Analytics() {
 
   const summary = calculateSummary();
 
+  // Add this useEffect to force chart re-render when data changes
+  useEffect(() => {
+    if (
+      paymentChartData.labels.length > 0 ||
+      ratingChartData.labels.length > 0
+    ) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        // Force re-render of the component
+        setForceUpdate((prev) => !prev);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [paymentChartData.labels.length, ratingChartData.labels.length]);
+
+  // Add this state at the top of your component
+  const [forceUpdate, setForceUpdate] = useState(false);
+
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
@@ -629,11 +648,17 @@ export default function Analytics() {
               ? "Real-time updates active"
               : "Real-time updates disconnected"}
           </span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-3 text-xs text-blue-600 hover:underline"
+          >
+            Reconnect
+          </button>
         </div>
 
         {/* Summary Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Total Revenue
             </p>
@@ -641,7 +666,7 @@ export default function Analytics() {
               ₱{summary.totalPayments}
             </h4>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Average Payment
             </p>
@@ -649,7 +674,7 @@ export default function Analytics() {
               ₱{summary.avgPaymentAmount}
             </h4>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Total Orders
             </p>
@@ -657,7 +682,7 @@ export default function Analytics() {
               {summary.totalOrders}
             </h4>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Average Rating
             </p>
@@ -856,7 +881,11 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="h-80">
-                <Line options={paymentOptions} data={paymentData_chart} />
+                <Line
+                  key={`payment-chart-${JSON.stringify(paymentChartData.labels)}`}
+                  options={paymentOptions}
+                  data={paymentData_chart}
+                />
               </div>
             )}
           </div>
@@ -905,7 +934,11 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="h-80">
-                <Line options={ratingOptions} data={ratingData_chart} />
+                <Line
+                  key={`rating-chart-${JSON.stringify(ratingChartData.labels)}`}
+                  options={ratingOptions}
+                  data={ratingData_chart}
+                />
               </div>
             )}
           </div>

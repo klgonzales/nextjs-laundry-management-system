@@ -115,12 +115,17 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                       <span>
-                        {order.date
-                          ? new Date(order.date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
+                        {" "}
+                        Order Date Placed:
+                        {order.date_placed
+                          ? new Date(order.date_placed).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              }
+                            )
                           : "No date available"}
                       </span>
                       <span>₱{order.total_price}</span>

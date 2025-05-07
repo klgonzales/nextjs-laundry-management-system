@@ -426,13 +426,13 @@ export default function Analytics() {
   // Calculate chart data whenever filtered data changes
   const paymentChartData = getFilteredPaymentData();
   const ratingChartData = getFilteredRatingData();
-
+  // Replace your chart data creation with this safer implementation
   const paymentData_chart = {
-    labels: paymentChartData.labels,
+    labels: paymentChartData.labels || [],
     datasets: [
       {
         label: "Payment Amount",
-        data: paymentChartData.amounts,
+        data: paymentChartData.amounts || [],
         borderColor: "rgb(53, 162, 235)",
         backgroundColor: "rgba(53, 162, 235, 0.2)",
         fill: true,
@@ -445,11 +445,11 @@ export default function Analytics() {
   };
 
   const ratingData_chart = {
-    labels: ratingChartData.labels,
+    labels: ratingChartData.labels || [],
     datasets: [
       {
         label: "Average Rating",
-        data: ratingChartData.ratings,
+        data: ratingChartData.ratings || [],
         borderColor: "rgb(255, 99, 132)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         fill: true,
@@ -460,7 +460,6 @@ export default function Analytics() {
       },
     ],
   };
-
   // Chart options
   const paymentOptions = {
     responsive: true,
@@ -513,7 +512,7 @@ export default function Analytics() {
       },
     },
     animation: {
-      duration: 1000, // Animation duration in milliseconds
+      duration: 0, // Animation duration in milliseconds
       easing: "easeOutQuart" as const, // Animation easing function
     },
   };
@@ -565,8 +564,7 @@ export default function Analytics() {
       },
     },
     animation: {
-      duration: 1000, // Animation duration in milliseconds
-      easing: "easeOutQuart" as const, // Animation easing function
+      duration: 0, // Animation duration in milliseconds
     },
   };
 
@@ -612,6 +610,25 @@ export default function Analytics() {
 
   const summary = calculateSummary();
 
+  // Add this useEffect to force chart re-render when data changes
+  useEffect(() => {
+    if (
+      paymentChartData.labels.length > 0 ||
+      ratingChartData.labels.length > 0
+    ) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        // Force re-render of the component
+        setForceUpdate((prev) => !prev);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [paymentChartData.labels.length, ratingChartData.labels.length]);
+
+  // Add this state at the top of your component
+  const [forceUpdate, setForceUpdate] = useState(false);
+
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
       <div className="px-4 py-5 sm:px-6">
@@ -629,6 +646,12 @@ export default function Analytics() {
               ? "Real-time updates active"
               : "Real-time updates disconnected"}
           </span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-3 text-xs text-blue-600 hover:underline"
+          >
+            Reconnect
+          </button>
         </div>
 
         {/* Summary Stats Cards */}
@@ -856,7 +879,11 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="h-80">
-                <Line options={paymentOptions} data={paymentData_chart} />
+                <Line
+                  key={`payment-chart-${JSON.stringify(paymentChartData.labels)}`}
+                  options={paymentOptions}
+                  data={paymentData_chart}
+                />
               </div>
             )}
           </div>
@@ -905,7 +932,11 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="h-80">
-                <Line options={ratingOptions} data={ratingData_chart} />
+                <Line
+                  key={`rating-chart-${JSON.stringify(ratingChartData.labels)}`}
+                  options={ratingOptions}
+                  data={ratingData_chart}
+                />
               </div>
             )}
           </div>

@@ -8,7 +8,7 @@ import { usePusher } from "@/app/context/PusherContext";
 // import { pusherClient } from "@/app/lib/pusherClient";
 import type { Channel } from "pusher-js";
 // --- Add useRef ---
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 // Add this import at the top of your file
 import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
 
@@ -95,6 +95,68 @@ export default function Orders() {
     },
     []
   );
+  const subcategory = ongoingSubcategory || filterStatus;
+  const count = orderDetails.filter(
+    (order) => order.order_status === subcategory
+  ).length;
+
+  const orderCounts = useMemo(() => {
+    if (!orderDetails.length)
+      return {
+        all: 0,
+        pending: 0,
+        scheduled: 0,
+        inProgress: 0, // Total of all ongoing statuses
+        toBePickedUp: 0,
+        sorting: 0,
+        washing: 0,
+        drying: 0,
+        folding: 0,
+        toBeDelivered: 0,
+        completed: 0,
+        cancelled: 0,
+      };
+
+    const counts = {
+      all: orderDetails.length,
+      pending: 0,
+      scheduled: 0,
+      inProgress: 0, // We'll calculate this as a total
+      toBePickedUp: 0,
+      sorting: 0,
+      washing: 0,
+      drying: 0,
+      folding: 0,
+      toBeDelivered: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+
+    for (const order of orderDetails) {
+      if (order.order_status === "pending") counts.pending++;
+      else if (order.order_status === "scheduled") counts.scheduled++;
+      else if (order.order_status === "completed") counts.completed++;
+      else if (order.order_status === "cancelled") counts.cancelled++;
+      // Handle ongoing subcategories
+      else if (order.order_status === "to be picked up") counts.toBePickedUp++;
+      else if (order.order_status === "sorting") counts.sorting++;
+      else if (order.order_status === "washing") counts.washing++;
+      else if (order.order_status === "drying") counts.drying++;
+      else if (order.order_status === "folding") counts.folding++;
+      else if (order.order_status === "to be delivered") counts.toBeDelivered++;
+    }
+
+    // Calculate total inProgress count as sum of all ongoing subcategories
+    counts.inProgress =
+      counts.toBePickedUp +
+      counts.sorting +
+      counts.washing +
+      counts.drying +
+      counts.folding +
+      counts.toBeDelivered;
+
+    return counts;
+  }, [orderDetails]);
 
   // Define fetchOrderDetails as a useCallback to prevent recreating on every render
   const fetchOrderDetails = useCallback(
@@ -578,6 +640,61 @@ export default function Orders() {
     }
   };
 
+  // Define a type for the keys in orderCounts
+  type OrderCountKey = keyof typeof orderCounts;
+
+  // Define this component right before your return statement
+  const OngoingSubcategories = () => (
+    <div className="mt-4">
+      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+        <h6 className="text-sm font-medium text-gray-700 mb-2">
+          Ongoing Order Status
+        </h6>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {[
+            { key: "toBePickedUp" as OrderCountKey, label: "To be picked up" },
+            { key: "sorting" as OrderCountKey, label: "Sorting" },
+            { key: "washing" as OrderCountKey, label: "Washing" },
+            { key: "drying" as OrderCountKey, label: "Drying" },
+            { key: "folding" as OrderCountKey, label: "Folding" },
+            { key: "toBeDelivered" as OrderCountKey, label: "To be delivered" },
+          ].map((item) => (
+            <button
+              key={item.key}
+              onClick={() => {
+                // Convert the key to match your order_status format
+                const statusValue = item.label.toLowerCase();
+                setFilterStatus("ongoing");
+                setOngoingSubcategory(statusValue);
+              }}
+              className={`px-3 py-2 rounded-md flex items-center justify-between ${
+                ongoingSubcategory === item.label.toLowerCase()
+                  ? "bg-purple-100 border border-purple-200"
+                  : "bg-white border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              <span className="text-sm">{item.label}</span>
+              <span
+                className={`px-1.5 py-0.5 text-xs rounded-full ${
+                  orderCounts[item.key] > 0
+                    ? "bg-purple-100 text-purple-800"
+                    : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {orderCounts[item.key]}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Then in your component, conditionally render it:
+  {
+    filterStatus === "ongoing" && <OngoingSubcategories />;
+  }
+
   const handleUpdateDateCompleted = async (orderId: string) => {
     try {
       const newDateCompleted = new Date().toISOString();
@@ -798,6 +915,15 @@ export default function Orders() {
             }`}
           >
             All
+            <span
+              className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                orderCounts.all > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.all}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -811,6 +937,15 @@ export default function Orders() {
             }`}
           >
             Pending
+            <span
+              className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                orderCounts.pending > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.pending}
+            </span>
           </button>
           <button
             onClick={() => setFilterStatus("ongoing")}
@@ -821,6 +956,15 @@ export default function Orders() {
             }`}
           >
             Ongoing
+            <span
+              className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                orderCounts.inProgress > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.inProgress}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -834,6 +978,15 @@ export default function Orders() {
             }`}
           >
             Completed
+            <span
+              className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                orderCounts.completed > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.completed}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -847,12 +1000,21 @@ export default function Orders() {
             }`}
           >
             Cancelled
+            <span
+              className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                orderCounts.cancelled > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.cancelled}
+            </span>
           </button>
         </div>
 
         {/* Subcategories for Ongoing */}
         {filterStatus === "ongoing" && (
-          <div className="mt-4 flex space-x-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             {[
               "to be picked up",
               "sorting",
@@ -860,19 +1022,35 @@ export default function Orders() {
               "drying",
               "folding",
               "to be delivered",
-            ].map((subcategory) => (
-              <button
-                key={subcategory}
-                onClick={() => setOngoingSubcategory(subcategory)}
-                className={`btn ${
-                  ongoingSubcategory === subcategory
-                    ? "btn-tertiary"
-                    : "btn-tertiary-neutral"
-                }`}
-              >
-                {subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}
-              </button>
-            ))}
+            ].map((subcategory) => {
+              // Get count for this subcategory
+              const count = orderDetails.filter(
+                (order) => order.order_status === subcategory
+              ).length;
+
+              return (
+                <button
+                  key={subcategory}
+                  onClick={() => setOngoingSubcategory(subcategory)}
+                  className={`btn ${
+                    ongoingSubcategory === subcategory
+                      ? "btn-tertiary"
+                      : "btn-tertiary-neutral"
+                  }`}
+                >
+                  {subcategory.charAt(0).toUpperCase() + subcategory.slice(1)}
+                  <span
+                    className={`ml-1.5 px-2 py-0.5 text-xs rounded-full ${
+                      count > 0
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

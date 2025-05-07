@@ -6,7 +6,7 @@ import { usePusher } from "@/app/context/PusherContext";
 // import { pusherClient } from "@/app/lib/pusherClient";
 import type { Channel } from "pusher-js";
 // --- Add useRef ---
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 // Add this import at the top of your file
 import { useRealTimeUpdates } from "@/app/context/RealTimeUpdatesContext";
 // Add icons import at the top if not already imported
@@ -99,6 +99,37 @@ export default function Orders() {
     []
   );
 
+  // Add this memoized counts object
+  const orderCounts = useMemo(() => {
+    if (!orderDetails.length)
+      return {
+        all: 0,
+        pending: 0,
+        scheduled: 0,
+        inProgress: 0,
+        completed: 0,
+        cancelled: 0,
+      };
+
+    const counts = {
+      all: orderDetails.length,
+      pending: 0,
+      scheduled: 0,
+      inProgress: 0,
+      completed: 0,
+      cancelled: 0,
+    };
+
+    for (const order of orderDetails) {
+      if (order.order_status === "pending") counts.pending++;
+      else if (order.order_status === "scheduled") counts.scheduled++;
+      else if (order.order_status === "in progress") counts.inProgress++;
+      else if (order.order_status === "completed") counts.completed++;
+      else if (order.order_status === "cancelled") counts.cancelled++;
+    }
+
+    return counts;
+  }, [orderDetails]);
   // Define fetchOrderDetails as a useCallback to prevent recreating on every render
   const fetchOrderDetails = useCallback(
     async (ordersToDetail: Order[]): Promise<DetailedOrder[]> => {
@@ -922,6 +953,15 @@ export default function Orders() {
             }`}
           >
             All
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.all > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.all}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -935,6 +975,15 @@ export default function Orders() {
             }`}
           >
             Pending
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.pending > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.pending}
+            </span>
           </button>
           <button
             onClick={() => setFilterStatus("scheduled")}
@@ -945,6 +994,15 @@ export default function Orders() {
             }`}
           >
             Scheduled
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.scheduled > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.scheduled}
+            </span>
           </button>
           <button
             onClick={() => setFilterStatus("in progress")}
@@ -955,6 +1013,15 @@ export default function Orders() {
             }`}
           >
             Ongoing
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.inProgress > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.inProgress}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -968,6 +1035,15 @@ export default function Orders() {
             }`}
           >
             Completed
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.completed > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.completed}
+            </span>
           </button>
           <button
             onClick={() => {
@@ -981,6 +1057,15 @@ export default function Orders() {
             }`}
           >
             Cancelled
+            <span
+              className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full ${
+                orderCounts.cancelled > 0
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {orderCounts.cancelled}
+            </span>
           </button>
         </div>
       </div>
