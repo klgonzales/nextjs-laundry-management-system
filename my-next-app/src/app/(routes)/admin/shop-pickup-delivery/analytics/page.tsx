@@ -329,7 +329,13 @@ export default function Analytics() {
   }, [paymentData, paymentTimePeriod]);
 
   const getFilteredRatingData = useCallback(() => {
-    if (!ratingData.length) return { labels: [], ratings: [] };
+    if (!ratingData.length) {
+      // Return default values with at least 2 data points to avoid errors
+      return {
+        labels: ["No Data", "No Data"],
+        ratings: [0, 0],
+      };
+    }
 
     let cutoffDate;
     switch (ratingTimePeriod) {
@@ -426,17 +432,25 @@ export default function Analytics() {
   // Calculate chart data whenever filtered data changes
   const paymentChartData = getFilteredPaymentData();
   const ratingChartData = getFilteredRatingData();
-
+  // Replace your chart data creation with this safer implementation
+  // 3. Apply the same fix to the payment chart:
   const paymentData_chart = {
-    labels: paymentChartData.labels,
+    labels:
+      paymentChartData.labels.length >= 2
+        ? paymentChartData.labels
+        : ["No Data", "No Data"],
     datasets: [
       {
         label: "Payment Amount",
-        data: paymentChartData.amounts,
+        data:
+          paymentChartData.amounts.length >= 2
+            ? paymentChartData.amounts
+            : [0, 0],
         borderColor: "rgb(53, 162, 235)",
         backgroundColor: "rgba(53, 162, 235, 0.2)",
         fill: true,
-        tension: 0.3,
+        // Reduce tension to 0 if data is sparse
+        tension: paymentChartData.amounts.length >= 3 ? 0.3 : 0,
         pointBackgroundColor: "rgb(53, 162, 235)",
         pointRadius: 4,
         pointHoverRadius: 6,
@@ -444,16 +458,24 @@ export default function Analytics() {
     ],
   };
 
+  // 2. Add protection for missing data in chart creation:
   const ratingData_chart = {
-    labels: ratingChartData.labels,
+    labels:
+      ratingChartData.labels.length >= 2
+        ? ratingChartData.labels
+        : ["No Data", "No Data"],
     datasets: [
       {
         label: "Average Rating",
-        data: ratingChartData.ratings,
+        data:
+          ratingChartData.ratings.length >= 2
+            ? ratingChartData.ratings
+            : [0, 0],
         borderColor: "rgb(255, 99, 132)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
         fill: true,
-        tension: 0.3,
+        // Reduce tension to 0 if data is sparse
+        tension: ratingChartData.ratings.length >= 3 ? 0.3 : 0,
         pointBackgroundColor: "rgb(255, 99, 132)",
         pointRadius: 4,
         pointHoverRadius: 6,
@@ -512,8 +534,13 @@ export default function Analytics() {
         },
       },
     },
+    elements: {
+      line: {
+        tension: ratingChartData.ratings.length >= 3 ? 0.3 : 0, // Disable curve for sparse data
+      },
+    },
     animation: {
-      duration: 1000, // Animation duration in milliseconds
+      duration: 0, // Animation duration in milliseconds
       easing: "easeOutQuart" as const, // Animation easing function
     },
   };
@@ -564,9 +591,13 @@ export default function Analytics() {
         },
       },
     },
+    elements: {
+      line: {
+        tension: ratingChartData.ratings.length >= 3 ? 0.3 : 0, // Disable curve for sparse data
+      },
+    },
     animation: {
-      duration: 1000, // Animation duration in milliseconds
-      easing: "easeOutQuart" as const, // Animation easing function
+      duration: 0, // Animation duration in milliseconds
     },
   };
 
@@ -630,6 +661,49 @@ export default function Analytics() {
 
   // Add this state at the top of your component
   const [forceUpdate, setForceUpdate] = useState(false);
+  // Define proper types for the chart component
+  interface SafeChartProps {
+    data: {
+      labels: string[];
+      datasets: {
+        label: string;
+        data: number[];
+        borderColor: string;
+        backgroundColor: string;
+        fill?: boolean;
+        tension?: number;
+        pointBackgroundColor?: string;
+        pointRadius?: number;
+        pointHoverRadius?: number;
+      }[];
+    };
+    options: any;
+    type?: string;
+    minimumDataPoints?: number;
+  }
+
+  const SafeChart = ({
+    data,
+    options,
+    type = "line",
+    minimumDataPoints = 2,
+  }: SafeChartProps) => {
+    const hasEnoughData = data.datasets[0]?.data.length >= minimumDataPoints;
+
+    // Only render chart if we have enough data, otherwise show placeholder
+    return hasEnoughData ? (
+      <Line options={options} data={data} />
+    ) : (
+      <div className="flex items-center justify-center h-full bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-500 mb-2">Not enough data to display chart</p>
+          <p className="text-sm text-gray-400">
+            At least {minimumDataPoints} data points are needed
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="mt-8 bg-white shadow rounded-lg">
@@ -658,7 +732,7 @@ export default function Analytics() {
 
         {/* Summary Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Total Revenue
             </p>
@@ -666,7 +740,7 @@ export default function Analytics() {
               ₱{summary.totalPayments}
             </h4>
           </div>
-          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Average Payment
             </p>
@@ -674,7 +748,7 @@ export default function Analytics() {
               ₱{summary.avgPaymentAmount}
             </h4>
           </div>
-          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Total Orders
             </p>
@@ -682,7 +756,7 @@ export default function Analytics() {
               {summary.totalOrders}
             </h4>
           </div>
-          <div className="bg-[#F9F9F9] rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm font-medium text-gray-500 mb-1">
               Average Rating
             </p>
@@ -881,10 +955,10 @@ export default function Analytics() {
               </div>
             ) : (
               <div className="h-80">
-                <Line
-                  key={`payment-chart-${JSON.stringify(paymentChartData.labels)}`}
-                  options={paymentOptions}
-                  data={paymentData_chart}
+                <SafeChart
+                  data={ratingData_chart}
+                  options={ratingOptions}
+                  minimumDataPoints={2}
                 />
               </div>
             )}
