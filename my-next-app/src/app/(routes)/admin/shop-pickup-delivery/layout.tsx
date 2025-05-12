@@ -25,7 +25,80 @@ export default function AdminLayout({
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [completedOrders, setCompletedOrders] = useState(0);
 
-  // Calculate stats from orders
+  // 1. First, add a new function to handle refreshing the data
+  const handleRefreshStats = async () => {
+    if (!user?.shops?.[0]?.shop_id) {
+      console.log("[Layout] No shop ID available for refresh");
+      return;
+    }
+
+    // Show loading state
+    setIsLoading(true);
+
+    try {
+      const shopId = user.shops[0].shop_id;
+      console.log(`[Layout] Manually refreshing data for shop: ${shopId}`);
+
+      // Fetch orders from API
+      const response = await fetch(`/api/shops/${shopId}/orders`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch shop orders");
+      }
+
+      const ordersData = await response.json();
+
+      // Process orders to get additional details
+      const detailedOrders = await Promise.all(
+        ordersData.map(async (order: any) => {
+          try {
+            // Fetch customer details
+            const customerResponse = await fetch(
+              `/api/customers/${order.customer_id}`
+            );
+            const customerData = await customerResponse.json();
+
+            return {
+              ...order,
+              customer_name: customerData?.customer?.name || "Unknown Customer",
+            };
+          } catch (error) {
+            console.error("Error fetching order details:", error);
+            return { ...order, customer_name: "Error" };
+          }
+        })
+      );
+
+      // Update state with new data
+      setOrders(ordersData);
+      setOrderDetails(detailedOrders);
+      calculateStats(detailedOrders);
+
+      console.log("[Layout] Data refresh completed successfully");
+    } catch (error) {
+      console.error("[Layout] Error refreshing data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2. Then add these states to track the refresh button state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  // 3. Create an enhanced version of the refresh function with animation
+  const refreshStats = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    await handleRefreshStats();
+    setLastRefreshed(new Date());
+
+    // Reset the refreshing state after animation completes
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
+  // In your calculateStats function, add logging
   const calculateStats = useCallback((orders: any[]) => {
     console.log(`[Layout] Calculating stats from ${orders.length} orders`);
 
@@ -44,6 +117,7 @@ export default function AdminLayout({
       .filter(Boolean);
     const uniqueCustomers = new Set(customerIds);
     setTotalCustomers(uniqueCustomers.size);
+    console.log(`[Layout] Updated customers count: ${uniqueCustomers.size}`);
 
     // Calculate total revenue from completed and paid orders
     const paidOrders = orders.filter((order) => {
@@ -61,12 +135,14 @@ export default function AdminLayout({
     }, 0);
 
     setTotalRevenue(revenue);
+    console.log(`[Layout] Updated total revenue: ₱${revenue.toFixed(2)}`);
 
     // Count completed orders
     const completed = orders.filter(
       (order) => order.order_status === "completed"
     ).length;
     setCompletedOrders(completed);
+    console.log(`[Layout] Updated completed orders: ${completed}`);
   }, []);
 
   // Fetch order data
@@ -130,7 +206,7 @@ export default function AdminLayout({
     }
   }, [user?.shops, calculateStats]);
 
-  // Set up Pusher for real-time updates
+  // Modify your Pusher event handlers to recalculate stats after updating orders
   useEffect(() => {
     if (
       !pusher ||
@@ -158,29 +234,62 @@ export default function AdminLayout({
                 customer_name: data.customer_name || "New Customer",
               },
             ];
-            calculateStats(updatedOrders);
+            // Immediately recalculate stats after updating orders
+            setTimeout(() => calculateStats(updatedOrders), 0);
             return updatedOrders;
           });
         }
       });
 
-      // Handle order updates
-      channel.bind("order-update", (data: any) => {
+      // Handle order updates with specific check for "completed" status
+      channel.bind("update-order-status", (data: any) => {
         if (data.shop_id === shopId) {
           setOrderDetails((prevOrders) => {
             const updatedOrders = prevOrders.map((order) =>
               order._id === data._id ? { ...order, ...data } : order
             );
-            calculateStats(updatedOrders);
+
+            // Check if this update changed an order to "completed" status
+            const wasOrderCompleted = data.order_status === "completed";
+            const didStatusChange =
+              prevOrders.find((o) => o._id === data._id)?.order_status !==
+              data.order_status;
+
+            // Only recalculate stats if status changed to/from "completed" or payment status changed
+            if (wasOrderCompleted || didStatusChange || data.payment_status) {
+              console.log(
+                "[Layout] Order status changed to/from completed - updating stats"
+              );
+              setTimeout(() => calculateStats(updatedOrders), 0);
+            } else {
+              console.log(
+                "[Layout] Order updated but status not relevant for stats - skipping recalculation"
+              );
+            }
+
             return updatedOrders;
           });
         }
       });
 
-      // Handle payment updates
+      // Handle payment updates with check for relevant changes
       channel.bind("payment-update", (data: any) => {
         if (data.shop_id === shopId) {
           setOrderDetails((prevOrders) => {
+            // Find the relevant order
+            const targetOrder = prevOrders.find(
+              (order) => order._id === data.order_id
+            );
+
+            // Only proceed with update if order exists and status changed
+            if (!targetOrder || targetOrder.payment_status === data.status) {
+              console.log(
+                "[Layout] Payment update with no status change - skipping"
+              );
+              return prevOrders; // No change needed
+            }
+
+            // Update orders
             const updatedOrders = prevOrders.map((order) =>
               order._id === data.order_id
                 ? {
@@ -189,12 +298,23 @@ export default function AdminLayout({
                   }
                 : order
             );
-            calculateStats(updatedOrders);
+
+            // Check if this is relevant for stats (completed order + payment status change)
+            const isCompletedOrder = targetOrder.order_status === "completed";
+            const affectsRevenue =
+              data.status === "paid" || targetOrder.payment_status === "paid";
+
+            if (isCompletedOrder || affectsRevenue) {
+              console.log(
+                "[Layout] Payment status changed for completed order - updating stats"
+              );
+              setTimeout(() => calculateStats(updatedOrders), 0);
+            }
+
             return updatedOrders;
           });
         }
       });
-
       return () => {
         pusher.unsubscribe(channelName);
       };
@@ -229,6 +349,13 @@ export default function AdminLayout({
     }
   };
 
+  // Add this useEffect to ensure stats are updated when orderDetails changes
+  useEffect(() => {
+    if (orderDetails.length > 0) {
+      calculateStats(orderDetails);
+    }
+  }, [orderDetails, calculateStats]);
+
   return (
     <div className="flex">
       {/* Sidebar */}
@@ -243,11 +370,48 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <div className="flex-1">
-        <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto sm:px-6 lg:px-6">
           {/* Header */}
           <Header userType="admin" />
-          <div className="px-4 py-6 sm:px-0">
+          <div className="px-2 py-0 sm:px-0">
             {/* Stats Cards - Always visible */}
+            {/* Stats Header with Refresh Button */}
+            <div className="flex justify-end items-center mb-0">
+              {/* Add last refreshed timestamp if available */}
+              {/* {lastRefreshed && (
+                <div className="text-xs text-gray-500 mb-4 text-right">
+                  Last updated: {lastRefreshed.toLocaleTimeString()}
+                </div>
+              )} */}
+              <button
+                onClick={refreshStats}
+                disabled={isRefreshing || isLoading}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#F386C7] hover:bg-[#e06eb3] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F386C7] transition-all"
+                aria-label="Refresh statistics"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                {isRefreshing ? "Refreshing..." : "Refresh Data"}
+              </button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+              {/* Your existing stats cards */}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {/* Total Customers */}
               <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">

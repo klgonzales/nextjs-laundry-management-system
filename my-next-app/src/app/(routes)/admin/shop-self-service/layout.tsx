@@ -24,7 +24,79 @@ export default function AdminLayout({
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [completedOrders, setCompletedOrders] = useState(0);
+  // 1. First, add a new function to handle refreshing the data
+  const handleRefreshStats = async () => {
+    if (!user?.shops?.[0]?.shop_id) {
+      console.log("[Layout] No shop ID available for refresh");
+      return;
+    }
 
+    // Show loading state
+    setIsLoading(true);
+
+    try {
+      const shopId = user.shops[0].shop_id;
+      console.log(`[Layout] Manually refreshing data for shop: ${shopId}`);
+
+      // Fetch orders from API
+      const response = await fetch(`/api/shops/${shopId}/orders`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch shop orders");
+      }
+
+      const ordersData = await response.json();
+
+      // Process orders to get additional details
+      const detailedOrders = await Promise.all(
+        ordersData.map(async (order: any) => {
+          try {
+            // Fetch customer details
+            const customerResponse = await fetch(
+              `/api/customers/${order.customer_id}`
+            );
+            const customerData = await customerResponse.json();
+
+            return {
+              ...order,
+              customer_name: customerData?.customer?.name || "Unknown Customer",
+            };
+          } catch (error) {
+            console.error("Error fetching order details:", error);
+            return { ...order, customer_name: "Error" };
+          }
+        })
+      );
+
+      // Update state with new data
+      setOrders(ordersData);
+      setOrderDetails(detailedOrders);
+      calculateStats(detailedOrders);
+
+      console.log("[Layout] Data refresh completed successfully");
+    } catch (error) {
+      console.error("[Layout] Error refreshing data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2. Then add these states to track the refresh button state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+
+  // 3. Create an enhanced version of the refresh function with animation
+  const refreshStats = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    await handleRefreshStats();
+    setLastRefreshed(new Date());
+
+    // Reset the refreshing state after animation completes
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
   // Calculate stats from orders
   const calculateStats = useCallback((orders: any[]) => {
     console.log(`[Layout] Calculating stats from ${orders.length} orders`);
@@ -250,6 +322,43 @@ export default function AdminLayout({
           <Header userType="admin" />
           <div className="px-4 py-6 sm:px-0">
             {/* Stats Cards - Always visible */}
+            {/* Stats Header with Refresh Button */}
+            <div className="flex justify-end items-center mb-0">
+              {/* Add last refreshed timestamp if available */}
+              {/* {lastRefreshed && (
+                <div className="text-xs text-gray-500 mb-4 text-right">
+                  Last updated: {lastRefreshed.toLocaleTimeString()}
+                </div>
+              )} */}
+              <button
+                onClick={refreshStats}
+                disabled={isRefreshing || isLoading}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#F386C7] hover:bg-[#e06eb3] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F386C7] transition-all"
+                aria-label="Refresh statistics"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 mr-1.5 ${isRefreshing ? "animate-spin" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                {isRefreshing ? "Refreshing..." : "Refresh Data"}
+              </button>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+              {/* Your existing stats cards */}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {/* Total Customers */}
               <div className="bg-[#F8F3EA] overflow-hidden shadow rounded-lg">

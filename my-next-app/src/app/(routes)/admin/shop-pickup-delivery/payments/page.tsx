@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { usePusher } from "@/app/context/PusherContext";
 import type { Channel } from "pusher-js";
@@ -477,6 +477,39 @@ export default function Payments() {
     };
   }, [registerPaymentHandler, unregisterPaymentHandler]);
 
+  // Update your paymentCounts implementation with proper TypeScript types:
+  const paymentCounts = useMemo(() => {
+    // Define the allowed status types
+    type PaymentStatus =
+      | "all"
+      | "pending"
+      | "for review"
+      | "paid"
+      | "failed"
+      | "cancelled";
+
+    // Initialize counts with the correct type
+    const counts: Record<PaymentStatus, number> = {
+      all: payments.length,
+      pending: 0,
+      "for review": 0,
+      paid: 0,
+      failed: 0,
+      cancelled: 0,
+    };
+
+    // Count payments by status
+    payments.forEach((payment) => {
+      const status = payment.payment_status;
+      // Check if status is a valid key before incrementing
+      if (status in counts && status !== "all") {
+        counts[status as PaymentStatus]++;
+      }
+    });
+
+    return counts;
+  }, [payments]);
+
   // Add this function within your component
   const fetchCustomerData = useCallback(async (customerIds: string[]) => {
     if (!customerIds.length) return;
@@ -739,8 +772,9 @@ export default function Payments() {
 
         {/* Tabs for filtering payments */}
 
-        <div className="mt-4 flex space-x-4">
-          <div className="flex space-x-2">
+        <div className="mt-4 flex flex-wrap gap-2">
+          {/* Sort buttons - more compact */}
+          <div className="flex items-center pr-0 mr-0">
             <button
               onClick={() => setSortDirection("asc")}
               className={`btn ${
@@ -764,7 +798,7 @@ export default function Payments() {
                     d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
                   />
                 </svg>
-                Oldest First
+                Oldest
               </div>
             </button>
             <button
@@ -790,25 +824,43 @@ export default function Payments() {
                     d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
                   />
                 </svg>
-                Newest First
+                Newest
               </div>
             </button>
           </div>
           <div className="w-px bg-gray-300"></div>
           {["all", "pending", "for review", "paid", "failed", "cancelled"].map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`btn ${
-                  filterStatus === status
-                    ? "btn-tertiary"
-                    : "btn-tertiary-neutral"
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            )
+            (status) => {
+              // Use type assertion to tell TypeScript this is a valid key
+              const safeStatus = status as keyof typeof paymentCounts;
+
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFilterStatus(status)}
+                  className={`btn ${
+                    filterStatus === status
+                      ? "btn-tertiary"
+                      : "btn-tertiary-neutral"
+                  }`}
+                >
+                  <span>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </span>
+                  <span
+                    className={`ml-1 inline-flex items-center justify-center h-5 w-5 text-xs rounded-full${
+                      paymentCounts[safeStatus] > 0
+                        ? filterStatus === status
+                          ? "bg-white text-purple-800"
+                          : "bg-gray-100 text-gray-600"
+                        : "bg-gray-100 text-gray-400"
+                    }`}
+                  >
+                    {paymentCounts[safeStatus]}
+                  </span>
+                </button>
+              );
+            }
           )}
         </div>
       </div>
@@ -990,7 +1042,6 @@ export default function Payments() {
                       </div>
                     </div>
                   </div>
-
                   {/* Payment details */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     {/* Payment Method */}
@@ -1056,7 +1107,6 @@ export default function Payments() {
                       </div>
                     </div>
                   </div>
-
                   {/* Show details if payment_status is "for review" */}
                   {payment.payment_status === "for review" && (
                     <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200">
@@ -1259,6 +1309,162 @@ export default function Payments() {
                       </div>
                     </div>
                   )}
+
+                  {/* View proof for paid payments */}
+                  {payment.payment_status === "paid" &&
+                    payment.proof_of_payment && (
+                      <div className="mt-4 bg-white p-4 rounded-lg border border-gray-200">
+                        <h5 className="font-medium text-gray-800 mb-3 flex items-center">
+                          <FiCheckCircle className="mr-2 text-green-600" />
+                          Approved Payment Details
+                        </h5>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            {payment.payment_method === "gcash" ? (
+                              <>
+                                <div className="flex items-center">
+                                  <div className="w-32 text-sm text-gray-600">
+                                    Amount Sent:
+                                  </div>
+                                  <div className="font-medium text-sm">
+                                    ₱
+                                    {payment.proof_of_payment?.amount_sent ||
+                                      "N/A"}
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  <div className="w-32 text-sm text-gray-600">
+                                    Reference Number:
+                                  </div>
+                                  <div className="font-medium text-sm">
+                                    {payment.proof_of_payment
+                                      ?.reference_number || "N/A"}
+                                  </div>
+                                </div>
+                              </>
+                            ) : payment.payment_method === "cash" ? (
+                              <>
+                                <div className="flex items-center">
+                                  <div className="w-32 text-sm text-gray-600">
+                                    Amount Paid:
+                                  </div>
+                                  <div className="font-medium text-sm">
+                                    ₱
+                                    {payment.proof_of_payment?.amount_paid ||
+                                      "N/A"}
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  <div className="w-32 text-sm text-gray-600">
+                                    Paid the Driver:
+                                  </div>
+                                  <div className="font-medium text-sm">
+                                    {payment.proof_of_payment?.paid_the_driver
+                                      ? "Yes"
+                                      : "No"}
+                                  </div>
+                                </div>
+                              </>
+                            ) : null}
+
+                            <div className="flex items-center">
+                              <div className="w-32 text-sm text-gray-600">
+                                Payment Date:
+                              </div>
+                              <div className="font-medium text-sm">
+                                {payment.proof_of_payment?.payment_date
+                                  ? new Date(
+                                      payment.proof_of_payment.payment_date
+                                    ).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    })
+                                  : "N/A"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* View button for screenshots */}
+                          {payment.payment_method === "gcash" &&
+                            payment.proof_of_payment?.screenshot && (
+                              <div className="flex items-center justify-center">
+                                <button
+                                  onClick={() => {
+                                    const screenshot =
+                                      payment.proof_of_payment?.screenshot;
+                                    if (screenshot) {
+                                      const newWindow = window.open();
+                                      if (newWindow) {
+                                        newWindow.document.write(`
+                    <html>
+                      <head>
+                        <title>Payment Screenshot</title>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                          body {
+                            margin: 0;
+                            padding: 20px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            background-color: #f4f4f4;
+                            font-family: system-ui, -apple-system, sans-serif;
+                          }
+                          .container {
+                            max-width: 100%;
+                            text-align: center;
+                          }
+                          img {
+                            max-width: 100%;
+                            height: auto;
+                            border: 1px solid #ccc;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                            border-radius: 4px;
+                          }
+                          h2 {
+                            color: #333;
+                            margin-bottom: 20px;
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="container">
+                          <h2>Payment Screenshot</h2>
+                          <img src="${screenshot}" alt="Payment Screenshot" />
+                        </div>
+                      </body>
+                    </html>
+                  `);
+                                        newWindow.document.close();
+                                      }
+                                    } else {
+                                      console.log("No screenshot available");
+                                    }
+                                  }}
+                                  className="btn btn-success flex items-center"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  View Receipt
+                                </button>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    )}
                 </li>
               ))}
             </ul>

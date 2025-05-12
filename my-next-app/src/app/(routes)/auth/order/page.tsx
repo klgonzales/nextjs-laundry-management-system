@@ -92,6 +92,8 @@ function OrderContent() {
   // Add a loading state to track button click status
   const [isProceedingToServices, setIsProceedingToServices] = useState(false);
   // First add a new state to track which shop's reviews are being viewed
+  const [location, setLocation] = useState("");
+  const [minRating, setMinRating] = useState(0); // 0 means no filter
   const [reviewsModalOpen, setReviewsModalOpen] = useState(false);
   const [selectedShopForReviews, setSelectedShopForReviews] =
     useState<Shop | null>(null);
@@ -252,11 +254,35 @@ function OrderContent() {
           ) || shop.name.toLowerCase().includes(service.toLowerCase())
         : true;
 
-      return matchesType && matchesPrice && matchesPayment && matchesService;
+      // Location filter - NEW
+      const matchesLocation = location
+        ? shop.address.toLowerCase().includes(location.toLowerCase())
+        : true;
+
+      // Rating filter - NEW
+      const avgRating = getAverageRating(shop);
+      const matchesRating = minRating > 0 ? avgRating >= minRating : true;
+
+      return (
+        matchesType &&
+        matchesPrice &&
+        matchesPayment &&
+        matchesService &&
+        matchesLocation &&
+        matchesRating
+      );
     });
 
     setFilteredShops(filtered);
-  }, [shopType, priceRange, paymentMethod, service, shops]);
+  }, [
+    shopType,
+    priceRange,
+    paymentMethod,
+    service,
+    shops,
+    location,
+    minRating,
+  ]);
 
   const formatOperatingHours = (shop: Shop) => {
     if (
@@ -554,9 +580,11 @@ function OrderContent() {
           </div>
 
           {/* Additional filters */}
+          {/* Additional filters */}
           {isFilterExpanded && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+              {/* Service Filter */}
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Service
                 </label>
@@ -571,6 +599,61 @@ function OrderContent() {
                     className="text-sm pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#F468BB] focus:border-[#F468BB]"
                     placeholder="Search for a service (e.g., Wash, Iron, Fold)"
                   />
+                </div>
+              </div>
+
+              {/* Location Filter - NEW */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiMapPin className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="text-sm pl-10 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-[#F468BB] focus:border-[#F468BB]"
+                    placeholder="Search by area or address"
+                  />
+                </div>
+              </div>
+
+              {/* Rating Filter - NEW */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Rating
+                </label>
+                <div className="flex items-center space-x-1">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      type="button"
+                      onClick={() =>
+                        setMinRating(rating === minRating ? 0 : rating)
+                      }
+                      className="focus:outline-none"
+                      aria-label={`${rating} stars`}
+                    >
+                      <FiStar
+                        className={`w-6 h-6 ${
+                          rating <= minRating
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  {minRating > 0 && (
+                    <button
+                      onClick={() => setMinRating(0)}
+                      className="ml-2 text-xs text-gray-500 hover:text-gray-700"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

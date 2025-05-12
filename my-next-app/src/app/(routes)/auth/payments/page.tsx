@@ -1098,7 +1098,7 @@ export default function Payments() {
                               type="button"
                               onClick={handleSubmitPayment}
                               disabled={isSubmitting}
-                              className="flex-1 px-4 py-2 bg-[#F468BB] text-white rounded-lg hover:bg-opacity-90 flex items-center justify-center"
+                              className="btn btn-success flex items-center"
                             >
                               {isSubmitting ? (
                                 <>
@@ -1116,7 +1116,7 @@ export default function Payments() {
                               type="button"
                               onClick={() => setSelectedOrderId(null)}
                               disabled={isSubmitting}
-                              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center"
+                              className="btn btn-danger flex items-center"
                             >
                               <FiXCircle className="mr-2" />
                               Cancel

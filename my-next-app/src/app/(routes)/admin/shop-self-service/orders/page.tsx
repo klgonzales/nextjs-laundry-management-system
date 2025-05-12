@@ -77,6 +77,11 @@ export default function Orders() {
 
   // --- Add loading/error states ---
   const [loading, setLoading] = useState(true);
+  // Add a new state variable to track which order is currently being updated
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(
+    null
+  );
+
   const [error, setError] = useState<string | null>(null);
   // --- Add Pusher channel ref ---
   const channelRef = useRef<Channel | null>(null);
@@ -511,6 +516,8 @@ export default function Orders() {
 
   const handleAccept = async (orderId: string) => {
     try {
+      // Set the processing state for this specific order
+      setProcessingOrderId(orderId);
       const response = await fetch(
         `/api/orders/${orderId}/update-order-status`,
         {
@@ -534,11 +541,16 @@ export default function Orders() {
       );
     } catch (error) {
       console.error("Error accepting order:", error);
+    } finally {
+      // Clear the processing state
+      setProcessingOrderId(null);
     }
   };
 
   const handleDecline = async (orderId: string) => {
     try {
+      // Set the processing state for this specific order
+      setProcessingOrderId(orderId);
       // Update order status to "cancelled"
       const orderResponse = await fetch(
         `/api/orders/${orderId}/update-order-status`,
@@ -577,11 +589,16 @@ export default function Orders() {
       );
     } catch (error) {
       console.error("Error declining order:", error);
+    } finally {
+      // Clear the processing state
+      setProcessingOrderId(null);
     }
   };
 
   const handleMoveToNextStage = async (orderId: string, nextStage: string) => {
     try {
+      // Set the processing state for this specific order
+      setProcessingOrderId(orderId);
       let apiUrl = `/api/orders/${orderId}/update-order-status`;
       let body = { newStatus: nextStage };
 
@@ -609,6 +626,9 @@ export default function Orders() {
       );
     } catch (error) {
       console.error("Error moving order to next stage:", error);
+    } finally {
+      // Clear the processing state
+      setProcessingOrderId(null);
     }
   };
 
@@ -641,6 +661,41 @@ export default function Orders() {
       console.error("Error updating date completed:", error);
     }
   };
+
+  // Add this component at the top of your file (outside the main component)
+  const FilterButton = ({
+    label,
+    count,
+    active,
+    onClick,
+  }: {
+    label: string;
+    count: number;
+    active: boolean;
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded ${
+        active
+          ? "bg-purple-100 text-purple-800"
+          : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+      }`}
+    >
+      <span>{label}</span>
+      <span
+        className={`ml-1 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 text-xs font-medium rounded-full ${
+          count > 0
+            ? active
+              ? "bg-white text-purple-800"
+              : "bg-gray-100 text-gray-600"
+            : "bg-gray-100 text-gray-400"
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
 
   // Add this function to handle search, right before your return statement
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -885,8 +940,9 @@ export default function Orders() {
           </div>
         )}
 
-        <div className="mt-4 flex space-x-4">
-          <div className="flex space-x-2">
+        <div className="mt-4 flex flex-wrap gap-2">
+          {/* Sort buttons - more compact */}
+          <div className="flex items-center pr-0 mr-0">
             <button
               onClick={() => setSortDirection("asc")}
               className={`btn ${
@@ -910,7 +966,7 @@ export default function Orders() {
                     d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
                   />
                 </svg>
-                Oldest First
+                Oldest
               </div>
             </button>
             <button
@@ -936,7 +992,7 @@ export default function Orders() {
                     d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
                   />
                 </svg>
-                Newest First
+                Newest
               </div>
             </button>
           </div>
@@ -1520,9 +1576,12 @@ export default function Orders() {
                         <>
                           <button
                             onClick={() => handleAccept(order._id)}
+                            disabled={processingOrderId === order._id}
                             className="btn btn-success"
                           >
-                            {loading ? "Accepting..." : "Accept"}
+                            {processingOrderId === order._id
+                              ? "Accepting..."
+                              : "Accept"}
                           </button>
                           <button
                             onClick={() => handleDecline(order._id)}
@@ -1565,10 +1624,11 @@ export default function Orders() {
                             onClick={() =>
                               handleMoveToNextStage(order._id, "in progress")
                             }
+                            disabled={processingOrderId === order._id}
                             className="btn btn-sm btn-primary"
                           >
                             <div className="flex items-center">
-                              {loading
+                              {processingOrderId === order._id
                                 ? "Moving to Ongoing..."
                                 : "Move to Ongoing"}
                               <svg
@@ -1620,10 +1680,11 @@ export default function Orders() {
                             onClick={() =>
                               handleMoveToNextStage(order._id, "completed")
                             }
+                            disabled={processingOrderId === order._id}
                             className="btn btn-sm btn-primary"
                           >
                             <div className="flex items-center">
-                              {loading
+                              {processingOrderId === order._id
                                 ? "Marking as Completed..."
                                 : "Mark as Completed"}
                               <svg

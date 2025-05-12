@@ -956,8 +956,8 @@ export default function Analytics() {
             ) : (
               <div className="h-80">
                 <SafeChart
-                  data={ratingData_chart}
-                  options={ratingOptions}
+                  data={paymentData_chart}
+                  options={paymentOptions}
                   minimumDataPoints={2}
                 />
               </div>
