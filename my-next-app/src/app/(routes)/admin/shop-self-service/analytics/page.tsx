@@ -230,6 +230,76 @@ export default function Analytics() {
     }
   }, [pusher, isConnected, user?.admin_id, shopId]);
 
+  const createChartData = (
+    labels: string[],
+    values: number[],
+    color: string
+  ) => {
+    // Ensure we have valid arrays
+    if (!Array.isArray(labels) || !Array.isArray(values)) {
+      return {
+        labels: ["No Data", "No Data"],
+        datasets: [
+          {
+            label: "No Data",
+            data: [0, 0],
+            borderColor: color,
+            backgroundColor: color
+              .replace("rgb", "rgba")
+              .replace(")", ", 0.2)"),
+            fill: true,
+            tension: 0,
+            pointBackgroundColor: color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+        ],
+      };
+    }
+    // Check if we have enough valid data points
+    const validValues = values.filter((v) => v !== undefined && v !== null);
+
+    if (validValues.length < 2) {
+      return {
+        labels: ["No Data", "No Data"],
+        datasets: [
+          {
+            label: "No Data",
+            data: [0, 0],
+            borderColor: color,
+            backgroundColor: color
+              .replace("rgb", "rgba")
+              .replace(")", ", 0.2)"),
+            fill: true,
+            tension: 0,
+            pointBackgroundColor: color,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+        ],
+      };
+    }
+
+    // Return valid chart data
+    return {
+      labels,
+      datasets: [
+        {
+          label:
+            color === "rgb(255, 99, 132)" ? "Average Rating" : "Payment Amount",
+          data: values,
+          borderColor: color,
+          backgroundColor: color.replace("rgb", "rgba").replace(")", ", 0.2)"),
+          fill: true,
+          tension: values.length > 2 ? 0.3 : 0, // Disable curve for sparse data
+          pointBackgroundColor: color,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    };
+  };
+
   // Replace the problematic getFilteredPaymentData function with this fixed version:
   const getFilteredPaymentData = useCallback(() => {
     if (!paymentData.length) return { labels: [], amounts: [] };
@@ -434,54 +504,21 @@ export default function Analytics() {
   const ratingChartData = getFilteredRatingData();
   // Replace your chart data creation with this safer implementation
   // 3. Apply the same fix to the payment chart:
-  const paymentData_chart = {
-    labels:
-      paymentChartData.labels.length >= 2
-        ? paymentChartData.labels
-        : ["No Data", "No Data"],
-    datasets: [
-      {
-        label: "Payment Amount",
-        data:
-          paymentChartData.amounts.length >= 2
-            ? paymentChartData.amounts
-            : [0, 0],
-        borderColor: "rgb(53, 162, 235)",
-        backgroundColor: "rgba(53, 162, 235, 0.2)",
-        fill: true,
-        // Reduce tension to 0 if data is sparse
-        tension: paymentChartData.amounts.length >= 3 ? 0.3 : 0,
-        pointBackgroundColor: "rgb(53, 162, 235)",
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-    ],
-  };
+  const paymentData_chart = createChartData(
+    paymentChartData.labels.length >= 2
+      ? paymentChartData.labels
+      : ["No Data", "No Data"],
+    paymentChartData.amounts.length >= 2 ? paymentChartData.amounts : [0, 0],
+    "rgb(53, 162, 235)"
+  );
 
-  // 2. Add protection for missing data in chart creation:
-  const ratingData_chart = {
-    labels:
-      ratingChartData.labels.length >= 2
-        ? ratingChartData.labels
-        : ["No Data", "No Data"],
-    datasets: [
-      {
-        label: "Average Rating",
-        data:
-          ratingChartData.ratings.length >= 2
-            ? ratingChartData.ratings
-            : [0, 0],
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
-        fill: true,
-        // Reduce tension to 0 if data is sparse
-        tension: ratingChartData.ratings.length >= 3 ? 0.3 : 0,
-        pointBackgroundColor: "rgb(255, 99, 132)",
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-    ],
-  };
+  const ratingData_chart = createChartData(
+    ratingChartData.labels.length >= 2
+      ? ratingChartData.labels
+      : ["No Data", "No Data"],
+    ratingChartData.ratings.length >= 2 ? ratingChartData.ratings : [0, 0],
+    "rgb(255, 99, 132)"
+  );
 
   // Chart options
   const paymentOptions = {
@@ -688,17 +725,41 @@ export default function Analytics() {
     type = "line",
     minimumDataPoints = 2,
   }: SafeChartProps) => {
-    const hasEnoughData = data.datasets[0]?.data.length >= minimumDataPoints;
+    // Check if we have valid data structure
+    const isDataValid =
+      data &&
+      data.datasets &&
+      data.datasets[0] &&
+      Array.isArray(data.datasets[0].data) &&
+      data.datasets[0].data.length >= minimumDataPoints &&
+      !data.datasets[0].data.some(
+        (point) => point === undefined || point === null
+      );
 
-    // Only render chart if we have enough data, otherwise show placeholder
-    return hasEnoughData ? (
-      <Line options={options} data={data} />
+    // Only render chart if we have valid data
+    return isDataValid ? (
+      <Line
+        options={{
+          ...options,
+          elements: {
+            ...options.elements,
+            line: {
+              ...options.elements?.line,
+              tension:
+                data.datasets[0].data.length <= 2
+                  ? 0
+                  : options.elements?.line?.tension || 0.3,
+            },
+          },
+        }}
+        data={data}
+      />
     ) : (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-64 bg-gray-50">
         <div className="text-center">
           <p className="text-gray-500 mb-2">Not enough data to display chart</p>
           <p className="text-sm text-gray-400">
-            At least {minimumDataPoints} data points are needed
+            At least {minimumDataPoints} valid data points are needed
           </p>
         </div>
       </div>
