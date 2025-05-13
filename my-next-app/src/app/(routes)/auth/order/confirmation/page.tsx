@@ -64,6 +64,7 @@ function OrderConfirmationContent() {
     pickup_time?: string[]; // For pickup-delivery shops
     total_price?: number;
     total_weight?: number;
+    date_placed?: string; // For order date
   }
 
   useEffect(() => {
@@ -848,9 +849,9 @@ function OrderConfirmationContent() {
                     <p>
                       Order placed on{" "}
                       {orderDetails.date
-                        ? formatDate(orderDetails.date) +
+                        ? formatDate(orderDetails.date_placed) +
                           " at " +
-                          formatTime(orderDetails.date)
+                          formatTime(orderDetails.date_placed)
                         : "Unknown date"}
                     </p>
                   </div>

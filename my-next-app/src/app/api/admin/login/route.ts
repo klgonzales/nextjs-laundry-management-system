@@ -6,7 +6,12 @@ import { Admin } from "../../../models/Admin";
 export async function POST(request: Request) {
   try {
     await dbConnect();
-    const { email, password } = await request.json();
+
+    const { email: rawEmail, password: rawPassword } = await request.json();
+    const email = rawEmail.trim();
+    const password = rawPassword.trim();
+
+    console.log(`Login attempt for: ${email}`);
 
     // Find admin by email
     const admin = await Admin.findOne({ email });
@@ -20,6 +25,12 @@ export async function POST(request: Request) {
 
     // Compare passwords
     const isPasswordValid = await bcrypt.compare(password, admin.password);
+    // For debugging only - remove in production
+    console.log(`Raw password input: ${password}`);
+    console.log(
+      `Stored hashed password: ${admin.password.substring(0, 10)}...`
+    );
+    console.log(`Password check for ${email}: ${isPasswordValid}`);
 
     if (!isPasswordValid) {
       return NextResponse.json(
